@@ -14,6 +14,8 @@
             <option value="$PROJECT_DIR$/Authentication/endpoint" />
             <option value="$PROJECT_DIR$/Authentication/repository" />
             <option value="$PROJECT_DIR$/Authentication/service" />
+            <option value="$PROJECT_DIR$/Common" />
+            <option value="$PROJECT_DIR$/Common/dto" />
             <option value="$PROJECT_DIR$/Framework" />
             <option value="$PROJECT_DIR$/IdentityManagement" />
             <option value="$PROJECT_DIR$/IdentityManagement/dto" />

@@ -1,9 +1,10 @@
 package User.Authentication;
 
-public class UserAuthDetailsRequestDTO {
-    String email;
+import IdentityManagement.PhoneNumber;
 
-    PhoneNumber phoneNumber;
-
-    String username;
+public record UserAuthDetailsRequestDTO(
+        String email,
+        PhoneNumber phoneNumber,
+        String username
+) {
 }
