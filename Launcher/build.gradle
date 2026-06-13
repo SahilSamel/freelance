@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'launcher'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:6.0.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation 'org.postgresql:postgresql:42.7.11'
+
+    implementation 'org.flywaydb:flyway-core:12.8.1'
+    implementation 'org.flywaydb:flyway-database-postgresql:12.8.1'
+
+    implementation 'com.zaxxer:HikariCP:7.0.2'
+
+    implementation project(":Framework:database")
+}
+
+test {
+    useJUnitPlatform()
+}
+
+application {
+    mainClass = 'launcher.Main'
+}
