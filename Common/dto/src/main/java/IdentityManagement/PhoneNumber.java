@@ -5,10 +5,12 @@ import java.io.Serializable;
 public record PhoneNumber(String countryCode, String nationalNumber) implements Serializable {
 
     public PhoneNumber {
+        // Fail fast so every PhoneNumber instance is safe to serialize and format.
         if (countryCode == null || nationalNumber == null) {
             throw new IllegalArgumentException("Country code and national number cannot be null");
         }
 
+        // Store only the dialing digits; presentation characters belong at the UI boundary.
         countryCode = countryCode.trim().replace("+", "");
         nationalNumber = nationalNumber.replaceAll("[^0-9]", "");
 
@@ -18,6 +20,7 @@ public record PhoneNumber(String countryCode, String nationalNumber) implements 
     }
 
     public String toE164() {
+        // E.164 keeps the shared DTO compatible with APIs that expect international phone numbers.
         return "+" + countryCode + nationalNumber;
     }
 

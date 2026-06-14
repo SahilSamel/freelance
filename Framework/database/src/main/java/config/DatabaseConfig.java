@@ -1,4 +1,4 @@
-package framework.database;
+package config;
 
 public record DatabaseConfig(
         String url,
@@ -6,6 +6,7 @@ public record DatabaseConfig(
         String password
 ) {
     public static DatabaseConfig fromArgs(String[] args) {
+        // The launcher supplies database settings explicitly so local and deployed runs use the same boot path.
         if (args.length < 3) {
             throw new IllegalArgumentException(
                     "Expected arguments: <db-url> <db-username> <db-password>"
