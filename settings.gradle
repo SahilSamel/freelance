@@ -1,16 +1,21 @@
 rootProject.name = 'Freelance'
-include 'Authentication'
-include 'Authentication:dto'
-include 'Authentication:endpoint'
-include 'Authentication:service'
+
+// Infrastructure & Core
 include 'Framework'
-include 'IdentityManagement'
-include 'IdentityManagement:dto'
-include 'IdentityManagement:endpoint'
-include 'IdentityManagement:service'
-include 'Authentication:repository'
-include 'IdentityManagement:repository'
+include 'Framework:database'
 include 'Common'
 include 'Common:dto'
-include 'Launcher'
-include 'Framework:database'
+include 'Launcher' // Your App Shell / Composition Root
+
+// Feature Modules (Grouped under the 'modules' directory)
+include 'modules:Authentication'
+include 'modules:Authentication:dto'
+include 'modules:Authentication:endpoint'
+include 'modules:Authentication:service'
+include 'modules:Authentication:repository'
+
+include 'modules:IdentityManagement'
+include 'modules:IdentityManagement:dto'
+include 'modules:IdentityManagement:endpoint'
+include 'modules:IdentityManagement:service'
+include 'modules:IdentityManagement:repository'

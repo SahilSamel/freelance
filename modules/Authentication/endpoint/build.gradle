@@ -11,8 +11,8 @@ repositories {
 
 dependencies {
     implementation("javax.ws.rs:javax.ws.rs-api:2.1.1")
-    implementation project(":Authentication:dto")
-    implementation project(":Authentication:service")
+    implementation project(":modules:Authentication:dto")
+    implementation project(":modules:Authentication:service")
 }
 
 test {
