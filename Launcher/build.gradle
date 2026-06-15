@@ -22,6 +22,7 @@ dependencies {
     implementation 'com.zaxxer:HikariCP:7.0.2'
 
     implementation project(":Framework:database")
+    implementation project(":Framework:transaction")
     implementation project(":modules:Authentication:repository")
     implementation project(":modules:IdentityManagement:repository")
 
