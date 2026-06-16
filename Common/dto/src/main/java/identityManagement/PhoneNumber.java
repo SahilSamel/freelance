@@ -1,4 +1,4 @@
-package IdentityManagement;
+package identityManagement;
 
 import java.io.Serializable;
 

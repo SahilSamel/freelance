@@ -4,7 +4,7 @@ import config.DatabaseConfig;
 import flyway.FlywayMigrationRunner;
 import jpa.JpaFactory;
 import jakarta.persistence.EntityManagerFactory;
-import Transaction.Transaction;
+import transaction.Transaction;
 
 public class Main {
     public static void main(String[] args) {

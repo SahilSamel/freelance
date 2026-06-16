@@ -1,6 +1,6 @@
 package Login;
 
-import IdentityManagement.PhoneNumber;
+import identityManagement.PhoneNumber;
 
 public record LoginRequestDTO(
     String username,

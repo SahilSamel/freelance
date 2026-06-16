@@ -1,6 +1,6 @@
 package User.Authentication;
 
-import IdentityManagement.PhoneNumber;
+import identityManagement.PhoneNumber;
 
 public record UserAuthDetailsRequestDTO(
         String email,
