@@ -1,8 +1,8 @@
-package errorHandling;
+package error.validation;
 
-import errorHandling.exception.validation.ValidationException;
-import transaction.Transaction;
 import error.ErrorCode;
+import transaction.Transaction;
+
 import java.util.List;
 import java.util.Map;
 

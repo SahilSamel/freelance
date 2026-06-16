@@ -1,4 +1,4 @@
-package errorHandling.exception;
+package error.exception;
 
 public abstract class BaseException extends RuntimeException {
     private final String errorCode;

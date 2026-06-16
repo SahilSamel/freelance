@@ -1,11 +1,11 @@
 package repository;
 
 import jakarta.persistence.EntityManager;
-import java.lang.reflect.ParameterizedType;
-import java.util.Map;
-
 import jakarta.persistence.TypedQuery;
 import transaction.Transaction;
+
+import java.lang.reflect.ParameterizedType;
+import java.util.Map;
 
 public abstract class AbstractRepository<T, ID> {
 
@@ -67,7 +67,7 @@ public abstract class AbstractRepository<T, ID> {
         if (params != null) {
             params.forEach(query::setParameter);
         }
-        return query.getResultList(); // Returns the full list of results natively
+        return query.getResultList();
     }
 
 

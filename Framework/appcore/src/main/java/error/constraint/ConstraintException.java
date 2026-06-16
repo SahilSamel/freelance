@@ -1,6 +1,6 @@
-package errorHandling.exception.constraint;
+package error.constraint;
 
-import errorHandling.exception.BaseException;
+import error.exception.BaseException;
 
 public class ConstraintException extends BaseException {
     public ConstraintException(String errorCode) {

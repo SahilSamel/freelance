@@ -1,6 +1,5 @@
-package errorHandling;
+package error.constraint;
 
-import errorHandling.exception.constraint.ConstraintException;
 import transaction.Transaction;
 
 public abstract class AbstractConstraint {
