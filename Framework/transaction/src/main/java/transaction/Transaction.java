@@ -70,54 +70,44 @@ public class Transaction {
 
     /**
      * PIPELINE EXIT POINT: Evaluates application state and terminates database connections.
-     * * Executed by the Launcher inside a 'finally' block as the thread prepares to send the HTTP response.
-     * * Evaluation Checklist:
-     * - If context has no constraints/failures logged -> COMMIT changes to disk.
-     * - If context is dirty (failures, business/system exceptions logged) -> ROLLBACK to safety.
-     * - ALWAYS close the EntityManager to prevent database connection pool starvation.
-     * - ALWAYS scrub the ThreadLocal clean to ensure safety for subsequent requests reusing this thread.
-     * * @return The finalized TransactionContext containing accumulated metrics and logs for the UI router.
+     * * @throws RuntimeException If the database commit or rollback operation crashes.
      */
-    public static TransactionContext finish() {
+    public static void finish() {
         TransactionContext ctx = contextHolder.get();
 
         // Safety check if finish() is called on an uninitialized pipeline flight path
         if (ctx == null) {
-            return null;
+            return;
         }
 
         var em = ctx.getEntityManager();
 
         try {
             if (em != null && em.getTransaction().isActive()) {
-                // Determine the ultimate fate of this transaction block
                 if (ctx.isClean()) {
-                    // Framework-wide win. Persist all changes to disk permanently.
                     em.getTransaction().commit();
                 } else {
-                    // Constraints or failures were registered. Erase all partial mutations safely.
                     em.getTransaction().rollback();
                 }
             }
         } catch (Exception e) {
-            // Intercept unexpected infrastructure/flush failures right at the goal line
-            ctx.addFailure(e);
-            if (em != null && em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
+
+            try {
+                if (em != null && em.getTransaction().isActive()) {
+                    em.getTransaction().rollback();
+                }
+            } catch (Exception rollbackError) {
+                // Suppressed silently to ensure 'e' remains the primary root cause exception
             }
+
+            // 🎯 FIX: Wrap in an unchecked RuntimeException so it compiles and bubbles up perfectly!
+            throw new RuntimeException("Critical database synchronization failure during transaction finalization.", e);
+
         } finally {
-            // CRITICAL STEP: Connection Safety
             if (em != null) {
                 em.close(); // Return database connection safely back to the pool
             }
-
-            // CRITICAL STEP: Thread Pool Memory Scrubbing
-            // Server worker threads are pooled and reused for different clients.
-            // If you skip this, Client B could read Client A's cached contexts.
-            contextHolder.remove();
+            contextHolder.remove(); // Evict the context to prevent thread-pool memory leaks
         }
-
-        // Return the collected logs back to the Launcher for structured JSON output formatting
-        return ctx;
     }
 }

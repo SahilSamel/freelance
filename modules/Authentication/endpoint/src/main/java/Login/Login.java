@@ -1,20 +1,44 @@
 package Login;
 
-import javax.ws.rs.*;
+import rest.AbstractRest;
+import transaction.Transaction;
+
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 @ApplicationPath("/auth")
-public class Login {
+public class Login extends AbstractRest {
 
     @POST
     @Path("/login")
     @Produces(MediaType.APPLICATION_JSON)
     public Response login(LoginRequestDTO loginRequestDTO){
-        // Keep HTTP concerns here; credential validation/token creation belongs in the login service.
-        Login loginService = new Login();
-        LoginResponseDTO loginResponseDTO = loginService.login(loginRequestDTO);
-        // ACCEPTED signals that the login request was received and converted into a response payload.
-        return Response.status(Response.Status.ACCEPTED).entity(loginResponseDTO).build();
+        Response response;
+
+        try {
+            Transaction.start();
+
+            service.login.Login loginService = new service.login.Login();
+            LoginResponseDTO loginResponseDTO = loginService.login(loginRequestDTO);
+
+            response = buildResponse(loginResponseDTO, 200);
+
+        } catch (Exception e) {
+
+            response = buildResponse(e);
+
+        } finally {
+            try {
+                Transaction.finish();
+            } catch (Exception e) {
+                response = buildResponse(e);
+            }
+        }
+
+        return response;
     }
 }

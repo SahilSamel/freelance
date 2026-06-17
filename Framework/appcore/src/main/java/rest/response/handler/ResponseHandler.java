@@ -1,6 +1,7 @@
-package rest.response;
+package rest.response.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import rest.response.Response;
 
 public class ResponseHandler {
     private final ObjectMapper json = new ObjectMapper();
@@ -13,10 +14,10 @@ public class ResponseHandler {
     public Response buildResponse(Object dto, int statusCode) {
         try {
             // Handle null gracefully by returning an empty JSON block
-            String jsonString = (dto == null) ? "{}" : json.writeValueAsString(dto);
+            String responseJSON = (dto == null) ? "{}" : json.writeValueAsString(dto);
 
             // Construct and return the payload package
-            return new Response(statusCode, jsonString);
+            return new Response(statusCode, responseJSON);
 
         } catch (Exception e) {
             // Unchecked bubble up to prevent messy try-catch blocks inside your module endpoints

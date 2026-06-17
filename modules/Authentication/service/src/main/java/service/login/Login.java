@@ -1,4 +1,4 @@
-package Login;
+package service.login;
 
 import Login.LoginRequestDTO;
 import Login.LoginResponseDTO;

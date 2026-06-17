@@ -11,6 +11,12 @@ public class Response {
         this.contentType = "application/json; charset=UTF-8";
     }
 
+    public Response(int status, String body, String contentType) {
+        this.status = status;
+        this.body = body;
+        this.contentType = contentType;
+    }
+
     public int getStatus() { return status; }
     public String getBody() { return body; }
     public String getContentType() { return contentType; }
