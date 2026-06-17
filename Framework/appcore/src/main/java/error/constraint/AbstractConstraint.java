@@ -10,7 +10,6 @@ public abstract class AbstractConstraint {
      */
     protected void raiseConstraintError(String constraintCode) {
         if (constraintCode != null && !constraintCode.isBlank()) {
-            Transaction.peek().addConstraintError(constraintCode);
             throw new ConstraintException(constraintCode);
         }
     }

@@ -2,7 +2,7 @@ package error.constraint;
 
 import error.exception.BaseException;
 
-public class ConstraintException extends BaseException {
+public class  ConstraintException extends BaseException {
     public ConstraintException(String errorCode) {
         super(errorCode);
     }
