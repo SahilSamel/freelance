@@ -23,6 +23,7 @@ dependencies {
 
     implementation project(":Framework:database")
     implementation project(":Framework:transaction")
+    implementation project(":Framework:configuration")
     implementation project(":modules:Authentication:repository")
     implementation project(":modules:IdentityManagement:repository")
 

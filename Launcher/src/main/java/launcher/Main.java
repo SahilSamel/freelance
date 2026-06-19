@@ -1,9 +1,10 @@
 package launcher;
 
+import config.ConfigurationEngine;
 import config.DatabaseConfig;
 import flyway.FlywayMigrationRunner;
-import jpa.JpaFactory;
 import jakarta.persistence.EntityManagerFactory;
+import jpa.JpaFactory;
 import transaction.Transaction;
 
 public class Main {
@@ -32,6 +33,8 @@ public class Main {
         // 4. Start your actual web server/router loop (Javalin, Netty, Helidon, etc.)
         // This keeps the application alive and listening for worker threads!
         bootHttpServer();
+
+        ConfigurationEngine.initializeFromDatabase(entityManagerFactory);
 
         // 5. Add a Shutdown Hook to close the factory gracefully when the app stops
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
