@@ -11,6 +11,8 @@ public enum ValidationErrors implements IBadRequestError {
     USERNAME_HAS_INVALID_CHARS("USERNAME_HAS_INVALID_CHARS"),
     PASSWORDS_DO_NOT_MATCH("PASSWORDS_DO_NOT_MATCH");
 
+    private static final String CATEGORY = "identity.validation";
+
     private final String code;
 
     ValidationErrors(String code) {
@@ -20,5 +22,10 @@ public enum ValidationErrors implements IBadRequestError {
     @Override
     public String getCode() {
         return this.code;
+    }
+
+    @Override
+    public String getConfigKey() {
+        return CATEGORY + "." + this.code;
     }
 }

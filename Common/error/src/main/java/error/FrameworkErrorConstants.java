@@ -5,10 +5,11 @@ public enum FrameworkErrorConstants implements IError {
     CONSTRAINT_ERROR("CONSTRAINT_ERROR", 400),
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", 500);
 
+    private static final String CATEGORY = "framework";
+
     private final String code;
     private final int statusCode;
 
-    // Enum constructor matching your definitions above
     FrameworkErrorConstants(String code, int statusCode) {
         this.code = code;
         this.statusCode = statusCode;
@@ -22,5 +23,10 @@ public enum FrameworkErrorConstants implements IError {
     @Override
     public int getStatusCode() {
         return this.statusCode;
+    }
+
+    @Override
+    public String getConfigKey() {
+        return CATEGORY + "." + this.code;
     }
 }

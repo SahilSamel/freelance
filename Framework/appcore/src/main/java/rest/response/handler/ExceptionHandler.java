@@ -2,8 +2,11 @@ package rest.response.handler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import config.ConfigurationEngine;
 import context.TransactionContext;
 import error.FrameworkErrorConstants;
+import error.IBadRequestError;
+import error.IError;
 import exception.exception.Exception;
 import exception.validation.ValidationException;
 import rest.response.Response;
@@ -17,7 +20,6 @@ public class ExceptionHandler {
 
     private final ObjectMapper json = new ObjectMapper();
 
-    // ─── JACKSON TARGET STRUCTURES ───────────────────────────────────────────
     private record ValidationErrorItem(String errorCode, String fieldName, String message) {
     }
 
@@ -35,46 +37,48 @@ public class ExceptionHandler {
                 case ValidationException validationException -> {
                     List<ValidationErrorItem> items = getValidationErrorItems(ctx);
                     return createResponse(
-                            validationException.getStatusCode(),
-                            new ValidationResponse(validationException.getErrorCode(), items));
+                            validationException.getError().getStatusCode(),
+                            new ValidationResponse(FrameworkErrorConstants.VALIDATION_ERROR.getCode(), items));
                 }
 
                 case Exception ex -> {
-                    String errorCode = ex.getErrorCode();
+                    IError error = ex.getError();
                     return createResponse(
-                            ex.getStatusCode(),
-                            new StandardErrorResponse(errorCode, resolveErrorMessage(errorCode)));
+                            error.getStatusCode(),
+                            new StandardErrorResponse(error.getCode(), resolveErrorMessage(error.getConfigKey())));
                 }
 
                 case null, default -> {
+                    IError internalError = FrameworkErrorConstants.INTERNAL_SERVER_ERROR;
                     return createResponse(
-                            FrameworkErrorConstants.INTERNAL_SERVER_ERROR.getStatusCode(),
-                            new StandardErrorResponse(
-                                    FrameworkErrorConstants.INTERNAL_SERVER_ERROR.getCode(),
-                                    resolveErrorMessage(FrameworkErrorConstants.INTERNAL_SERVER_ERROR.getCode())));
+                            internalError.getStatusCode(),
+                            new StandardErrorResponse(internalError.getCode(), resolveErrorMessage(internalError.getConfigKey())));
                 }
             }
 
         } catch (java.lang.Exception e) {
+            IError internalError = FrameworkErrorConstants.INTERNAL_SERVER_ERROR;
             return createResponse(
-                    FrameworkErrorConstants.INTERNAL_SERVER_ERROR.getStatusCode(),
-                    new StandardErrorResponse(
-                            FrameworkErrorConstants.INTERNAL_SERVER_ERROR.getCode(),
-                            resolveErrorMessage(FrameworkErrorConstants.INTERNAL_SERVER_ERROR.getCode())));
+                    internalError.getStatusCode(),
+                    new StandardErrorResponse(internalError.getCode(), resolveErrorMessage(internalError.getConfigKey())));
         }
     }
 
     private List<ValidationErrorItem> getValidationErrorItems(TransactionContext ctx) {
-        Map<String, List<String>> validationErrors = ctx.getValidationErrors();
+        Map<String, List<IBadRequestError>> validationErrors = ctx.getValidationErrors();
         List<ValidationErrorItem> items = new ArrayList<>();
 
         if (validationErrors != null && !validationErrors.isEmpty()) {
-            for (Map.Entry<String, List<String>> entry : validationErrors.entrySet()) {
+            for (Map.Entry<String, List<IBadRequestError>> entry : validationErrors.entrySet()) {
                 String fieldName = entry.getKey();
-                List<String> errorCodes = entry.getValue();
+                List<IBadRequestError> errors = entry.getValue();
 
-                for (String errorCode : errorCodes) {
-                    items.add(new ValidationErrorItem(errorCode, fieldName, resolveErrorMessage(errorCode)));
+                for (IBadRequestError error : errors) {
+                    items.add(new ValidationErrorItem(
+                            error.getCode(),
+                            fieldName,
+                            resolveErrorMessage(error.getConfigKey())
+                    ));
                 }
             }
         }
@@ -90,7 +94,17 @@ public class ExceptionHandler {
         }
     }
 
-    private String resolveErrorMessage(String errorCode) {
-        return "Just an Error Message";
+    private String resolveErrorMessage(String absoluteKey) {
+        if (absoluteKey == null || absoluteKey.isBlank()) {
+            return "An unclassified system error occurred.";
+        }
+
+        String mappedMessage = ConfigurationEngine.getErrorMessage(absoluteKey);
+
+        if (mappedMessage == null || mappedMessage.isBlank()) {
+            return "An unexpected error occurred [" + absoluteKey + "]. Please try again later.";
+        }
+
+        return mappedMessage;
     }
 }

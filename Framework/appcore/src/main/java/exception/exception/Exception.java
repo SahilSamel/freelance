@@ -25,18 +25,4 @@ public abstract class Exception extends RuntimeException {
     public IError getError() {
         return error;
     }
-
-    /**
-     * Bridges cleanly with your current ExceptionHandler signature.
-     */
-    public String getErrorCode() {
-        return error.getCode();
-    }
-
-    /**
-     * Allows the ExceptionHandler to extract the HTTP status code directly.
-     */
-    public int getStatusCode() {
-        return error.getStatusCode();
-    }
 }

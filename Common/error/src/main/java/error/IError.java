@@ -4,4 +4,6 @@ public interface IError {
     String getCode();
 
     int getStatusCode();
+
+    String getConfigKey();
 }

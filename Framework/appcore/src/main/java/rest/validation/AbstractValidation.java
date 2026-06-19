@@ -1,5 +1,6 @@
 package rest.validation;
 
+import error.IBadRequestError;
 import exception.validation.ValidationException;
 import transaction.Transaction;
 
@@ -10,11 +11,11 @@ public abstract class AbstractValidation {
 
     /**
      * Accumulates an input format failure against a specific request field.
-     * These are buffered silently in the context so multiple form field errors can be collected at once.
+     * Uses type-safe IError to preserve full category pathing context.
      */
-    protected void raiseValidationError(String validationCode, String fieldName) {
-        if (validationCode != null && !validationCode.isBlank() && fieldName != null && !fieldName.isBlank()) {
-            Transaction.peek().addValidationError(fieldName, validationCode);
+    protected void raiseValidationError(IBadRequestError validationError, String fieldName) {
+        if (validationError != null && fieldName != null && !fieldName.isBlank()) {
+            Transaction.peek().addValidationError(fieldName, validationError);
         }
     }
 
@@ -23,10 +24,9 @@ public abstract class AbstractValidation {
      * the block execution, it fires a validation cycle termination exception.
      */
     protected void validate() {
-        Map<String, List<String>> validationErrors = Transaction.peek().getValidationErrors();
+        Map<String, List<IBadRequestError>> validationErrors = Transaction.peek().getValidationErrors();
 
         if (validationErrors != null && !validationErrors.isEmpty()) {
-            // Leverages the clean, no-arg default constructor we built earlier
             throw new ValidationException();
         }
     }
