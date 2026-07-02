@@ -19,7 +19,7 @@ dependencies {
     implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
     implementation platform('com.fasterxml.jackson:jackson-bom:2.17.2')
     implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation("javax.ws.rs:javax.ws.rs-api:2.1.1")
+    implementation("jakarta.ws.rs:jakarta.ws.rs-api:3.1.0")
 }
 
 test {

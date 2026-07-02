@@ -13,7 +13,7 @@ public class ResponseHandler {
      */
     public Response buildResponse(Object dto, int statusCode) {
         try {
-            // Handle null gracefully by returning an empty JSON block
+
             String responseJSON = (dto == null) ? "{}" : json.writeValueAsString(dto);
 
             // Construct and return the payload package

@@ -6,7 +6,7 @@ public enum ConstraintErrors implements IBadRequestError {
     USER_ALREADY_EXISTS("USER_ALREADY_EXISTS") {
         @Override
         public int getStatusCode() {
-            return 409; // Preserves your explicit Conflict status overrides
+            return 409;
         }
     },
     EMAIL_ALREADY_REGISTERED("EMAIL_ALREADY_REGISTERED") {
@@ -30,9 +30,6 @@ public enum ConstraintErrors implements IBadRequestError {
         return this.code;
     }
 
-    /**
-     * 🎯 Automatically yields paths like: "identity.constraint.USER_ALREADY_EXISTS"
-     */
     @Override
     public String getConfigKey() {
         return CATEGORY + "." + this.code;

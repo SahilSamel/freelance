@@ -52,7 +52,6 @@ public final class ConfigurationEngine {
 
         try (EntityManager em = emf.createEntityManager()) {
 
-            // 🎯 Updated to use 'config_id' and 'config_value'
             @SuppressWarnings("unchecked")
             List<Object[]> configs = em.createNativeQuery("SELECT config_id, config_value FROM system_configuration").getResultList();
             for (Object[] row : configs) {
@@ -61,7 +60,6 @@ public final class ConfigurationEngine {
                 }
             }
 
-            // 🎯 Updated to use 'error_id' and 'ui_message'
             @SuppressWarnings("unchecked")
             List<Object[]> errors = em.createNativeQuery("SELECT error_id, ui_message FROM error_message_mapping").getResultList();
             for (Object[] row : errors) {
@@ -70,7 +68,7 @@ public final class ConfigurationEngine {
                 }
             }
 
-            System.out.println("config.ConfigurationEngine: Local RAM caches synchronized successfully with the database.");
+            System.out.println("ConfigurationEngine: Local RAM caches synchronized successfully with the database.");
 
         } catch (Exception e) {
             throw new RuntimeException("Fatal: Infrastructure synchronization failure within config.ConfigurationEngine loader context.", e);

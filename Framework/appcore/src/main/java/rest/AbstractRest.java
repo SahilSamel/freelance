@@ -1,5 +1,6 @@
 package rest;
 
+import jakarta.ws.rs.core.Response;
 import rest.response.handler.ExceptionHandler;
 import rest.response.handler.ResponseHandler;
 import transaction.Transaction;
@@ -12,10 +13,10 @@ public abstract class AbstractRest {
     /**
      * SUCCESS ADAPTER: Maps to your internal .getStatus() and .getBody()
      */
-    protected javax.ws.rs.core.Response buildResponse(Object dto, int statusCode) {
+    protected Response buildResponse(Object dto, int statusCode) {
         rest.response.Response internalRes = responseHandler.buildResponse(dto, statusCode);
 
-        return javax.ws.rs.core.Response.status(internalRes.getStatus())
+        return Response.status(internalRes.getStatus())
                 .entity(internalRes.getBody())
                 .type(internalRes.getContentType())
                 .build();
@@ -24,7 +25,7 @@ public abstract class AbstractRest {
     /**
      * FAILURE ADAPTER: Maps to your internal .getStatus() and .getBody()
      */
-    protected javax.ws.rs.core.Response buildResponse(Throwable exception) {
+    protected Response buildResponse(Throwable exception) {
         try {
             Transaction.peek().markRollbackOnly();
         } catch (IllegalStateException e) {
@@ -33,7 +34,7 @@ public abstract class AbstractRest {
 
         rest.response.Response internalRes = exceptionHandler.buildResponse(exception);
 
-        return javax.ws.rs.core.Response.status(internalRes.getStatus())
+        return Response.status(internalRes.getStatus())
                 .entity(internalRes.getBody())
                 .type(internalRes.getContentType())
                 .build();
