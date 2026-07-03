@@ -1,4 +1,4 @@
-package entity.Credential;
+package entity.credential;
 
 import jakarta.persistence.*;
 

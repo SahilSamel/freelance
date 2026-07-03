@@ -18,13 +18,6 @@ dependencies {
 
     implementation 'com.zaxxer:HikariCP:7.0.2'
 
-    implementation project(":Framework:database")
-    implementation project(":Framework:transaction")
-    implementation project(":Framework:configuration")
-    implementation project(":modules:Authentication:repository")
-    implementation project(":modules:Authentication:endpoint")
-    implementation project(":modules:IdentityManagement:repository")
-
     implementation 'org.hibernate.orm:hibernate-core:6.6.0.Final'
     implementation 'jakarta.persistence:jakarta.persistence-api:3.2.0'
     implementation("javax.ws.rs:javax.ws.rs-api:2.1.1")
@@ -32,6 +25,16 @@ dependencies {
     implementation 'org.glassfish.jersey.containers:jersey-container-grizzly2-http:3.1.7'
     implementation 'org.glassfish.jersey.inject:jersey-hk2:3.1.7'
     implementation 'org.glassfish.jersey.media:jersey-media-json-jackson:3.1.7'
+
+    implementation project(":Framework:database")
+    implementation project(":Framework:transaction")
+    implementation project(":Framework:configuration")
+    implementation project(":modules:Authentication:authentication-repository")
+    implementation project(":modules:Authentication:authentication-endpoint")
+    implementation project(":modules:IdentityManagement:identity-repository")
+    implementation project(":modules:IdentityManagement:identity-endpoint")
+
+
 }
 
 test {
