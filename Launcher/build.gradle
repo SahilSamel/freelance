@@ -29,8 +29,8 @@ dependencies {
     implementation project(":Framework:database")
     implementation project(":Framework:transaction")
     implementation project(":Framework:configuration")
-    implementation project(":modules:Authentication:authentication-repository")
-    implementation project(":modules:Authentication:authentication-endpoint")
+    implementation project(":modules:authentication:authentication-repository")
+    implementation project(":modules:authentication:authentication-endpoint")
     implementation project(":modules:IdentityManagement:identity-repository")
     implementation project(":modules:IdentityManagement:identity-endpoint")
 

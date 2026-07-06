@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'jakarta.ws.rs:jakarta.ws.rs-api:3.1.0'
+    implementation project(":modules:authentication:authentication-dto")
+    implementation project(":modules:authentication:authentication-service")
+    implementation project(":Framework:transaction")
+    implementation project(":Framework:appcore")
+}
+
+test {
+    useJUnitPlatform()
+}

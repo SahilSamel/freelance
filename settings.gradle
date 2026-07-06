@@ -12,11 +12,11 @@ include 'Common:error'
 include 'Framework:configuration'
 
 // Feature Modules (Grouped under the 'modules' directory)
-include 'modules:Authentication'
-include 'modules:Authentication:dto'
-include 'modules:Authentication:endpoint'
-include 'modules:Authentication:service'
-include 'modules:Authentication:repository'
+include 'modules:authentication'
+include 'modules:authentication:dto'
+include 'modules:authentication:endpoint'
+include 'modules:authentication:service'
+include 'modules:authentication:repository'
 
 include 'modules:IdentityManagement'
 include 'modules:IdentityManagement:dto'
@@ -25,10 +25,10 @@ include 'modules:IdentityManagement:service'
 include 'modules:IdentityManagement:repository'
 
 // ─── DISAMBIGUATE DUPLICATE SUBPROJECT NAMES ─────────────────────────
-project(':modules:Authentication:dto').name = 'authentication-dto'
-project(':modules:Authentication:service').name = 'authentication-service'
-project(':modules:Authentication:endpoint').name = 'authentication-endpoint'
-project(':modules:Authentication:repository').name = 'authentication-repository'
+project(':modules:authentication:dto').name = 'authentication-dto'
+project(':modules:authentication:service').name = 'authentication-service'
+project(':modules:authentication:endpoint').name = 'authentication-endpoint'
+project(':modules:authentication:repository').name = 'authentication-repository'
 
 project(':modules:IdentityManagement:dto').name = 'identity-dto'
 project(':modules:IdentityManagement:service').name = 'identity-service'
