@@ -2,8 +2,8 @@ package com.freelance.endpoint.login;
 
 import com.freelance.login.LoginRequestDTO;
 import com.freelance.login.LoginResponseDTO;
-import com.freelance.rest.AbstractRest;
-import com.freelance.transaction.Transaction;
+import com.freelance.rest.app.endpoint.AbstractRest;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -16,28 +16,11 @@ public class Login extends AbstractRest {
 
     @POST
     @Path("/login")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response login(LoginRequestDTO loginRequestDTO){
-        Response response;
-
-        try {
-            Transaction.start();
-
-            com.freelance.service.login.Login loginService = new com.freelance.service.login.Login();
-            LoginResponseDTO loginResponseDTO = loginService.login(loginRequestDTO);
-
-            response = buildResponse(loginResponseDTO, 200);
-
-        } catch (Exception e) {
-            response = buildResponse(e);
-        } finally {
-            try {
-                Transaction.finish();
-            } catch (Exception e) {
-                response = buildResponse(e);
-            }
-        }
-
-        return response;
+        com.freelance.service.login.Login loginService = new com.freelance.service.login.Login();
+        LoginResponseDTO loginResponseDTO = loginService.login(loginRequestDTO);
+        return buildResponse(loginResponseDTO, 200);
     }
 }

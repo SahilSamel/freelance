@@ -1,5 +1,7 @@
 package com.freelance.entity.credential;
 
+import jakarta.persistence.*;
+
 import java.util.UUID;
 
 @Entity

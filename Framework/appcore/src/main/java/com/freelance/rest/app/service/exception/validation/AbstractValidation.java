@@ -1,8 +1,7 @@
-package com.freelance.rest.validation;
+package com.freelance.rest.app.service.exception.validation;
 
 import com.freelance.error.IBadRequestError;
-import com.freelance.exception.validation.ValidationException;
-import com.freelance.transaction.Transaction;
+import com.freelance.rest.app.transaction.Transaction;
 
 import java.util.List;
 import java.util.Map;

@@ -1,17 +1,17 @@
-package com.freelance.rest.response;
+package com.freelance.rest.app.endpoint.response;
 
-public class Response {
+public class BaseResponse {
     private final int status;
     private final String body;
     private final String contentType;
 
-    public Response(int status, String body) {
+    public BaseResponse(int status, String body) {
         this.status = status;
         this.body = body;
         this.contentType = "application/json; charset=UTF-8";
     }
 
-    public Response(int status, String body, String contentType) {
+    public BaseResponse(int status, String body, String contentType) {
         this.status = status;
         this.body = body;
         this.contentType = contentType;

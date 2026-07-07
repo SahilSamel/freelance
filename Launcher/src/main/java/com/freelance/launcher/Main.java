@@ -5,7 +5,7 @@ import com.freelance.config.DatabaseConfig;
 import com.freelance.endpoint.login.Login;
 import com.freelance.flyway.FlywayMigrationRunner;
 import com.freelance.jpa.JpaFactory;
-import com.freelance.transaction.Transaction;
+import com.freelance.rest.app.transaction.Transaction;
 import jakarta.persistence.EntityManagerFactory;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
@@ -72,14 +72,41 @@ public class Main {
 
             // 3. Registering resources
             System.out.println("[DEBUG] 3/4 Registering resources with ResourceConfig...");
+
+            // NOTE: Fixed package path from "com.freelance.jaxrs" to "com.freelance.rest.jaxrs"
+            // to perfectly match your ExceptionHandler and TransactionFilter packages.
             ResourceConfig config = new ResourceConfig()
-                    .packages("endpoint")
+                    .packages("com.freelance.endpoint", "com.freelance.rest.jaxrs")
                     .register(org.glassfish.jersey.jackson.JacksonFeature.class);
             System.out.println("[DEBUG] ResourceConfig configuration complete.");
 
             // 4. Starting the server
             System.out.println("[DEBUG] 4/4 Starting embedded HTTP server on " + baseUri);
             HttpServer server = GrizzlyHttpServerFactory.createHttpServer(URI.create(baseUri), config);
+
+            // ─── EXTRA DEBUG LOGGING: PRINT ALL DISCOVERED COMPONENTS ───
+            System.out.println("\n=========================================================");
+            System.out.println("   JERSEY REGISTRY INSPECTOR (Post-Initialization)");
+            System.out.println("=========================================================");
+
+            System.out.println("\n[ACTIVE COMPONENTS & PROVIDERS]:");
+            if (config.getClasses().isEmpty()) {
+                System.out.println("  -> (None found via package scanning yet)");
+            } else {
+                for (Class<?> registeredClass : config.getClasses()) {
+                    System.out.println("  -> [Class] " + registeredClass.getName());
+                }
+            }
+
+            System.out.println("\n[ACTIVE SINGLETONS / FEATURE INSTANCES]:");
+            if (config.getInstances().isEmpty()) {
+                System.out.println("  -> (No direct instances registered)");
+            } else {
+                for (Object instance : config.getInstances()) {
+                    System.out.println("  -> [Instance] " + instance.getClass().getName());
+                }
+            }
+            System.out.println("=========================================================\n");
 
             System.out.println("Application started and listening on port 8080...");
 

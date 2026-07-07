@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * CORE CONFIGURATION UTILITY
- * High-speed, database-backed memory cache for application properties and error mappings.
+ * High-speed, database-backed memory cache for application properties and exception mappings.
  * Structurally isolated from request thread transactions to protect against system deadlock loops.
  */
 public final class ConfigurationEngine {
@@ -102,7 +102,7 @@ public final class ConfigurationEngine {
         try {
             return Integer.parseInt(value.trim());
         } catch (NumberFormatException e) {
-            System.err.println("Configuration format error: Key '" + key + "' cannot be cast to an Integer. Value: '" + value + "'");
+            System.err.println("Configuration format exception: Key '" + key + "' cannot be cast to an Integer. Value: '" + value + "'");
             return null;
         }
     }

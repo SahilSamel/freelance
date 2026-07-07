@@ -1,22 +1,29 @@
-package com.freelance.rest.response.handler;
+package com.freelance.rest.jaxrs.provider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.freelance.config.ConfigurationEngine;
-import com.freelance.context.TransactionContext;
 import com.freelance.error.FrameworkErrorConstants;
 import com.freelance.error.IBadRequestError;
 import com.freelance.error.IError;
-import com.freelance.exception.exception.Exception;
-import com.freelance.exception.validation.ValidationException;
-import com.freelance.rest.response.Response;
-import com.freelance.transaction.Transaction;
+import com.freelance.rest.app.endpoint.response.BaseResponse;
+import com.freelance.rest.app.service.exception.BaseException;
+import com.freelance.rest.app.service.exception.validation.ValidationException;
+import com.freelance.rest.app.transaction.Transaction;
+import com.freelance.rest.app.transaction.context.TransactionContext;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ExceptionHandler {
+// --- 1. NEW IMPORTS ---
+
+@Provider // --- 2. REGISTERS THIS WITH JERSEY ---
+public class ExceptionHandler implements ExceptionMapper<Throwable> { // --- 3. IMPLEMENTS MAPPER ---
 
     private final ObjectMapper json = new ObjectMapper();
 
@@ -29,7 +36,29 @@ public class ExceptionHandler {
     private record StandardErrorResponse(String errorCode, String message) {
     }
 
-    public Response buildResponse(Throwable throwable) {
+    // --- 4. NEW REQUIRED METHOD ---
+    @Override
+    public Response toResponse(Throwable throwable) {
+
+        // Ensure transaction is marked for rollback if it exists
+        try {
+            TransactionContext ctx = Transaction.peek();
+            ctx.markRollbackOnly();
+        } catch (IllegalStateException e) {
+            System.out.println("Shizzzzzzzzzzzzzzzzzzz");
+        }
+
+        // Delegate to your existing logic below
+        BaseResponse internalRes = buildResponse(throwable);
+
+        // Convert your BaseResponse into a Jersey Response
+        return Response.status(internalRes.getStatus())
+                .entity(internalRes.getBody())
+                .type(MediaType.APPLICATION_JSON)
+                .build();
+    }
+
+    public BaseResponse buildResponse(Throwable throwable) {
         try {
             TransactionContext ctx = Transaction.peek();
 
@@ -41,7 +70,7 @@ public class ExceptionHandler {
                             new ValidationResponse(FrameworkErrorConstants.VALIDATION_ERROR.getCode(), items));
                 }
 
-                case Exception ex -> {
+                case BaseException ex -> {
                     IError error = ex.getError();
                     return createResponse(
                             error.getStatusCode(),
@@ -85,10 +114,10 @@ public class ExceptionHandler {
         return items;
     }
 
-    private Response createResponse(int statusCode, Object payload) {
+    private BaseResponse createResponse(int statusCode, Object payload) {
         try {
             String failureJSON = json.writeValueAsString(payload);
-            return new Response(statusCode, failureJSON);
+            return new BaseResponse(statusCode, failureJSON);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize response payload", e);
         }
@@ -96,13 +125,13 @@ public class ExceptionHandler {
 
     private String resolveErrorMessage(String absoluteKey) {
         if (absoluteKey == null || absoluteKey.isBlank()) {
-            return "An unclassified system error occurred.";
+            return "An unclassified system exception occurred.";
         }
 
         String mappedMessage = ConfigurationEngine.getErrorMessage(absoluteKey);
 
         if (mappedMessage == null || mappedMessage.isBlank()) {
-            return "An unexpected error occurred [" + absoluteKey + "]. Please try again later.";
+            return "An unexpected exception occurred [" + absoluteKey + "]. Please try again later.";
         }
 
         return mappedMessage;

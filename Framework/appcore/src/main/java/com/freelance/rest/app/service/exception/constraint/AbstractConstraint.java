@@ -1,7 +1,6 @@
-package com.freelance.rest.constraint;
+package com.freelance.rest.app.service.exception.constraint;
 
 import com.freelance.error.IBadRequestError;
-import com.freelance.exception.constraint.ConstraintException;
 
 public abstract class AbstractConstraint {
 

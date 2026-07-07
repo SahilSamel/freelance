@@ -1,6 +1,6 @@
-package com.freelance.repository;
+package com.freelance.rest.app.service.repository;
 
-import com.freelance.transaction.Transaction;
+import com.freelance.rest.app.transaction.Transaction;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 

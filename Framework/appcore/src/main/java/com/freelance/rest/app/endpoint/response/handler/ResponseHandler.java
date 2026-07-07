@@ -1,7 +1,7 @@
-package com.freelance.rest.response.handler;
+package com.freelance.rest.app.endpoint.response.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.freelance.rest.response.Response;
+import com.freelance.rest.app.endpoint.response.BaseResponse;
 
 public class ResponseHandler {
     private final ObjectMapper json = new ObjectMapper();
@@ -11,13 +11,13 @@ public class ResponseHandler {
      * @param statusCode The specific HTTP status code for this response (e.g., 200, 201, 202).
      * @return A compiled Response object ready for network transmission.
      */
-    public Response buildResponse(Object dto, int statusCode) {
+    public BaseResponse buildResponse(Object dto, int statusCode) {
         try {
 
             String responseJSON = (dto == null) ? "{}" : json.writeValueAsString(dto);
 
             // Construct and return the payload package
-            return new Response(statusCode, responseJSON);
+            return new BaseResponse(statusCode, responseJSON);
 
         } catch (Exception e) {
             // Unchecked bubble up to prevent messy try-catch blocks inside your module endpoints
