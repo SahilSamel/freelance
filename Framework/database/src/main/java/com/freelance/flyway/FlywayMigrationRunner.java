@@ -3,10 +3,18 @@ package com.freelance.flyway;
 import com.freelance.config.DatabaseConfig;
 import org.flywaydb.core.Flyway;
 
-
+/**
+ * Runs Flyway database migrations at application boot, ensuring the
+ * schema is up to date before the app starts serving requests.
+ */
 public class FlywayMigrationRunner {
+
+    /**
+     * Applies any pending Flyway migrations to the target database.
+     *
+     * @param databaseConfig connection settings for the target database
+     */
     public void migrate(DatabaseConfig databaseConfig) {
-        // Keep migration scripts in the launcher resources so the app starts with the schema it expects.
         Flyway flyway = Flyway.configure()
                 .dataSource(
                         databaseConfig.url(),
@@ -16,7 +24,6 @@ public class FlywayMigrationRunner {
                 .locations("classpath:db/migration")
                 .load();
 
-        // Flyway tracks applied versions and runs only pending migrations.
         flyway.migrate();
     }
 }

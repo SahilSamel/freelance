@@ -2,6 +2,10 @@ package com.freelance.rest.app.service.exception.constraint;
 
 import com.freelance.error.IBadRequestError;
 
+/**
+ * Base class for services that need to raise business rule constraint
+ * violations (e.g. duplicate resources, conflicting state) as exceptions.
+ */
 public abstract class AbstractConstraint {
 
     /**

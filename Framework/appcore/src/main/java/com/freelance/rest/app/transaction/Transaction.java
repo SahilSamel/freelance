@@ -4,58 +4,57 @@ import com.freelance.rest.app.transaction.context.TransactionContext;
 import jakarta.persistence.EntityManagerFactory;
 
 /**
- * COORDINATOR: Manages the lifecycle of database transactions per API request.
- * * Uses Java's ThreadLocal mechanism to bind a distinct database connection and execution
- * context (TransactionContext) directly to the specific worker thread handling the current HTTP request.
- * * Execution Flow Rule:
- * 1. Launcher calls start() -> Allocates connection, begins database transaction.
- * 2. Bridges call peek() -> Interacts with current thread's state/data.
- * 3. Launcher calls finish() -> Evaluates constraints, commits/rolls back, clears memory.
+ * Manages the lifecycle of database transactions per API request, using a
+ * {@link ThreadLocal} to bind a dedicated {@link TransactionContext}
+ * (connection + execution state) to the worker thread handling the request.
+ * <p>
+ * Expected flow: the launcher calls {@link #start()} to begin a transaction,
+ * internal bridges call {@link #peek()} to access the current thread's state,
+ * and the launcher calls {@link #finish()} to commit/rollback and clean up.
  */
 public class Transaction {
 
-    // Isolated data silo per worker thread. Prevents cross-pollination of data or connections between users.
+    /**
+     * Isolated transaction state per worker thread, to prevent cross-request data leakage.
+     */
     private static final ThreadLocal<TransactionContext> contextHolder = new ThreadLocal<>();
 
-    // Shared reference to the database engine provider, initialized once at boot.
+    /** Shared JPA provider, initialized once at application boot. */
     private static EntityManagerFactory emf;
 
     /**
-     * FRAMEWORK BOOTSTRAPPER
-     * Links your database engine (Hibernate/JPA) to this coordinator.
-     * Must be invoked exactly once inside the Launcher's Main file before booting the HTTP server.
+     * Binds this coordinator to the application's JPA provider. Must be
+     * called exactly once at startup, before the HTTP server begins
+     * accepting requests.
      */
     public static void init(EntityManagerFactory factory) {
         emf = factory;
     }
 
     /**
-     * PIPELINE ENTRY POINT: Allocates the thread's isolated database universe.
-     * * Executed by the Launcher right as the HTTP request exits the gateway.
-     * Spins up a fresh EntityManager, flags the database transaction start,
-     * and maps a brand-new TransactionContext container to this exact thread execution path.
+     * Begins a new transaction for the current thread: opens a fresh
+     * {@code EntityManager}, starts the underlying database transaction,
+     * and binds a new {@link TransactionContext} to this thread.
+     *
+     * @throws IllegalStateException if {@link #init(EntityManagerFactory)} was never called
      */
     public static void start() {
         if (emf == null) {
             throw new IllegalStateException("Transaction engine has not been initialized with an EntityManagerFactory!");
         }
 
-        // 1. Grab a fresh database session out of the connection pool
         var em = emf.createEntityManager();
-
-        // 2. Open the physical transaction boundary on the database
         em.getTransaction().begin();
-
-        // 3. Bind the connection inside a new context container to this thread
         contextHolder.set(new TransactionContext(em));
     }
 
     /**
-     * THE MODULE HIGHWAY: Safe retrieval of the current execution state.
-     * * Used exclusively by internal framework bridges (BaseRepository, BaseBusinessConstraint).
-     * Allows services to fetch the running EntityManager or append validation errors
-     * out of thin air, without ever needing to touch transaction lifecycle code directly.
-     * * @return The active TransactionContext bound to the executing thread.
+     * Retrieves the {@link TransactionContext} bound to the current thread.
+     * Used internally by repositories and services to access the active
+     * {@code EntityManager} or record validation errors.
+     *
+     * @return the active TransactionContext for this thread
+     * @throws IllegalStateException if no transaction is active on this thread
      */
     public static TransactionContext peek() {
         TransactionContext ctx = contextHolder.get();
@@ -69,13 +68,17 @@ public class Transaction {
     }
 
     /**
-     * PIPELINE EXIT POINT: Evaluates application state and terminates database connections.
-     * * @throws RuntimeException If the database commit or rollback operation crashes.
+     * Ends the current thread's transaction: commits if the context is
+     * clean (no validation errors, not flagged for rollback), otherwise
+     * rolls back. Always closes the EntityManager and clears the thread's
+     * bound context, even on failure.
+     *
+     * @throws RuntimeException if the commit or rollback operation itself fails
      */
     public static void finish() {
         TransactionContext ctx = contextHolder.get();
 
-        // Safety check if finish() is called on an uninitialized pipeline flight path
+        // No-op if finish() is called without a matching start() on this thread.
         if (ctx == null) {
             return;
         }
@@ -100,14 +103,13 @@ public class Transaction {
                 // Suppressed silently to ensure 'e' remains the primary root cause exception
             }
 
-            // 🎯 FIX: Wrap in an unchecked RuntimeException so it compiles and bubbles up perfectly!
             throw new RuntimeException("Critical database synchronization failure during transaction finalization.", e);
 
         } finally {
             if (em != null) {
-                em.close(); // Return database connection safely back to the pool
+                em.close();
             }
-            contextHolder.remove(); // Evict the context to prevent thread-pool memory leaks
+            contextHolder.remove();
         }
     }
 }

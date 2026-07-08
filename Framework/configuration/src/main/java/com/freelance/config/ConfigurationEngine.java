@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * CORE CONFIGURATION UTILITY
- * High-speed, database-backed memory cache for application properties and exception mappings.
- * Structurally isolated from request thread transactions to protect against system deadlock loops.
+ * High-speed, database-backed in-memory cache for application properties
+ * and error message mappings. Structurally isolated from request-thread
+ * transactions to avoid deadlocks.
  */
 public final class ConfigurationEngine {
 
@@ -22,8 +22,8 @@ public final class ConfigurationEngine {
     }
 
     /**
-     * 🚀 INITIAL COLD START
-     * Invoked exactly once within the Main/Launcher wrapper script during system boot.
+     * Performs the initial load from the database. Invoked exactly once
+     * during application boot; subsequent calls are no-ops.
      */
     public static synchronized void initializeFromDatabase(EntityManagerFactory emf) {
         if (initialized) return;
@@ -32,9 +32,8 @@ public final class ConfigurationEngine {
     }
 
     /**
-     * 🔄 HOT REBUILD
-     * Wipes active RAM maps and forces a fresh query synchronization.
-     * Can be safely executed on a live server via protected administrative triggers.
+     * Clears the in-memory caches and reloads them from the database.
+     * Safe to call on a live server (e.g. via an administrative trigger).
      */
     public static synchronized void refresh(EntityManagerFactory emf) {
         appConfigs.clear();
@@ -43,7 +42,8 @@ public final class ConfigurationEngine {
     }
 
     /**
-     * Internal data harvester utilizing a distinct, short-lived session boundary.
+     * Loads configuration and error message data from the database into
+     * the in-memory caches, using a short-lived EntityManager.
      */
     private static void load(EntityManagerFactory emf) {
         if (emf == null) {
@@ -76,16 +76,15 @@ public final class ConfigurationEngine {
     }
 
     /**
-     * RAW STRING GETTER
-     * Pulls value from cache. Returns null if key is non-existent or empty.
+     * Returns the raw string value for the given key, or null if absent.
      */
     public static String get(String key) {
         return appConfigs.get(key);
     }
 
     /**
-     * FALLBACK STRING GETTER
-     * Returns matching configuration value, or falls back to default if absent.
+     * Returns the string value for the given key, or the provided default
+     * if absent.
      */
     public static String get(String key, String defaultValue) {
         String value = appConfigs.get(key);
@@ -93,8 +92,8 @@ public final class ConfigurationEngine {
     }
 
     /**
-     * RAW INTEGER GETTER
-     * Converts value to Integer. Returns null if key is absent or corrupted.
+     * Returns the value for the given key as an Integer, or null if the
+     * key is absent or the value can't be parsed as an integer.
      */
     public static Integer getInt(String key) {
         String value = appConfigs.get(key);
@@ -108,8 +107,8 @@ public final class ConfigurationEngine {
     }
 
     /**
-     * FALLBACK INTEGER GETTER
-     * Returns matching configuration primitive, or falls back to default if absent or corrupted.
+     * Returns the value for the given key as an int, or the provided
+     * default if absent or unparseable.
      */
     public static int getInt(String key, int defaultValue) {
         Integer value = getInt(key);
@@ -117,8 +116,8 @@ public final class ConfigurationEngine {
     }
 
     /**
-     * ERROR MESSAGE TRANSLATOR
-     * Returns the user-facing localized string. Returns null if string mapping is completely missing from database.
+     * Returns the user-facing localized message for the given error code,
+     * or null if no mapping exists.
      */
     public static String getErrorMessage(String errorCode) {
         return errorMessages.get(errorCode);

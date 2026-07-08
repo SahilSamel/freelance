@@ -33,8 +33,6 @@ dependencies {
     implementation project(":modules:authentication:authentication-endpoint")
     implementation project(":modules:IdentityManagement:identity-repository")
     implementation project(":modules:IdentityManagement:identity-endpoint")
-
-
 }
 
 test {

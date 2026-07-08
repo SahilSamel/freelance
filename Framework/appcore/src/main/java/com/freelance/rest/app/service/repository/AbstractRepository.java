@@ -7,10 +7,25 @@ import jakarta.persistence.TypedQuery;
 import java.lang.reflect.ParameterizedType;
 import java.util.Map;
 
+/**
+ * Generic base repository providing common CRUD and query operations
+ * for a given entity type, backed by the active transaction's
+ * {@link EntityManager}.
+ *
+ * @param <T>  the entity type
+ * @param <ID> the entity's primary key type
+ */
 public abstract class AbstractRepository<T, ID> {
 
+    /**
+     * Runtime class of the entity, resolved via reflection for use with JPA.
+     */
     protected final Class<T> entityClass;
 
+    /**
+     * Resolves the concrete entity type from the generic type parameter
+     * of the subclass (e.g. {@code class UserRepository extends AbstractRepository<User, Long>}).
+     */
     @SuppressWarnings("unchecked")
     protected AbstractRepository() {
         this.entityClass = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass())
@@ -18,36 +33,43 @@ public abstract class AbstractRepository<T, ID> {
     }
 
     /**
-     * Direct bridge fetching the running thread's active EntityManager
-     * out of the Transaction component.
+     * Retrieves the {@link EntityManager} bound to the current thread's
+     * active transaction.
      */
     protected EntityManager em() {
         return Transaction.peek().getEntityManager();
     }
 
     /**
-     * READ: Find a database row by its primary key ID.
+     * Finds an entity by its primary key.
+     *
+     * @param id the primary key; if null, no lookup is performed
+     * @return the matching entity, or null if not found (or if id was null)
      */
     public T get(ID id) {
         return id == null ? null : em().find(entityClass, id);
     }
 
     /**
-     * CREATE: Place a fresh object into the active persistence context.
+     * Persists a new entity into the active persistence context.
      */
     public void persist(T entity) {
         em().persist(entity);
     }
 
     /**
-     * UPDATE: Merge updates made to an object back into the current context.
+     * Merges changes made to a detached entity back into the current
+     * persistence context.
+     *
+     * @return the managed entity instance reflecting the merge
      */
     public T merge(T entity) {
         return em().merge(entity);
     }
 
     /**
-     * DELETE: Remove the target entity completely from the database.
+     * Deletes the given entity, merging it into the persistence context
+     * first if it isn't already managed.
      */
     public void remove(T entity) {
         if (entity != null) {
@@ -57,10 +79,11 @@ public abstract class AbstractRepository<T, ID> {
     }
 
     /**
-     * QUERY: Executes a declared NamedQuery utilizing a map of parameters and returns all matching records.
-     * @param queryName The full descriptor matching the Entity annotation (e.g., "User.findAllActive")
-     * @param params Key-Value pairs matching the placeholder variables inside the query (:status)
-     * @return A List of matching entity records, or an empty list if no records are found.
+     * Executes a named query with the given parameters and returns all matches.
+     *
+     * @param queryName the named query identifier (e.g. "User.findAllActive")
+     * @param params    parameter name/value pairs to bind, or null if none are needed
+     * @return the matching entities, or an empty list if none are found
      */
     protected java.util.List<T> executeSearch(String queryName, Map<String, Object> params) {
         TypedQuery<T> query = em().createNamedQuery(queryName, entityClass);
@@ -69,6 +92,5 @@ public abstract class AbstractRepository<T, ID> {
         }
         return query.getResultList();
     }
-
 
 }

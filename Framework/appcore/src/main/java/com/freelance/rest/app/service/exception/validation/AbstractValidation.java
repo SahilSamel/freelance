@@ -6,6 +6,11 @@ import com.freelance.rest.app.transaction.Transaction;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Base class for services that accumulate field-level validation errors
+ * during a request and raise a single exception once all validations
+ * for that request have been evaluated.
+ */
 public abstract class AbstractValidation {
 
     /**

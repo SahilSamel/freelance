@@ -8,12 +8,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Holds per-transaction state: the bound {@link EntityManager}, any
+ * accumulated field validation errors, and whether the transaction has
+ * been flagged for rollback.
+ */
 public class TransactionContext {
 
+    /**
+     * The EntityManager bound to this transaction.
+     */
     private final EntityManager entityManager;
 
+    /** Accumulated validation errors, keyed by field name. */
     private final Map<String, List<IBadRequestError>> validationErrors = new ConcurrentHashMap<>();
 
+    /** Whether this transaction has been flagged to roll back rather than commit. */
     private boolean rollbackOnly = false;
 
     public TransactionContext(EntityManager entityManager) {
@@ -30,22 +40,28 @@ public class TransactionContext {
 
     // --- State Mutators ---
 
+    /**
+     * Records a validation error against a specific field.
+     */
     public void addValidationError(String fieldName, IBadRequestError error) {
         if (fieldName != null && error != null) {
             this.validationErrors.computeIfAbsent(fieldName, k -> new ArrayList<>()).add(error);
         }
     }
 
-    public void addFailure(Throwable throwable) {
-        this.rollbackOnly = true;
-    }
-
+    /**
+     * Explicitly flags the transaction for rollback.
+     */
     public void markRollbackOnly() {
         this.rollbackOnly = true;
     }
 
     // --- Evaluation ---
 
+    /**
+     * Checks whether the transaction has no validation errors and has
+     * not been flagged for rollback.
+     */
     public boolean isClean() {
         return validationErrors.isEmpty() && !rollbackOnly;
     }

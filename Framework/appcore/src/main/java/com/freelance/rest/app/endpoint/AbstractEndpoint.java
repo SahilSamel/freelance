@@ -5,7 +5,11 @@ import com.freelance.rest.app.endpoint.response.handler.ResponseHandler;
 import com.freelance.rest.jaxrs.provider.ExceptionHandler;
 import jakarta.ws.rs.core.Response;
 
-public abstract class AbstractRest {
+/**
+ * Base class for REST endpoint resources, providing shared helpers to
+ * convert internal response/error objects into JAX-RS {@link Response} objects.
+ */
+public abstract class AbstractEndpoint {
 
     private final ResponseHandler responseHandler = new ResponseHandler();
     private final ExceptionHandler exceptionHandler = new ExceptionHandler();

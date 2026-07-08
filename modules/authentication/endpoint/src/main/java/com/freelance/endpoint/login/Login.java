@@ -2,7 +2,7 @@ package com.freelance.endpoint.login;
 
 import com.freelance.login.LoginRequestDTO;
 import com.freelance.login.LoginResponseDTO;
-import com.freelance.rest.app.endpoint.AbstractRest;
+import com.freelance.rest.app.endpoint.AbstractEndpoint;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -12,7 +12,7 @@ import jakarta.ws.rs.core.Response;
 
 
 @Path("/auth")
-public class Login extends AbstractRest {
+public class Login extends AbstractEndpoint {
 
     @POST
     @Path("/login")
