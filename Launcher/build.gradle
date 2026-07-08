@@ -11,6 +11,8 @@ repositories {
 }
 
 dependencies {
+    implementation 'ch.qos.logback:logback-classic:1.5.18'
+
     implementation 'org.postgresql:postgresql:42.7.11'
 
     implementation 'org.flywaydb:flyway-core:12.8.1'
