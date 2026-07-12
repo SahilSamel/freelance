@@ -6,6 +6,8 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * JAX-RS filter that binds the transaction lifecycle to each HTTP request:
@@ -15,12 +17,17 @@ import jakarta.ws.rs.ext.Provider;
 @Provider
 public class TransactionFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
+    private static final String CLASS_NAME = TransactionFilter.class.getSimpleName();
+
+    private static final Logger logger = LoggerFactory.getLogger(TransactionFilter.class);
+
     /**
      * Starts a new transaction for the incoming request.
      */
     @Override
     public void filter(ContainerRequestContext requestContext) {
         Transaction.start();
+        logger.debug("Transaction started for {}", requestContext.getUriInfo());
     }
 
     /**
@@ -29,5 +36,6 @@ public class TransactionFilter implements ContainerRequestFilter, ContainerRespo
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         Transaction.finish();
+        logger.debug("Transaction closed for {}", requestContext.getUriInfo());
     }
 }

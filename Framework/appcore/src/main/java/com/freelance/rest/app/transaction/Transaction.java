@@ -2,6 +2,8 @@ package com.freelance.rest.app.transaction;
 
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import jakarta.persistence.EntityManagerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Manages the lifecycle of database transactions per API request, using a
@@ -13,6 +15,10 @@ import jakarta.persistence.EntityManagerFactory;
  * and the launcher calls {@link #finish()} to commit/rollback and clean up.
  */
 public class Transaction {
+
+    private static final String CLASS_NAME = Transaction.class.getSimpleName();
+
+    private static final Logger logger = LoggerFactory.getLogger(Transaction.class);
 
     /**
      * Isolated transaction state per worker thread, to prevent cross-request data leakage.
@@ -96,11 +102,11 @@ public class Transaction {
         } catch (Exception e) {
 
             try {
-                if (em != null && em.getTransaction().isActive()) {
+                if (em.getTransaction().isActive()) {
                     em.getTransaction().rollback();
                 }
             } catch (Exception rollbackError) {
-                // Suppressed silently to ensure 'e' remains the primary root cause exception
+                logger.warn("Failure while rolling back transaction in {}", CLASS_NAME, e);
             }
 
             throw new RuntimeException("Critical database synchronization failure during transaction finalization.", e);

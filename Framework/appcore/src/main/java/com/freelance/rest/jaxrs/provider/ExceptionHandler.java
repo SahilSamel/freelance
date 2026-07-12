@@ -15,6 +15,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +28,11 @@ import java.util.Map;
  * back, and converts the failure into a standardized JSON error response.
  */
 @Provider
-public class ExceptionHandler implements ExceptionMapper<Throwable> { // --- 3. IMPLEMENTS MAPPER ---
+public class ExceptionHandler implements ExceptionMapper<Throwable> {
+
+    private static final String CLASS_NAME = ExceptionHandler.class.getSimpleName();
+
+    private static final Logger logger = LoggerFactory.getLogger(ExceptionHandler.class);
 
     private final ObjectMapper json = new ObjectMapper();
 
@@ -56,7 +62,6 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> { // --- 3. 
             TransactionContext ctx = Transaction.peek();
             ctx.markRollbackOnly();
         } catch (IllegalStateException e) {
-            System.out.println("Shizzzzzzzzzzzzzzzzzzz");
         }
 
         BaseResponse internalRes = buildResponse(throwable);
@@ -151,13 +156,14 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> { // --- 3. 
      */
     private String resolveErrorMessage(String absoluteKey) {
         if (absoluteKey == null || absoluteKey.isBlank()) {
-            return "An unclassified system exception occurred.";
+            return "Unexpected System Error";
         }
 
         String mappedMessage = ConfigurationEngine.getErrorMessage(absoluteKey);
 
         if (mappedMessage == null || mappedMessage.isBlank()) {
-            return "An unexpected exception occurred [" + absoluteKey + "]. Please try again later.";
+            logger.warn("[{}] No error message mapping found for config key [{}]. Falling back to generic message.", CLASS_NAME, absoluteKey);
+            return "Known Error was caused but Error Message could not be resolved for code - [" + absoluteKey + "]. Please try again later.";
         }
 
         return mappedMessage;

@@ -67,9 +67,6 @@ public final class ConfigurationEngine {
                     errorMessages.put((String) row[0], (String) row[1]);
                 }
             }
-
-            System.out.println("ConfigurationEngine: Local RAM caches synchronized successfully with the database.");
-
         } catch (Exception e) {
             throw new RuntimeException("Fatal: Infrastructure synchronization failure within com.freelance.config.ConfigurationEngine loader context.", e);
         }
@@ -101,7 +98,6 @@ public final class ConfigurationEngine {
         try {
             return Integer.parseInt(value.trim());
         } catch (NumberFormatException e) {
-            System.err.println("Configuration format exception: Key '" + key + "' cannot be cast to an Integer. Value: '" + value + "'");
             return null;
         }
     }
