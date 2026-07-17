@@ -1,5 +1,6 @@
 package com.freelance.launcher;
 
+import com.freelance.cache.CacheManager;
 import com.freelance.config.ConfigurationEngine;
 import com.freelance.config.DatabaseConfig;
 import com.freelance.flyway.FlywayMigrationRunner;
@@ -56,6 +57,8 @@ public class Main {
             );
 
             Transaction.init(entityManagerFactory);
+
+            CacheManager.getInstance().init("com.freelance.config.custom", entityManagerFactory);
 
             ConfigurationEngine.initializeFromDatabase(entityManagerFactory);
 

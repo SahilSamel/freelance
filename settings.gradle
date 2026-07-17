@@ -7,6 +7,7 @@ include 'Common'
 include 'Common:dto'
 include 'Launcher'
 include 'Framework:appcore'
+include 'Framework:cache'
 include 'Common:error'
 include 'Framework:configuration'
 
