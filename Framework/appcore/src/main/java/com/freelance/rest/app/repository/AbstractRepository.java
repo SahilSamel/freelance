@@ -1,4 +1,4 @@
-package com.freelance.rest.app.service.repository;
+package com.freelance.rest.app.repository;
 
 import com.freelance.rest.app.transaction.Transaction;
 import jakarta.persistence.EntityManager;
