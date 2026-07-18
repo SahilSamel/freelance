@@ -21,7 +21,7 @@ public class FlywayMigrationRunner {
                         databaseConfig.username(),
                         databaseConfig.password()
                 )
-                .locations("classpath:db/migration")
+                .locations("classpath:db/migration/*")
                 .load();
 
         flyway.migrate();
