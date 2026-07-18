@@ -16,7 +16,7 @@ import java.io.Serializable;
 public abstract class AbstractCacheConfig<K extends Serializable, V extends Serializable> {
 
     /**
-     * Cache name used by developers to call com.freelance.cache.CacheManager.get(name, key). Defaults to the class name.
+     * Cache name used by developers to call com.freelance.manager.CacheManager.get(name, key). Defaults to the class name.
      */
     protected String name() {
         return getClass().getSimpleName();

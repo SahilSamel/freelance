@@ -30,6 +30,7 @@ dependencies {
 
     implementation project(":Framework:database")
     implementation project(":Framework:appcore")
+    implementation project(":Framework:cache")
     implementation project(":Framework:configuration")
     implementation project(":modules:authentication:authentication-repository")
     implementation project(":modules:authentication:authentication-endpoint")

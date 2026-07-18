@@ -1,11 +1,11 @@
-package com.freelance.cache;
+package com.freelance.manager;
 
 import com.freelance.config.AbstractCacheConfig;
 import com.freelance.config.data.CacheDefinition;
 import com.freelance.config.scanner.CacheConfigScanner;
 import com.freelance.provider.Cache;
-import com.freelance.provider.dbCache.DbCache;
-import com.freelance.provider.memory.InMemoryCache;
+import com.freelance.provider.impl.DbCache;
+import com.freelance.provider.impl.InMemoryCache;
 import jakarta.persistence.EntityManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +121,7 @@ public final class CacheManager {
 
     private AbstractCacheConfig<?, ?> resolveConfig(String cacheName) {
         if (!initialized) {
-            throw new IllegalStateException("com.freelance.cache.CacheManager has not been initialized. Call init() at application boot.");
+            throw new IllegalStateException("com.freelance.manager.CacheManager has not been initialized. Call init() at application boot.");
         }
         AbstractCacheConfig<?, ?> config = configsByName.get(cacheName);
         if (config == null) {

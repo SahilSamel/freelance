@@ -1,10 +1,10 @@
 package com.freelance.launcher;
 
-import com.freelance.cache.CacheManager;
-import com.freelance.config.ConfigurationEngine;
+import com.freelance.ConfigurationEngine;
 import com.freelance.config.DatabaseConfig;
 import com.freelance.flyway.FlywayMigrationRunner;
 import com.freelance.jpa.JpaFactory;
+import com.freelance.manager.CacheManager;
 import com.freelance.rest.app.transaction.Transaction;
 import jakarta.persistence.EntityManagerFactory;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -58,9 +58,9 @@ public class Main {
 
             Transaction.init(entityManagerFactory);
 
-            CacheManager.getInstance().init("com.freelance.config.custom", entityManagerFactory);
+            CacheManager.getInstance().init("com.freelance.cache.config", entityManagerFactory);
 
-            ConfigurationEngine.initializeFromDatabase(entityManagerFactory);
+            ConfigurationEngine.init(entityManagerFactory);
 
             httpServer = bootHttpServer();
 

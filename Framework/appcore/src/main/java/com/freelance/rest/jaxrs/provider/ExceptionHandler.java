@@ -2,7 +2,7 @@ package com.freelance.rest.jaxrs.provider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.freelance.config.ConfigurationEngine;
+import com.freelance.ConfigurationEngine;
 import com.freelance.error.FrameworkErrorConstants;
 import com.freelance.error.IBadRequestError;
 import com.freelance.error.IError;

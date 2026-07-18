@@ -1,4 +1,4 @@
-package com.freelance.provider.dbCache;
+package com.freelance.provider.impl;
 
 import com.freelance.config.data.CacheDefinition;
 import com.freelance.provider.Cache;
