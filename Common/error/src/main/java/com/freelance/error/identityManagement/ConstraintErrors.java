@@ -16,18 +16,7 @@ public enum ConstraintErrors implements IBadRequestError {
         public int getStatusCode() {
             return 409;
         }
-    },
-
-    /** Raised when the provided email is already associated with an account. */
-    EMAIL_ALREADY_REGISTERED("EMAIL_ALREADY_REGISTERED") {
-        @Override
-        public int getStatusCode() {
-            return 409;
-        }
-    },
-
-    /** Raised when a password fails strength requirements. */
-    PASSWORD_TOO_WEAK("PASSWORD_TOO_WEAK");
+    };
 
     /** Config/category namespace used to build this error's config key. */
     private static final String CATEGORY = "identity.constraint";

@@ -36,3 +36,7 @@ project(':modules:IdentityManagement:endpoint').name = 'identity-endpoint'
 project(':modules:IdentityManagement:repository').name = 'identity-repository'
 include 'Common:config'
 include 'Framework:jaxrs'
+include 'Framework:security'
+
+// Integration test suite
+include 'testing'

@@ -1,6 +1,7 @@
 package com.freelance.rest.app.transaction;
 
 import com.freelance.rest.app.transaction.context.TransactionContext;
+import com.freelance.rest.context.RequestContext;
 import jakarta.persistence.EntityManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +72,15 @@ public class Transaction {
             );
         }
         return ctx;
+    }
+
+    /**
+     * Helper method to conveniently access the current thread's {@link RequestContext}.
+     *
+     * @return active RequestContext containing per-request data (e.g. userId)
+     */
+    public static RequestContext getRequestContext() {
+        return peek().getRequestContext();
     }
 
     /**

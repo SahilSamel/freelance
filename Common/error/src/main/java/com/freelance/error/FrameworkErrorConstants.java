@@ -14,6 +14,11 @@ public enum FrameworkErrorConstants implements IError {
     /** Generic constraint violation (e.g. duplicate resource, conflicting state). */
     CONSTRAINT_ERROR("CONSTRAINT_ERROR", 400),
 
+    /**
+     * Generic constraint violation (e.g. duplicate resource, conflicting state).
+     */
+    MISSING_CONFIGURATION_ERROR("MISSING_CONFIGURATION_ERROR", 400),
+
     /** Unexpected server-side failure. */
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", 500);
 

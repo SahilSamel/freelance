@@ -32,7 +32,7 @@ public abstract class BaseException extends RuntimeException {
     }
 
     /**
-     * Full constructor allowing a root cause (ideal for system failures).
+     * Full constructor allowing a root cause.
      *
      * @param error             the structured error describing this failure
      * @param diagnosticMessage a human-readable message for logs/diagnostics

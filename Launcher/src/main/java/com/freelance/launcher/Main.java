@@ -8,6 +8,8 @@ import com.freelance.manager.CacheManager;
 import com.freelance.rest.app.transaction.Transaction;
 import jakarta.persistence.EntityManagerFactory;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.ssl.SSLContextConfigurator;
+import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
@@ -96,7 +98,7 @@ public class Main {
      * @return the started HttpServer instance, or null if startup failed
      */
     private static HttpServer bootHttpServer() {
-        String baseUri = "http://localhost:8080/";
+        String baseUri = "https://localhost:8080/";
 
         ResourceConfig config = new ResourceConfig()
                 .packages(RESOURCE_PACKAGE_LABELS.keySet().toArray(new String[0]))
@@ -106,7 +108,16 @@ public class Main {
             logResourceSummary(config.getClasses());
         }
 
-        return GrizzlyHttpServerFactory.createHttpServer(URI.create(baseUri), config);
+        SSLContextConfigurator sslConfig = new SSLContextConfigurator();
+        sslConfig.setKeyStoreFile("/path/to/keystore.jks");
+        sslConfig.setKeyStorePass("changeit");
+
+        return GrizzlyHttpServerFactory.createHttpServer(
+                URI.create(baseUri),
+                config,
+                true,
+                new SSLEngineConfigurator(sslConfig, false, false, false)
+        );
     }
 
     /**

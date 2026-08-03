@@ -1,6 +1,7 @@
 package com.freelance.rest.app.transaction.context;
 
 import com.freelance.error.IBadRequestError;
+import com.freelance.rest.context.RequestContext;
 import jakarta.persistence.EntityManager;
 
 import java.util.ArrayList;
@@ -10,8 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Holds per-transaction state: the bound {@link EntityManager}, any
- * accumulated field validation errors, and whether the transaction has
- * been flagged for rollback.
+ * accumulated field validation errors, request context (logged-in user ID),
+ * and whether the transaction has been flagged for rollback.
  */
 public class TransactionContext {
 
@@ -19,6 +20,11 @@ public class TransactionContext {
      * The EntityManager bound to this transaction.
      */
     private final EntityManager entityManager;
+
+    /**
+     * Per-request contextual information (e.g., authenticated user ID).
+     */
+    private RequestContext requestContext = RequestContext.empty();
 
     /** Accumulated validation errors, keyed by field name. */
     private final Map<String, List<IBadRequestError>> validationErrors = new ConcurrentHashMap<>();
@@ -30,8 +36,23 @@ public class TransactionContext {
         this.entityManager = entityManager;
     }
 
+    public TransactionContext(EntityManager entityManager, RequestContext requestContext) {
+        this.entityManager = entityManager;
+        if (requestContext != null) {
+            this.requestContext = requestContext;
+        }
+    }
+
     public EntityManager getEntityManager() {
         return entityManager;
+    }
+
+    public RequestContext getRequestContext() {
+        return requestContext;
+    }
+
+    public void setRequestContext(RequestContext requestContext) {
+        this.requestContext = requestContext != null ? requestContext : RequestContext.empty();
     }
 
     public Map<String, List<IBadRequestError>> getValidationErrors() {

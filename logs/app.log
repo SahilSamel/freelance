@@ -1,0 +1,50 @@
+2026-07-18 20:26:26.382 [main] INFO  org.flywaydb.core.FlywayExecutor - Database: jdbc:postgresql://localhost:5432/freelance_db?currentSchema=freelance (PostgreSQL 18.4)
+2026-07-18 20:26:26.457 [main] INFO  org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory - Schema history table "freelance"."flyway_schema_history" does not exist yet
+2026-07-18 20:26:26.460 [main] INFO  org.flywaydb.core.internal.command.DbValidate - Successfully validated 5 migrations (execution time 00:00.016s)
+2026-07-18 20:26:26.486 [main] INFO  org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory - Creating Schema History table "freelance"."flyway_schema_history" ...
+2026-07-18 20:26:26.600 [main] INFO  org.flywaydb.core.internal.command.DbMigrate - Current version of schema "freelance": << Empty Schema >>
+2026-07-18 20:26:26.606 [main] INFO  org.flywaydb.core.internal.command.DbMigrate - Migrating schema "freelance" to version "1.1.1 - FL ERROR MESSAGE"
+2026-07-18 20:26:26.638 [main] INFO  org.flywaydb.core.internal.command.DbMigrate - Migrating schema "freelance" to version "1.2.1 - FL SYSTEM CONFIGURATION"
+2026-07-18 20:26:26.655 [main] INFO  org.flywaydb.core.internal.command.DbMigrate - Migrating schema "freelance" to version "2.1.1 - FL USERS"
+2026-07-18 20:26:26.667 [main] INFO  org.flywaydb.core.internal.command.DbMigrate - Migrating schema "freelance" to version "3.1.1 - FL USER CREDENTIALS"
+2026-07-18 20:26:26.672 [main] WARN  org.flywaydb.core.internal.proprietaryStubs.ErrorOverridesSupportStub - DB: extension "pgcrypto" already exists, skipping (SQL State: 42710 - Error Code: 0)
+2026-07-18 20:26:26.681 [main] INFO  org.flywaydb.core.internal.command.DbMigrate - Migrating schema "freelance" to version "3.1.2 - FL USER CREDENTIALS FK"
+2026-07-18 20:26:26.697 [main] INFO  org.flywaydb.core.internal.command.DbMigrate - Successfully applied 5 migrations to schema "freelance", now at version v3.1.2 (execution time 00:00.035s)
+2026-07-18 20:26:26.731 [main] INFO  org.reflections.Reflections - Reflections took 23 ms to scan 2 urls, producing 2 keys and 4 values
+2026-07-18 20:26:26.735 [main] DEBUG com.freelance.jpa.JpaFactory - [JpaFactory] Registered 1 entities from credential
+2026-07-18 20:26:26.736 [main] DEBUG com.freelance.jpa.JpaFactory - [JpaFactory] Registered 1 entities from identity
+2026-07-18 20:26:26.747 [main] DEBUG org.jboss.logging - Logging Provider: org.jboss.logging.Slf4jLoggerProvider
+2026-07-18 20:26:26.877 [main] WARN  org.hibernate.orm.connections.pooling - HHH10001002: Using built-in connection pool (not intended for production use)
+2026-07-18 20:26:26.939 [main] WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-07-18 20:26:27.783 [main] ERROR com.freelance.launcher.Main - [com.freelance.launcher.Main] Fatal error during application startup. Shutting down.
+org.hibernate.tool.schema.spi.SchemaManagementException: Schema-validation: missing table [freelance.user_credentials]
+	at org.hibernate.tool.schema.internal.AbstractSchemaValidator.validateTable(AbstractSchemaValidator.java:136)
+	at org.hibernate.tool.schema.internal.GroupedSchemaValidatorImpl.validateTables(GroupedSchemaValidatorImpl.java:46)
+	at org.hibernate.tool.schema.internal.AbstractSchemaValidator.performValidation(AbstractSchemaValidator.java:99)
+	at org.hibernate.tool.schema.internal.AbstractSchemaValidator.doValidation(AbstractSchemaValidator.java:77)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.performDatabaseAction(SchemaManagementToolCoordinator.java:289)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.lambda$process$5(SchemaManagementToolCoordinator.java:144)
+	at java.base/java.util.HashMap.forEach(HashMap.java:1430)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.process(SchemaManagementToolCoordinator.java:141)
+	at org.hibernate.boot.internal.SessionFactoryObserverForSchemaExport.sessionFactoryCreated(SessionFactoryObserverForSchemaExport.java:37)
+	at org.hibernate.internal.SessionFactoryObserverChain.sessionFactoryCreated(SessionFactoryObserverChain.java:35)
+	at org.hibernate.internal.SessionFactoryImpl.<init>(SessionFactoryImpl.java:323)
+	at org.hibernate.boot.internal.SessionFactoryBuilderImpl.build(SessionFactoryBuilderImpl.java:463)
+	at org.hibernate.boot.internal.MetadataImpl.buildSessionFactory(MetadataImpl.java:210)
+	at com.freelance.jpa.JpaFactory.createEntityManagerFactory(JpaFactory.java:77)
+	at com.freelance.launcher.Main.main(Main.java:56)
+2026-07-18 20:29:46.568 [main] INFO  org.flywaydb.core.FlywayExecutor - Database: jdbc:postgresql://localhost:5432/freelance_db?currentSchema=freelance (PostgreSQL 18.4)
+2026-07-18 20:29:46.624 [main] INFO  org.flywaydb.core.internal.command.DbValidate - Successfully validated 5 migrations (execution time 00:00.020s)
+2026-07-18 20:29:46.663 [main] INFO  org.flywaydb.core.internal.command.DbMigrate - Current version of schema "freelance": 3.1.2
+2026-07-18 20:29:46.666 [main] INFO  org.flywaydb.core.internal.command.DbMigrate - Schema "freelance" is up to date. No migration necessary.
+2026-07-18 20:29:46.698 [main] INFO  org.reflections.Reflections - Reflections took 21 ms to scan 2 urls, producing 2 keys and 4 values
+2026-07-18 20:29:46.702 [main] DEBUG com.freelance.jpa.JpaFactory - [JpaFactory] Registered 1 entities from credential
+2026-07-18 20:29:46.703 [main] DEBUG com.freelance.jpa.JpaFactory - [JpaFactory] Registered 1 entities from identity
+2026-07-18 20:29:46.714 [main] DEBUG org.jboss.logging - Logging Provider: org.jboss.logging.Slf4jLoggerProvider
+2026-07-18 20:29:46.846 [main] WARN  org.hibernate.orm.connections.pooling - HHH10001002: Using built-in connection pool (not intended for production use)
+2026-07-18 20:29:46.908 [main] WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-07-18 20:29:47.694 [main] INFO  org.reflections.Reflections - Reflections took 2 ms to scan 1 urls, producing 1 keys and 2 values
+2026-07-18 20:29:47.701 [main] DEBUG com.freelance.manager.CacheManager - [CacheManager] Registered cache 'cache_ErrorMessage' -> ErrorMessageCache (type=IN_MEMORY, ttl=-1)
+2026-07-18 20:29:47.702 [main] DEBUG com.freelance.manager.CacheManager - [CacheManager] Registered cache 'cache_AppConfig' -> AppConfigCache (type=IN_MEMORY, ttl=-1)
+2026-07-18 20:29:47.739 [main] DEBUG com.freelance.launcher.Main - [com.freelance.launcher.Main] Registered 1 endpoints from login
+2026-07-18 20:29:47.739 [main] DEBUG com.freelance.launcher.Main - [com.freelance.launcher.Main] Registered 1 providers from provider

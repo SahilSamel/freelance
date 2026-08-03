@@ -1,6 +1,7 @@
 package com.freelance.rest.jaxrs.filter;
 
 import com.freelance.rest.app.transaction.Transaction;
+import jakarta.annotation.Priority;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
  * rollback) once the response is ready to be sent.
  */
 @Provider
+@Priority(1)
 public class TransactionFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
     private static final String CLASS_NAME = TransactionFilter.class.getSimpleName();

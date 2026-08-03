@@ -10,11 +10,19 @@ repositories {
 }
 
 dependencies {
-    testImplementation platform('org.junit:junit-bom:6.0.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation project(":Framework:security")
+    implementation project(":Framework:cache")
+    implementation project(":Framework:configuration")
+    implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
+    implementation 'ch.qos.logback:logback-classic:1.5.18'
     implementation project(":modules:authentication:authentication-dto")
+    implementation project(":modules:IdentityManagement:identity-service")
+    implementation project(":modules:IdentityManagement:identity-dto")
     implementation project(":Framework:appcore")
+    implementation project(":Common:error")
+    implementation project(":Common:config")
 }
 
 test {

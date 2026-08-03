@@ -2,10 +2,12 @@ package com.freelance.rest.app.repository;
 
 import com.freelance.rest.app.transaction.Transaction;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Generic base repository providing common CRUD and query operations
@@ -91,6 +93,26 @@ public abstract class AbstractRepository<T, ID> {
             params.forEach(query::setParameter);
         }
         return query.getResultList();
+    }
+
+    /**
+     * Executes a named query with the given parameters and returns an Optional containing
+     * the single result, or an empty Optional if no match is found.
+     *
+     * @param queryName the named query identifier (e.g. "User.findByUsername")
+     * @param params    parameter name/value pairs to bind, or null if none are needed
+     * @return an Optional containing the matching entity, or empty if not found
+     */
+    protected Optional<T> executeSingleResultSearch(String queryName, Map<String, Object> params) {
+        try {
+            TypedQuery<T> query = em().createNamedQuery(queryName, entityClass);
+            if (params != null) {
+                params.forEach(query::setParameter);
+            }
+            return Optional.ofNullable(query.getSingleResult());
+        } catch (NoResultException e) {
+            return Optional.empty();
+        }
     }
 
 }
