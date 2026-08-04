@@ -101,7 +101,7 @@ public final class ConfigurationEngine {
         requireInitialized();
         try (EntityManager em = entityManagerFactory.createEntityManager()) {
             List<?> rows = em.createNativeQuery(
-                            "SELECT config_value FROM system_configuration WHERE config_id = ?1")
+                            "SELECT config_value FROM FL_SYSTEM_CONFIGURATION WHERE config_id = ?1")
                     .setParameter(1, configId)
                     .getResultList();
             return rows.isEmpty() ? null : (String) rows.getFirst();
@@ -112,7 +112,7 @@ public final class ConfigurationEngine {
         requireInitialized();
         try (EntityManager em = entityManagerFactory.createEntityManager()) {
             List<?> rows = em.createNativeQuery(
-                            "SELECT ui_message FROM error_message_mapping WHERE error_id = ?1")
+                            "SELECT ui_message FROM FL_ERROR_MESSAGE WHERE error_id = ?1")
                     .setParameter(1, errorId)
                     .getResultList();
             return rows.isEmpty() ? null : (String) rows.getFirst();

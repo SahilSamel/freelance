@@ -5,6 +5,8 @@ build/
 !**/src/test/**/build/
 .kotlin
 gradle
+app.log
+keystore.jks
 
 ### IntelliJ IDEA ###
 .idea

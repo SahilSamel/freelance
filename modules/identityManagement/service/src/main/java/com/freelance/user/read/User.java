@@ -18,8 +18,7 @@ public class User {
         UserReadAssembler userReadAssembler = new UserReadAssembler();
 
         UserRepository userRepository = new UserRepository();
-        com.freelance.entity.user.User user = (com.freelance.entity.user.User) userRepository.findByUsername(userReadRequestDTO.username());
-
+        com.freelance.entity.user.User user = userRepository.findByUsername(userReadRequestDTO.username()).orElse(null);
         return userReadAssembler.fromEntity(user);
     }
 }

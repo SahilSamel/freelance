@@ -65,7 +65,7 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> {
         }
 
         BaseResponse internalRes = buildResponse(throwable);
-
+        logger.info("Exception occurred at: ", throwable);
         return Response.status(internalRes.getStatus())
                 .entity(internalRes.getBody())
                 .type(MediaType.APPLICATION_JSON)

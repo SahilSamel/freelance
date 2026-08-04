@@ -1,0 +1,52 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // DTO types — so tests can build typed request bodies without raw maps
+    testImplementation project(':modules:authentication:authentication-dto')
+    testImplementation project(':modules:IdentityManagement:identity-dto')
+
+    // REST Assured — fluent HTTP test DSL
+    testImplementation 'io.rest-assured:rest-assured:5.5.0'
+
+    // Jackson integration — REST Assured auto-detects this and uses it for Java records/DTOs
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
+
+    // JUnit 5
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+
+    // Always print test results to console — useful when running from CLI
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = false
+        exceptionFormat = 'full'
+    }
+}
+
+// Separate task name so it's explicit: ./gradlew :testing:integrationTest
+tasks.register('integrationTest', Test) {
+    description = 'Runs HTTP integration tests against a locally running server.'
+    group = 'verification'
+
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat = 'full'
+    }
+}

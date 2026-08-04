@@ -109,7 +109,7 @@ public class Main {
         }
 
         SSLContextConfigurator sslConfig = new SSLContextConfigurator();
-        sslConfig.setKeyStoreFile("/path/to/keystore.jks");
+        sslConfig.setKeyStoreFile("D:\\programming\\java\\Freelance\\Launcher\\src\\main\\resources\\keystore\\keystore.jks");
         sslConfig.setKeyStorePass("changeit");
 
         return GrizzlyHttpServerFactory.createHttpServer(

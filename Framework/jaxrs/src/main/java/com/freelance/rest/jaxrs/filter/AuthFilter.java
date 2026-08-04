@@ -11,6 +11,8 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.ext.Provider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Global JAX-RS filter that intercepts all API requests to ensure they carry
@@ -19,6 +21,8 @@ import jakarta.ws.rs.ext.Provider;
 @Provider
 @Priority(2)
 public class AuthFilter implements ContainerRequestFilter {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthFilter.class);
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -36,14 +40,29 @@ public class AuthFilter implements ContainerRequestFilter {
      */
     @Override
     public void filter(ContainerRequestContext requestContext) {
+        String requestPath = requestContext.getUriInfo() != null ? requestContext.getUriInfo().getPath() : "unknown";
+        logger.debug("Intercepted request for: /{}", requestPath);
+
         if (isAnonymousAccessAllowed()) {
+            logger.debug("Endpoint is marked @Anonymous. Skipping authentication.");
             return;
         }
 
+        logger.debug("Endpoint requires authentication. Extracting token...");
         String token = extractBearerToken(requestContext);
+
+        if (token == null) {
+            logger.warn("Authorization header missing or invalid for protected endpoint: /{}", requestPath);
+        }
 
         Auth authService = new Auth();
         AuthVerifyResponseDTO verifyResponse = authService.verify(new AuthVerifyRequestDTO(token));
+
+        if (verifyResponse != null && verifyResponse.userId() != null) {
+            logger.debug("Authentication successful. User ID: {}", verifyResponse.userId());
+        } else {
+            logger.warn("Authentication verification failed for /{}", requestPath);
+        }
 
         Transaction.getRequestContext().withUserId(verifyResponse.userId());
         Transaction.getRequestContext().withSessionKey(verifyResponse.sessionKey());
@@ -56,7 +75,10 @@ public class AuthFilter implements ContainerRequestFilter {
      * entirely for this request.
      */
     private boolean isAnonymousAccessAllowed() {
-        if (resourceInfo == null) return false;
+        if (resourceInfo == null) {
+            logger.debug("ResourceInfo is null. Cannot check for @Anonymous annotation.");
+            return false;
+        }
         if (resourceInfo.getResourceMethod() != null && resourceInfo.getResourceMethod().isAnnotationPresent(Anonymous.class)) {
             return true;
         }
