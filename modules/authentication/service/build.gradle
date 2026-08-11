@@ -10,8 +10,6 @@ repositories {
 }
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-    implementation project(":Framework:security")
     implementation project(":Framework:cache")
     implementation project(":Framework:configuration")
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
@@ -24,6 +22,7 @@ dependencies {
     implementation project(":Framework:appcore")
     implementation project(":Common:error")
     implementation project(":Common:config")
+    implementation 'org.mindrot:jbcrypt:0.4'
 }
 
 test {

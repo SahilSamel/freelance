@@ -25,7 +25,7 @@ public class UserReadAssembler {
                         user.getUsername(),
                         user.getEmail(),
                         user.getPassword(),
-                        user.getCreatedAt()
+                        user.getCreatedDate()
                 )
         );
 

@@ -37,6 +37,9 @@ dependencies {
     implementation project(":modules:authentication:authentication-endpoint")
     implementation project(":modules:IdentityManagement:identity-repository")
     implementation project(":modules:IdentityManagement:identity-endpoint")
+    
+    implementation project(":modules:authorization:authorization-endpoint")
+    implementation project(":modules:authorization:authorization-service")
 }
 
 test {

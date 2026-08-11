@@ -1,0 +1,14 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":Framework:database")
+    implementation project(":Framework:appcore")
+    implementation project(":modules:IdentityManagement:identity-repository")
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+}

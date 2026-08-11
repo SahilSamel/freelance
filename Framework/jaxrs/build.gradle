@@ -11,10 +11,15 @@ repositories {
 
 dependencies {
     implementation project(":Framework:appcore")
+    implementation project(":Common:error")
+    implementation project(":Framework:configuration")
     implementation("jakarta.ws.rs:jakarta.ws.rs-api:3.1.0")
     implementation 'ch.qos.logback:logback-classic:1.5.18'
+    implementation platform('com.fasterxml.jackson:jackson-bom:2.17.2')
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
     implementation project(":modules:authentication:authentication-service")
+    implementation project(":modules:authorization:authorization-service")
     implementation project(":modules:authentication:authentication-dto")
 }
 

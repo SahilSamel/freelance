@@ -81,21 +81,6 @@ public abstract class AbstractRepository<T, ID> {
     }
 
     /**
-     * Executes a named query with the given parameters and returns all matches.
-     *
-     * @param queryName the named query identifier (e.g. "User.findAllActive")
-     * @param params    parameter name/value pairs to bind, or null if none are needed
-     * @return the matching entities, or an empty list if none are found
-     */
-    protected java.util.List<T> executeSearch(String queryName, Map<String, Object> params) {
-        TypedQuery<T> query = em().createNamedQuery(queryName, entityClass);
-        if (params != null) {
-            params.forEach(query::setParameter);
-        }
-        return query.getResultList();
-    }
-
-    /**
      * Executes a named query with the given parameters and returns an Optional containing
      * the single result, or an empty Optional if no match is found.
      *

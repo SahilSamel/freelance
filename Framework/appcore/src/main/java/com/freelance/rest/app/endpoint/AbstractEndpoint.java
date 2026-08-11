@@ -2,7 +2,6 @@ package com.freelance.rest.app.endpoint;
 
 import com.freelance.rest.app.endpoint.response.BaseResponse;
 import com.freelance.rest.app.endpoint.response.handler.ResponseHandler;
-import com.freelance.rest.jaxrs.provider.ExceptionHandler;
 import jakarta.ws.rs.core.Response;
 
 /**
@@ -12,7 +11,6 @@ import jakarta.ws.rs.core.Response;
 public abstract class AbstractEndpoint {
 
     private final ResponseHandler responseHandler = new ResponseHandler();
-    private final ExceptionHandler exceptionHandler = new ExceptionHandler();
 
     /**
      * SUCCESS ADAPTER: Maps to your internal .getStatus() and .getBody()

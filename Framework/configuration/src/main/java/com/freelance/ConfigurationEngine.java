@@ -95,8 +95,6 @@ public final class ConfigurationEngine {
         CacheManager.getInstance().invalidate(ErrorMessageCache.NAME, errorCode);
     }
 
-    // --- DB access, used internally by AppConfigCache/ErrorMessageCache as their loaders ---
-
     public static String loadConfigValue(String configId) {
         requireInitialized();
         try (EntityManager em = entityManagerFactory.createEntityManager()) {
@@ -112,7 +110,7 @@ public final class ConfigurationEngine {
         requireInitialized();
         try (EntityManager em = entityManagerFactory.createEntityManager()) {
             List<?> rows = em.createNativeQuery(
-                            "SELECT ui_message FROM FL_ERROR_MESSAGE WHERE error_id = ?1")
+                            "SELECT error_message FROM FL_ERROR_MESSAGE WHERE error_id = ?1")
                     .setParameter(1, errorId)
                     .getResultList();
             return rows.isEmpty() ? null : (String) rows.getFirst();

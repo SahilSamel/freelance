@@ -84,6 +84,13 @@ public class Transaction {
     }
 
     /**
+     * Helper method to conveniently set the current thread's {@link RequestContext}.
+     */
+    public static void setRequestContext(RequestContext requestContext) {
+        peek().setRequestContext(requestContext);
+    }
+
+    /**
      * Ends the current thread's transaction: commits if the context is
      * clean (no validation errors, not flagged for rollback), otherwise
      * rolls back. Always closes the EntityManager and clears the thread's

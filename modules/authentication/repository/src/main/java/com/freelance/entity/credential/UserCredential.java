@@ -1,12 +1,13 @@
 package com.freelance.entity.credential;
 
+import com.freelance.rest.app.repository.entity.AbstractEntity;
 import jakarta.persistence.*;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "FL_USER_CREDENTIALS", schema = "freelance")
-public class UserCredential {
+public class UserCredential extends AbstractEntity {
 
     @Id
     @Column(name = "id", updatable = false, nullable = false)
@@ -27,7 +28,7 @@ public class UserCredential {
     // ─── LIFECYCLE HOOKS ─────────────────────────────────────────────────────
 
     @PrePersist
-    protected void onCreate() {
+    protected void onCreateCredential() {
         if (this.id == null) {
             this.id = UUID.randomUUID();
         }
