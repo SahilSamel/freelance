@@ -2,6 +2,7 @@ package com.freelance.utility.security;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.freelance.system.SystemHardcoding;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -18,7 +19,7 @@ public class AuthorizationDatabaseSeeder {
 
     private static final Logger logger = Logger.getLogger(AuthorizationDatabaseSeeder.class.getName());
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+    private static final UUID SYSTEM_USER_ID = SystemHardcoding.SYSTEM_USER_ID.asUuid();
 
     public void syncAuthorizationsToDb(Connection connection) {
         List<JsonNode> jsonEntries = loadAllAuthorizationsFromClasspath();

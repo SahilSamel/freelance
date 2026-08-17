@@ -1,12 +1,6 @@
 package com.freelance;
 
-import com.freelance.cache.config.AppConfigCache;
-import com.freelance.cache.config.ErrorMessageCache;
 import com.freelance.manager.CacheManager;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-
-import java.util.List;
 
 /**
  * Facade over the application's config-property and error-message caches.
@@ -15,26 +9,15 @@ import java.util.List;
  */
 public final class ConfigurationEngine {
 
-    private static EntityManagerFactory entityManagerFactory;
-
     private ConfigurationEngine() {
-        // Enforce static utility pattern
-    }
 
-    /**
-     * Binds the EntityManagerFactory used to load values on a cache miss.
-     * Must be called once at application boot, before any get()/
-     * getErrorMessage() call.
-     */
-    public static void init(EntityManagerFactory emf) {
-        entityManagerFactory = emf;
     }
 
     /**
      * Returns the raw string value for the given key, or null if absent.
      */
     public static String get(String key) {
-        return CacheManager.getInstance().get(AppConfigCache.NAME, key);
+        return CacheManager.getInstance().get("cache_SystemConfig", key);
     }
 
     /**
@@ -70,56 +53,20 @@ public final class ConfigurationEngine {
      * Returns the user-facing localized message for the given error code, or null if no mapping exists.
      */
     public static String getErrorMessage(String errorCode) {
-        return CacheManager.getInstance().get(ErrorMessageCache.NAME, errorCode);
-    }
-
-    /**
-     * Clears every cached config property and error message, forcing all keys to reload on next use.
-     */
-    public static void clear() {
-        CacheManager.getInstance().clear(AppConfigCache.NAME);
-        CacheManager.getInstance().clear(ErrorMessageCache.NAME);
+        return CacheManager.getInstance().get("cache_ErrorMessage", errorCode);
     }
 
     /**
      * Forces a single config key to reload from the database on its next lookup.
      */
     public static void invalidateConfig(String key) {
-        CacheManager.getInstance().invalidate(AppConfigCache.NAME, key);
+        CacheManager.getInstance().invalidate("cache_SystemConfig", key);
     }
 
     /**
      * Forces a single error code's message to reload from the database on its next lookup.
      */
     public static void invalidateErrorMessage(String errorCode) {
-        CacheManager.getInstance().invalidate(ErrorMessageCache.NAME, errorCode);
-    }
-
-    public static String loadConfigValue(String configId) {
-        requireInitialized();
-        try (EntityManager em = entityManagerFactory.createEntityManager()) {
-            List<?> rows = em.createNativeQuery(
-                            "SELECT config_value FROM FL_SYSTEM_CONFIGURATION WHERE config_id = ?1")
-                    .setParameter(1, configId)
-                    .getResultList();
-            return rows.isEmpty() ? null : (String) rows.getFirst();
-        }
-    }
-
-    public static String loadErrorMessage(String errorId) {
-        requireInitialized();
-        try (EntityManager em = entityManagerFactory.createEntityManager()) {
-            List<?> rows = em.createNativeQuery(
-                            "SELECT error_message FROM FL_ERROR_MESSAGE WHERE error_id = ?1")
-                    .setParameter(1, errorId)
-                    .getResultList();
-            return rows.isEmpty() ? null : (String) rows.getFirst();
-        }
-    }
-
-    private static void requireInitialized() {
-        if (entityManagerFactory == null) {
-            throw new IllegalStateException("ConfigurationEngine has not been initialized. Call init() at application boot.");
-        }
+        CacheManager.getInstance().invalidate("cache_ErrorMessage", errorCode);
     }
 }

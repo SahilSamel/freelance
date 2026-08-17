@@ -3,6 +3,7 @@ package com.freelance.launcher;
 import com.freelance.ConfigurationEngine;
 import com.freelance.config.DatabaseConfig;
 import com.freelance.flyway.FlywayMigrationRunner;
+import com.freelance.initialization.Init;
 import com.freelance.jpa.JpaFactory;
 import com.freelance.manager.CacheManager;
 import com.freelance.rest.app.transaction.Transaction;
@@ -58,11 +59,7 @@ public class Main {
                     "com.freelance.entity"
             );
 
-            Transaction.init(entityManagerFactory);
-
-            CacheManager.getInstance().init("com.freelance.cache.config", entityManagerFactory);
-
-            ConfigurationEngine.init(entityManagerFactory);
+            Init.startUp(entityManagerFactory);
 
             httpServer = bootHttpServer();
 

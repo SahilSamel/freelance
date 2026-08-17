@@ -11,8 +11,4 @@ public enum CacheType {
      */
     IN_MEMORY,
 
-    /**
-     * Values are persisted as a BLOB in the database, surviving restarts.
-     */
-    DB
 }

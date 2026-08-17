@@ -37,7 +37,6 @@ public final class CacheManager {
 
     private final Map<String, AbstractCacheConfig<?, ?>> configsByName = new ConcurrentHashMap<>();
     private final Map<String, Cache> caches = new ConcurrentHashMap<>();
-    private volatile EntityManagerFactory emf;
     private volatile boolean initialized = false;
 
     private CacheManager() {
@@ -49,9 +48,8 @@ public final class CacheManager {
      * prepares the manager to serve them. Must be called once at
      * application boot, before any cache is used.
      */
-    public synchronized void init(String basePackage, EntityManagerFactory emf) {
+    public synchronized void init(String basePackage) {
         if (initialized) return;
-        this.emf = emf;
 
         CacheConfigScanner scanner = new CacheConfigScanner();
         Set<Class<? extends AbstractCacheConfig<?, ?>>> configClasses = scanner.scan(basePackage);
@@ -104,6 +102,28 @@ public final class CacheManager {
     }
 
     /**
+     * Pre-loads multiple key-value pairs into the specified cache in a single operation.
+     * Overwrites any existing cached entries for the provided keys without triggering load().
+     *
+     * @param cacheName the name of the cache to populate
+     * @param entries   a map containing key-value pairs to pre-load
+     */
+    public <K extends Serializable, V extends Serializable> void preload(String cacheName, Map<K, V> entries) {
+        if (entries == null || entries.isEmpty()) {
+            return;
+        }
+
+        AbstractCacheConfig<?, ?> config = resolveConfig(cacheName);
+        Cache cache = resolveCache(cacheName, config);
+
+        entries.forEach((key, value) -> {
+            if (key != null && value != null) {
+                cache.put(String.valueOf(key), value);
+            }
+        });
+    }
+
+    /**
      * Removes a single entry, forcing the next get() for that key to recompute.
      */
     public <K extends Serializable> void invalidate(String cacheName, K key) {
@@ -137,7 +157,6 @@ public final class CacheManager {
             CacheDefinition definition = config.toDefinition();
             return switch (definition.type()) {
                 case IN_MEMORY -> new InMemoryCache(definition);
-                case DB -> new DbCache(definition, emf);
             };
         });
     }

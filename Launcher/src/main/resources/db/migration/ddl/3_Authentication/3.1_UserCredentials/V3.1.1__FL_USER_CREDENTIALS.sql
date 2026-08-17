@@ -2,8 +2,6 @@ CREATE TABLE freelance.FL_USER_CREDENTIALS
 (
     id                UUID PRIMARY KEY,
     password          VARCHAR(255) NOT NULL,
-
-    -- Audit Fields
     created_by        UUID         NOT NULL,
     created_date      TIMESTAMPTZ  NOT NULL,
     last_updated_by   UUID,

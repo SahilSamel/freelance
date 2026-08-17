@@ -11,8 +11,9 @@ dependencies {
     implementation project(":Framework:cache")
     implementation project(":modules:authorization:authorization-dto")
     implementation project(":modules:authorization:authorization-repository")
-    implementation project(":modules:IdentityManagement:identity-service")
+    implementation project(":modules:identityManagement:identity-service")
     implementation project(":Common:error")
+    implementation project(":Common:dto")
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
     implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
     implementation 'ch.qos.logback:logback-classic:1.5.18'

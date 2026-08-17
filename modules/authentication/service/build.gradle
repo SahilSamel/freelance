@@ -17,8 +17,8 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
     implementation 'ch.qos.logback:logback-classic:1.5.18'
     implementation project(":modules:authentication:authentication-dto")
-    implementation project(":modules:IdentityManagement:identity-service")
-    implementation project(":modules:IdentityManagement:identity-dto")
+    implementation project(":modules:identityManagement:identity-service")
+    implementation project(":modules:identityManagement:identity-dto")
     implementation project(":Framework:appcore")
     implementation project(":Common:error")
     implementation project(":Common:config")

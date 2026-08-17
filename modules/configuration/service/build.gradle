@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+}
+
+group = 'configuration'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":modules:configuration:configuration-repository")
+    implementation project(":Framework:appcore")
+    implementation project(":Framework:cache")
+}
+
+test {
+    useJUnitPlatform()
+}
