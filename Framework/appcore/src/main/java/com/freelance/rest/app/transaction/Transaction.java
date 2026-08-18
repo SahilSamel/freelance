@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  * internal bridges call {@link #peek()} to access the current thread's state,
  * and the launcher calls {@link #finish()} to commit/rollback and clean up.
  */
-public class Transaction {
+public class Transaction implements AutoCloseable {
 
     private static final String CLASS_NAME = Transaction.class.getSimpleName();
 
@@ -43,9 +43,10 @@ public class Transaction {
      * {@code EntityManager}, starts the underlying database transaction,
      * and binds a new {@link TransactionContext} to this thread.
      *
+     * @return the Transaction instance for try-with-resources usage
      * @throws IllegalStateException if {@link #init(EntityManagerFactory)} was never called
      */
-    public static void start() {
+    public static Transaction start() {
         if (emf == null) {
             throw new IllegalStateException("Transaction engine has not been initialized with an EntityManagerFactory!");
         }
@@ -53,6 +54,7 @@ public class Transaction {
         var em = emf.createEntityManager();
         em.getTransaction().begin();
         contextHolder.set(new TransactionContext(em));
+        return new Transaction();
     }
 
     /**
@@ -134,5 +136,10 @@ public class Transaction {
             }
             contextHolder.remove();
         }
+    }
+
+    @Override
+    public void close() {
+        finish();
     }
 }

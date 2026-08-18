@@ -11,26 +11,32 @@ import jakarta.persistence.EntityManagerFactory;
 public class Init {
 
     public static void startUp(EntityManagerFactory entityManagerFactory) {
+        if (entityManagerFactory == null || !entityManagerFactory.isOpen()) {
+            throw new IllegalStateException("FATAL: EntityManagerFactory is null or closed. Cannot initialize application startup!");
+        }
 
-        // Starting transaction management
-        Transaction.init(entityManagerFactory);
-        Transaction.start();
-        Transaction.getRequestContext().withUserId(SystemHardcoding.SYSTEM_USER_ID.asUuid());
+        try {
+            // Starting transaction management
+            Transaction.init(entityManagerFactory);
 
-        // Initializing Cache Management
-        CacheManager.getInstance().init("com.freelance.cache.config");
+            try (Transaction tx = Transaction.start()) {
+                Transaction.getRequestContext().withUserId(SystemHardcoding.SYSTEM_USER_ID.asUuid());
 
-        //Preloading Configuration and Error cache
-        SystemConfigurationService systemConfigurationService = new SystemConfigurationService();
-        systemConfigurationService.preloadSystemCacheEntries();
-        ErrorConfigurationService errorConfigurationService = new ErrorConfigurationService();
-        errorConfigurationService.preloadErrorCacheEntries();
+                // Initializing Cache Management
+                CacheManager.getInstance().init("com.freelance.cache.config");
 
-        // Preloading AuthorizationCache
-        RoleAuthorizationService roleAuthorizationService = new RoleAuthorizationService();
-        roleAuthorizationService.preloadRoleAuthorizationCacheEntries();
+                // Preloading Configuration and Error cache
+                SystemConfigurationService systemConfigurationService = new SystemConfigurationService();
+                systemConfigurationService.preloadSystemCacheEntries();
+                ErrorConfigurationService errorConfigurationService = new ErrorConfigurationService();
+                errorConfigurationService.preloadErrorCacheEntries();
 
-        // Cleaning up transaction management
-        Transaction.finish();
+                // Preloading AuthorizationCache
+                RoleAuthorizationService roleAuthorizationService = new RoleAuthorizationService();
+                roleAuthorizationService.preloadRoleAuthorizationCacheEntries();
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("FATAL: Critical failure during application startup in Init.startUp()! Server startup aborted.", e);
+        }
     }
 }

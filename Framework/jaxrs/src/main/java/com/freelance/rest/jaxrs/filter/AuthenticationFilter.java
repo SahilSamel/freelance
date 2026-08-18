@@ -5,6 +5,7 @@ import com.freelance.auth.dto.AuthVerifyResponseDTO;
 import com.freelance.auth.service.Authentication;
 import com.freelance.rest.app.endpoint.annotation.Anonymous;
 import com.freelance.rest.app.transaction.Transaction;
+import com.freelance.system.SystemHardcoding;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -14,12 +15,14 @@ import jakarta.ws.rs.ext.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.UUID;
+
 /**
  * Global JAX-RS filter that intercepts all API requests to ensure they carry
  * a valid JWT token, unless the target method or class is annotated with @Anonymous.
  */
 @Provider
-@Priority(2)
+@Priority(3)
 public class AuthenticationFilter implements ContainerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationFilter.class);
@@ -50,6 +53,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         logger.debug("Intercepted request for: /{}", requestPath);
 
         if (isResourceAnonymous()) {
+            UUID systemUserId = SystemHardcoding.SYSTEM_USER_ID.asUuid();
+            Transaction.getRequestContext().withUserId(systemUserId);
+            requestContext.setProperty("audit.userId", systemUserId);
             logger.debug("Endpoint is marked @Anonymous. Skipping authentication.");
             return;
         }
@@ -60,6 +66,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         AuthVerifyResponseDTO verifyResponse = authenticationService.verify(new AuthVerifyRequestDTO(token));
         Transaction.getRequestContext().withUserId(verifyResponse.userId());
         Transaction.getRequestContext().withSessionKey(verifyResponse.sessionKey());
+        requestContext.setProperty("audit.userId", verifyResponse.userId());
     }
 
     /**

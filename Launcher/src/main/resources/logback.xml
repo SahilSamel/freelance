@@ -3,7 +3,7 @@
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} %magenta([%thread]) %highlight(%-5level) %cyan(%logger) - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %magenta([%thread]) %yellow([%X{traceId:-SYSTEM}]) %highlight(%-5level) %cyan(%logger) - %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -18,7 +18,7 @@
         </rollingPolicy>
 
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-SYSTEM}] %-5level %logger - %msg%n</pattern>
         </encoder>
     </appender>
 

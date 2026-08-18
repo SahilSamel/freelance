@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.freelance'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":modules:audit:audit-dto")
+    implementation project(":modules:audit:audit-repository")
+    implementation project(":Framework:appcore")
+    implementation project(":Common:error")
+    implementation project(":Common:dto")
+}
+
+test {
+    useJUnitPlatform()
+}

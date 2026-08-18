@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
  * is authorized to access the endpoint.
  */
 @Provider
-@Priority(3)
+@Priority(4)
 public class AuthorizationFilter implements ContainerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthorizationFilter.class);
@@ -34,12 +34,13 @@ public class AuthorizationFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
+        Authorization authAnnotation = getAuthorizationAnnotation();
+        Transaction.getRequestContext().withAuthorizationKey(authAnnotation == null ? null : authAnnotation.key());
+
         if (isResourceAnonymous()) {
             return;
         }
 
-        Authorization authAnnotation = getAuthorizationAnnotation();
-        Transaction.getRequestContext().withAuthorizationKey(authAnnotation == null ? null : authAnnotation.key());
         authorizationService.isAuthorized();
     }
 

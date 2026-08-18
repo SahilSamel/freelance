@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
  * rollback) once the response is ready to be sent.
  */
 @Provider
-@Priority(1)
+@Priority(2)
 public class TransactionFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
     private static final String CLASS_NAME = TransactionFilter.class.getSimpleName();

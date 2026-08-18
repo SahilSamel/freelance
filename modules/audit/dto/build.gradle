@@ -1,0 +1,18 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.freelance'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":Common:dto")
+}
+
+test {
+    useJUnitPlatform()
+}

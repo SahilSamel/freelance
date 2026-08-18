@@ -39,6 +39,11 @@ include 'modules:configuration:endpoint'
 include 'modules:configuration:service'
 include 'modules:configuration:repository'
 
+include 'modules:audit'
+include 'modules:audit:dto'
+include 'modules:audit:service'
+include 'modules:audit:repository'
+
 // ─── DISAMBIGUATE DUPLICATE SUBPROJECT NAMES ─────────────────────────
 project(':modules:authentication:dto').name = 'authentication-dto'
 project(':modules:authentication:service').name = 'authentication-service'
@@ -59,5 +64,9 @@ project(':modules:configuration:dto').name = 'configuration-dto'
 project(':modules:configuration:service').name = 'configuration-service'
 project(':modules:configuration:endpoint').name = 'configuration-endpoint'
 project(':modules:configuration:repository').name = 'configuration-repository'
+
+project(':modules:audit:dto').name = 'audit-dto'
+project(':modules:audit:service').name = 'audit-service'
+project(':modules:audit:repository').name = 'audit-repository'
 
 include 'Common:enum'

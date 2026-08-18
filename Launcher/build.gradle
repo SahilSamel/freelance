@@ -43,6 +43,8 @@ dependencies {
     implementation project(":modules:authorization:authorization-service")
 
     implementation project(":modules:configuration:configuration-service")
+    implementation project(":modules:audit:audit-repository")
+    implementation project(":modules:audit:audit-service")
 }
 
 test {
