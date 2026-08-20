@@ -4,9 +4,7 @@ import com.freelance.config.AbstractCacheConfig;
 import com.freelance.config.data.CacheDefinition;
 import com.freelance.config.scanner.CacheConfigScanner;
 import com.freelance.provider.Cache;
-import com.freelance.provider.impl.DbCache;
 import com.freelance.provider.impl.InMemoryCache;
-import jakarta.persistence.EntityManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +34,7 @@ public final class CacheManager {
     }
 
     private final Map<String, AbstractCacheConfig<?, ?>> configsByName = new ConcurrentHashMap<>();
+    private final Map<Class<? extends AbstractCacheConfig<?, ?>>, String> nameByClass = new ConcurrentHashMap<>();
     private final Map<String, Cache> caches = new ConcurrentHashMap<>();
     private volatile boolean initialized = false;
 
@@ -65,6 +64,8 @@ public final class CacheManager {
                                 existing.getClass().getName() + " and " + configClass.getName());
             }
 
+            nameByClass.put(configClass, name);
+
             logger.debug("[{}] Registered cache '{}' -> {} (type={}, ttl={})",
                     CLASS_NAME, name, configClass.getSimpleName(),
                     instance.toDefinition().type(), instance.toDefinition().ttlSeconds());
@@ -89,16 +90,40 @@ public final class CacheManager {
      */
     @SuppressWarnings("unchecked")
     public <K extends Serializable, V extends Serializable> V get(String cacheName, K key) {
+        if (cacheName == null || key == null) {
+            return null;
+        }
+
         AbstractCacheConfig<?, ?> config = resolveConfig(cacheName);
         Cache cache = resolveCache(cacheName, config);
         return (V) cache.get(String.valueOf(key), () -> config.loadInternal(key));
     }
 
     /**
+     * Type-safe overload: retrieves a value using the cache's config class.
+     */
+    public <K extends Serializable, V extends Serializable, C extends AbstractCacheConfig<K, V>> V get(Class<C> configClass, K key) {
+        String cacheName = resolveName(configClass);
+        return get(cacheName, key);
+    }
+
+    /**
      * Explicitly overwrites the cached value for key, bypassing load().
      */
     public <K extends Serializable, V extends Serializable> void put(String cacheName, K key, V value) {
+        if (cacheName == null || key == null || value == null) {
+            return;
+        }
+
         resolveCache(cacheName, resolveConfig(cacheName)).put(String.valueOf(key), value);
+    }
+
+    /**
+     * Type-safe overload: explicitly overwrites the cached value using the config class.
+     */
+    public <K extends Serializable, V extends Serializable, C extends AbstractCacheConfig<K, V>> void put(Class<C> configClass, K key, V value) {
+        String cacheName = resolveName(configClass);
+        put(cacheName, key, value);
     }
 
     /**
@@ -109,7 +134,7 @@ public final class CacheManager {
      * @param entries   a map containing key-value pairs to pre-load
      */
     public <K extends Serializable, V extends Serializable> void preload(String cacheName, Map<K, V> entries) {
-        if (entries == null || entries.isEmpty()) {
+        if (cacheName == null || entries == null || entries.isEmpty()) {
             return;
         }
 
@@ -124,19 +149,66 @@ public final class CacheManager {
     }
 
     /**
+     * Type-safe overload: pre-loads multiple entries using the config class.
+     */
+    public <K extends Serializable, V extends Serializable, C extends AbstractCacheConfig<K, V>> void preload(Class<C> configClass, Map<K, V> entries) {
+        String cacheName = resolveName(configClass);
+        preload(cacheName, entries);
+    }
+
+    /**
      * Removes a single entry, forcing the next get() for that key to recompute.
      */
     public <K extends Serializable> void invalidate(String cacheName, K key) {
+        if (cacheName == null || key == null) {
+            return;
+        }
+
         Cache cache = caches.get(cacheName);
         if (cache != null) cache.invalidate(String.valueOf(key));
+    }
+
+    /**
+     * Type-safe overload: removes a single entry using the config class.
+     */
+    public <K extends Serializable, C extends AbstractCacheConfig<K, ?>> void invalidate(Class<C> configClass, K key) {
+        String cacheName = resolveName(configClass);
+        invalidate(cacheName, key);
     }
 
     /**
      * Removes every entry in the named cache.
      */
     public void clear(String cacheName) {
+        if (cacheName == null) {
+            return;
+        }
+
         Cache cache = caches.get(cacheName);
         if (cache != null) cache.clear();
+    }
+
+    /**
+     * Type-safe overload: removes every entry using the config class.
+     */
+    public <C extends AbstractCacheConfig<?, ?>> void clear(Class<C> configClass) {
+        String cacheName = resolveName(configClass);
+        clear(cacheName);
+    }
+
+    private String resolveName(Class<?> configClass) {
+        if (!initialized) {
+            throw new IllegalStateException("com.freelance.manager.CacheManager has not been initialized. Call init() at application boot.");
+        }
+        if (configClass == null) {
+            return null;
+        }
+        String name = nameByClass.get(configClass);
+        if (name == null) {
+            throw new IllegalStateException(
+                    "No cache registered for class '" + configClass.getName() + "'.");
+        }
+        return name;
     }
 
     private AbstractCacheConfig<?, ?> resolveConfig(String cacheName) {

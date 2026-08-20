@@ -22,14 +22,18 @@ public class Init {
             try (Transaction tx = Transaction.start()) {
                 Transaction.getRequestContext().withUserId(SystemHardcoding.SYSTEM_USER_ID.asUuid());
 
+
                 // Initializing Cache Management
                 CacheManager.getInstance().init("com.freelance.cache.config");
+
 
                 // Preloading Configuration and Error cache
                 SystemConfigurationService systemConfigurationService = new SystemConfigurationService();
                 systemConfigurationService.preloadSystemCacheEntries();
+
                 ErrorConfigurationService errorConfigurationService = new ErrorConfigurationService();
                 errorConfigurationService.preloadErrorCacheEntries();
+
 
                 // Preloading AuthorizationCache
                 RoleAuthorizationService roleAuthorizationService = new RoleAuthorizationService();
