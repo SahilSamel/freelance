@@ -1,7 +1,7 @@
 package com.freelance.auth.service.validation;
 
 import com.freelance.auth.dto.AuthLogoutRequestDTO;
-import com.freelance.error.authentication.ValidationErrors;
+import com.freelance.keys.authentication.ValidationErrors;
 import com.freelance.rest.app.service.exception.validation.AbstractValidation;
 
 public class LogoutValidation extends AbstractValidation {

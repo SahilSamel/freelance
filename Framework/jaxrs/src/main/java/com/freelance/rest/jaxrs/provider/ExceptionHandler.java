@@ -3,9 +3,9 @@ package com.freelance.rest.jaxrs.provider;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.freelance.ConfigurationEngine;
-import com.freelance.error.FrameworkErrorConstants;
-import com.freelance.error.IBadRequestError;
-import com.freelance.error.IError;
+import com.freelance.keys.FrameworkErrorConstants;
+import com.freelance.config.IBadRequestError;
+import com.freelance.config.IError;
 import com.freelance.rest.app.endpoint.response.BaseResponse;
 import com.freelance.rest.app.service.exception.BaseException;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
@@ -85,31 +85,36 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> {
             switch (throwable) {
                 case ValidationException validationException -> {
                     List<ValidationErrorItem> items = getValidationErrorItems(ctx);
+                    IError validationError = validationException.getError();
+                    int statusCode = ConfigurationEngine.getStatusCode(validationError);
                     return createResponse(
-                            validationException.getError().getStatusCode(),
-                            new ValidationResponse(FrameworkErrorConstants.VALIDATION_ERROR.getCode(), items));
+                            statusCode,
+                            new ValidationResponse(validationError.getIndirectionCode(), items));
                 }
 
                 case BaseException ex -> {
                     IError error = ex.getError();
+                    int statusCode = ConfigurationEngine.getStatusCode(error);
                     return createResponse(
-                            error.getStatusCode(),
-                            new StandardErrorResponse(error.getCode(), resolveErrorMessage(error.getConfigKey())));
+                            statusCode,
+                            new StandardErrorResponse(error.getIndirectionCode(), ConfigurationEngine.getErrorMessage(error)));
                 }
 
                 case null, default -> {
                     IError internalError = FrameworkErrorConstants.INTERNAL_SERVER_ERROR;
+                    int statusCode = ConfigurationEngine.getStatusCode(internalError);
                     return createResponse(
-                            internalError.getStatusCode(),
-                            new StandardErrorResponse(internalError.getCode(), resolveErrorMessage(internalError.getConfigKey())));
+                            statusCode,
+                            new StandardErrorResponse(internalError.getIndirectionCode(), ConfigurationEngine.getErrorMessage(internalError)));
                 }
             }
 
         } catch (java.lang.Exception e) {
             IError internalError = FrameworkErrorConstants.INTERNAL_SERVER_ERROR;
+            int statusCode = ConfigurationEngine.getStatusCode(internalError);
             return createResponse(
-                    internalError.getStatusCode(),
-                    new StandardErrorResponse(internalError.getCode(), resolveErrorMessage(internalError.getConfigKey())));
+                    statusCode,
+                    new StandardErrorResponse(internalError.getIndirectionCode(), ConfigurationEngine.getErrorMessage(internalError)));
         }
     }
 
@@ -128,9 +133,9 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> {
 
                 for (IBadRequestError error : errors) {
                     items.add(new ValidationErrorItem(
-                            error.getCode(),
+                            error.getIndirectionCode(),
                             fieldName,
-                            resolveErrorMessage(error.getConfigKey())
+                            ConfigurationEngine.getErrorMessage(error)
                     ));
                 }
             }
@@ -148,24 +153,5 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize response payload", e);
         }
-    }
-
-    /**
-     * Resolves a human-readable error message for the given config key,
-     * falling back to a generic message if no mapping is configured.
-     */
-    private String resolveErrorMessage(String absoluteKey) {
-        if (absoluteKey == null || absoluteKey.isBlank()) {
-            return "Unexpected System Error";
-        }
-
-        String mappedMessage = ConfigurationEngine.getErrorMessage(absoluteKey);
-
-        if (mappedMessage == null || mappedMessage.isBlank()) {
-            logger.warn("[{}] No error message mapping found for config key [{}]. Falling back to generic message.", CLASS_NAME, absoluteKey);
-            return "Known Error was caused but Error Message could not be resolved for code - [" + absoluteKey + "]. Please try again later.";
-        }
-
-        return mappedMessage;
     }
 }

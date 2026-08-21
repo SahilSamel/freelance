@@ -5,7 +5,7 @@ import com.freelance.auth.dto.TokenGenerateRequestDTO;
 import com.freelance.auth.dto.TokenGenerateResponseDTO;
 import com.freelance.auth.dto.TokenParseRequestDTO;
 import com.freelance.auth.dto.TokenParseResponseDTO;
-import com.freelance.authentication.AuthenticationConfigKeys;
+import com.freelance.keys.authentication.AuthenticationConfigKeys;
 import com.freelance.rest.app.service.exception.config.ConfigException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -34,7 +34,7 @@ public class TokenUtility {
             throw new IllegalArgumentException("UserId and sessionKey are required to generate token.");
         }
 
-        long ttlSeconds = Long.parseLong(ConfigurationEngine.get(AuthenticationConfigKeys.SESSION_TTL_SECONDS.getKey()));
+        long ttlSeconds = ConfigurationEngine.getLong(AuthenticationConfigKeys.SESSION_TTL_SECONDS);
 
         Instant now = Instant.now();
         String token = Jwts.builder()
@@ -68,7 +68,7 @@ public class TokenUtility {
     }
 
     private SecretKey signingKey() {
-        String secret = ConfigurationEngine.get(AuthenticationConfigKeys.JWT_SECRET_KEY.getKey());
+        String secret = ConfigurationEngine.get(AuthenticationConfigKeys.JWT_SECRET_KEY);
         if (secret == null || secret.isBlank()) {
             throw new ConfigException(AuthenticationConfigKeys.JWT_SECRET_KEY.getKey());
         }

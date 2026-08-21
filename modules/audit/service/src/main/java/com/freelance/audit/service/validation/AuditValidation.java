@@ -1,7 +1,7 @@
 package com.freelance.audit.service.validation;
 
 import com.freelance.audit.dto.AuditLogCreateRequestDTO;
-import com.freelance.error.audit.ValidationErrors;
+import com.freelance.keys.audit.ValidationErrors;
 import com.freelance.rest.app.service.exception.validation.AbstractValidation;
 
 public class AuditValidation extends AbstractValidation {

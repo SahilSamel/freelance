@@ -6,6 +6,8 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,8 +32,19 @@ public abstract class AbstractRepository<T, ID> {
      */
     @SuppressWarnings("unchecked")
     protected AbstractRepository() {
-        this.entityClass = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass())
-                .getActualTypeArguments()[0];
+        Class<?> current = getClass();
+        Type genericSuper = current.getGenericSuperclass();
+
+        while (!(genericSuper instanceof ParameterizedType) && current.getSuperclass() != null) {
+            current = current.getSuperclass();
+            genericSuper = current.getGenericSuperclass();
+        }
+
+        if (genericSuper instanceof ParameterizedType pt && pt.getActualTypeArguments().length > 0) {
+            this.entityClass = (Class<T>) pt.getActualTypeArguments()[0];
+        } else {
+            this.entityClass = null;
+        }
     }
 
     /**
@@ -57,6 +70,19 @@ public abstract class AbstractRepository<T, ID> {
      */
     public void persist(T entity) {
         em().persist(entity);
+    }
+
+    public void persistBatch(List<T> entities, int batchSize) {
+        EntityManager em = em();
+        for (int i = 0; i < entities.size(); i++) {
+            em.persist(entities.get(i));
+            if ((i + 1) % batchSize == 0) {
+                em.flush();
+                em.clear();
+            }
+        }
+        em.flush();
+        em.clear();
     }
 
     /**

@@ -6,7 +6,7 @@ import com.freelance.auth.session.constraint.GenerateSessionConstraint;
 import com.freelance.auth.session.constraint.VerifySessionConstraint;
 import com.freelance.auth.session.validation.GenerateSessionValidation;
 import com.freelance.auth.session.validation.VerifySessionValidation;
-import com.freelance.authentication.AuthenticationConfigKeys;
+import com.freelance.keys.authentication.AuthenticationConfigKeys;
 import com.freelance.cache.config.SessionCacheConfig;
 import com.freelance.cache.config.SessionCacheEntry;
 import com.freelance.manager.CacheManager;
@@ -18,7 +18,7 @@ import java.util.UUID;
 public class Session {
 
     private long getExpiryMillis() {
-        long ttlSeconds = Long.parseLong(ConfigurationEngine.get(AuthenticationConfigKeys.SESSION_TTL_SECONDS.getKey()));
+        long ttlSeconds = ConfigurationEngine.getLong(AuthenticationConfigKeys.SESSION_TTL_SECONDS);
         return System.currentTimeMillis() + (ttlSeconds * 1000L);
     }
 

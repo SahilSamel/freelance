@@ -1,7 +1,7 @@
 package com.freelance.authorization.service.constraint;
 
 import com.freelance.cache.config.RoleAuthorizationKeyCacheConfig;
-import com.freelance.error.authorization.ConstraintErrors;
+import com.freelance.keys.authorization.ConstraintErrors;
 import com.freelance.identityManagement.mapping.userRole.UserRoleSearchRequestDTO;
 import com.freelance.identityManagement.mapping.userRole.UserRoleSearchResponseDTO;
 import com.freelance.manager.CacheManager;

@@ -14,6 +14,9 @@ public class ErrorConfiguration extends AbstractEntity {
     @Column(name = "error_id", nullable = false, length = 255)
     private String errorId;
 
+    @Column(name = "status_code", nullable = false)
+    private int statusCode;
+
     @Column(name = "error_message", nullable = false, columnDefinition = "TEXT")
     private String errorMessage;
 
@@ -23,8 +26,9 @@ public class ErrorConfiguration extends AbstractEntity {
     public ErrorConfiguration() {
     }
 
-    public ErrorConfiguration(String errorId, String errorMessage, String description) {
+    public ErrorConfiguration(String errorId, int statusCode, String errorMessage, String description) {
         this.errorId = errorId;
+        this.statusCode = statusCode;
         this.errorMessage = errorMessage;
         this.description = description;
     }
@@ -36,6 +40,14 @@ public class ErrorConfiguration extends AbstractEntity {
 
     public void setErrorId(String errorId) {
         this.errorId = errorId;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
     }
 
     public String getErrorMessage() {

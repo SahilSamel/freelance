@@ -6,7 +6,7 @@ import jakarta.ws.rs.core.Response;
 
 /**
  * Base class for REST endpoint resources, providing shared helpers to
- * convert internal response/error objects into JAX-RS {@link Response} objects.
+ * convert internal response/keys objects into JAX-RS {@link Response} objects.
  */
 public abstract class AbstractEndpoint {
 

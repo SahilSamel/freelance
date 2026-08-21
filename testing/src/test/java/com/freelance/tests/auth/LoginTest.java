@@ -39,7 +39,7 @@ class LoginTest extends BaseIntegrationTest {
     // ── Wrong credentials ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("wrong password → 400 INVALID_CREDENTIALS constraint error")
+    @DisplayName("wrong password → 400 INVALID_CREDENTIALS constraint keys")
     void login_wrongPassword_returns400() {
         RestAssured
                 .given()
@@ -53,7 +53,7 @@ class LoginTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("unknown username → 400 INVALID_CREDENTIALS constraint error")
+    @DisplayName("unknown username → 400 INVALID_CREDENTIALS constraint keys")
     void login_unknownUsername_returns400() {
         RestAssured
                 .given()

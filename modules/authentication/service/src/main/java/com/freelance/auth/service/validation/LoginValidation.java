@@ -2,8 +2,8 @@ package com.freelance.auth.service.validation;
 
 import com.freelance.ConfigurationEngine;
 import com.freelance.auth.dto.AuthLoginRequestDTO;
-import com.freelance.error.authentication.ValidationErrors;
-import com.freelance.identityManagement.IdentityManagementKeys;
+import com.freelance.keys.authentication.ValidationErrors;
+import com.freelance.keys.identityManagement.IdentityManagementKeys;
 import com.freelance.rest.app.service.exception.validation.AbstractValidation;
 
 public class LoginValidation extends AbstractValidation {
@@ -15,8 +15,8 @@ public class LoginValidation extends AbstractValidation {
             return;
         }
 
-        int minUsernameLength = Integer.parseInt(ConfigurationEngine.get(IdentityManagementKeys.USERNAME_MINIMUM_LENGTH.getKey(), "3"));
-        int maxUsernameLength = Integer.parseInt(ConfigurationEngine.get(IdentityManagementKeys.USERNAME_MAXIMUM_LENGTH.getKey(), "50"));
+        int minUsernameLength = ConfigurationEngine.getInt(IdentityManagementKeys.USERNAME_MINIMUM_LENGTH);
+        int maxUsernameLength = ConfigurationEngine.getInt(IdentityManagementKeys.USERNAME_MAXIMUM_LENGTH);
 
         if (request.username() == null || request.username().isBlank()) {
             raiseValidationError(ValidationErrors.INVALID_USERNAME, "username");

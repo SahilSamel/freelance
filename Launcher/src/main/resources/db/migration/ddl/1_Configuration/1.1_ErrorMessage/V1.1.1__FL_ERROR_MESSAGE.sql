@@ -1,6 +1,7 @@
 CREATE TABLE FL_ERROR_MESSAGE
 (
     error_id          VARCHAR(255) PRIMARY KEY,
+    status_code       INT          NOT NULL,
     error_message     TEXT         NOT NULL,
     description       VARCHAR(255),
     created_by        UUID         NOT NULL,

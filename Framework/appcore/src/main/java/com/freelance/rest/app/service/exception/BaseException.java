@@ -1,6 +1,6 @@
 package com.freelance.rest.app.service.exception;
 
-import com.freelance.error.IError;
+import com.freelance.config.IError;
 
 /**
  * Base class for all application-specific runtime exceptions. Carries
@@ -11,19 +11,19 @@ public abstract class BaseException extends RuntimeException {
     private final IError error;
 
     /**
-     * Builds a default message from the error's code.
+     * Builds a default message from the keys's code.
      *
-     * @param error the structured error describing this failure
+     * @param error the structured keys describing this failure
      */
     protected BaseException(IError error) {
-        super("Failure code triggered: " + error.getCode());
+        super("Failure triggered for error key: " + (error != null ? error.getErrorKey() : "unknown"));
         this.error = error;
     }
 
     /**
      * Constructor with a diagnostic message for internal logging.
      *
-     * @param error             the structured error describing this failure
+     * @param error             the structured keys describing this failure
      * @param diagnosticMessage a human-readable message for logs/diagnostics
      */
     protected BaseException(IError error, String diagnosticMessage) {
@@ -34,7 +34,7 @@ public abstract class BaseException extends RuntimeException {
     /**
      * Full constructor allowing a root cause.
      *
-     * @param error             the structured error describing this failure
+     * @param error             the structured keys describing this failure
      * @param diagnosticMessage a human-readable message for logs/diagnostics
      * @param cause             the underlying exception that triggered this failure
      */

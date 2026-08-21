@@ -1,6 +1,6 @@
 package com.freelance.rest.app.transaction.context;
 
-import com.freelance.error.IBadRequestError;
+import com.freelance.config.IBadRequestError;
 import com.freelance.rest.context.RequestContext;
 import jakarta.persistence.EntityManager;
 

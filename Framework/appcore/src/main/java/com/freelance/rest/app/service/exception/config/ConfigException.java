@@ -1,6 +1,6 @@
 package com.freelance.rest.app.service.exception.config;
 
-import com.freelance.error.FrameworkErrorConstants;
+import com.freelance.keys.FrameworkErrorConstants;
 import com.freelance.rest.app.service.exception.BaseException;
 
 public class ConfigException extends BaseException {

@@ -1,6 +1,6 @@
 package com.freelance.rest.app.service.exception.constraint;
 
-import com.freelance.error.IBadRequestError;
+import com.freelance.config.IBadRequestError;
 
 /**
  * Base class for services that need to raise business rule constraint

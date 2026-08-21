@@ -11,10 +11,28 @@ repositories {
 
 dependencies {
     implementation project(":modules:configuration:configuration-repository")
+    implementation project(":modules:configuration:configuration-dto")
+    implementation project(":Common:config")
+    implementation project(":Common:error")
+    implementation project(":Common:enum")
     implementation project(":Framework:appcore")
     implementation project(":Framework:cache")
+    implementation 'ch.qos.logback:logback-classic:1.5.18'
+    implementation 'org.reflections:reflections:0.10.2'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.mockito:mockito-core:5.14.2'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.14.2'
 }
 
 test {
     useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat = 'full'
+        showExceptions = true
+        showCauses = true
+        showStackTraces = false
+    }
 }
