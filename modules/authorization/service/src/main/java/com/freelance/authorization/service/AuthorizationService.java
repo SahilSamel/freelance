@@ -6,8 +6,8 @@ import com.freelance.authorization.service.validation.VerifyValidation;
 
 public class AuthorizationService {
 
-    AuthorizationRepository repository;
-    
+    private final AuthorizationRepository repository;
+
     public AuthorizationService() {
         this.repository = new AuthorizationRepository();
     }

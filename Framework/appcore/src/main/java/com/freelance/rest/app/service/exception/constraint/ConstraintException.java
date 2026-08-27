@@ -1,15 +1,17 @@
 package com.freelance.rest.app.service.exception.constraint;
 
-import com.freelance.config.IBadRequestError; // Change to your sub-interface
+import com.freelance.config.IError;
 import com.freelance.rest.app.service.exception.BaseException;
 
 /**
- * Thrown when a business rule constraint is violated (e.g. duplicate
- * resource, conflicting state). Carries the specific {@link IBadRequestError}
- * describing the violation.
+ * Thrown when an application rule constraint is violated.
+ * <p>
+ * Carries the specific {@link IError} describing the constraint violation.
+ * </p>
  */
 public class ConstraintException extends BaseException {
-    public ConstraintException(IBadRequestError error) {
+
+    public ConstraintException(IError error) {
         super(error);
     }
 }

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.freelance.ConfigurationEngine;
 import com.freelance.keys.FrameworkErrorConstants;
-import com.freelance.config.IBadRequestError;
 import com.freelance.config.IError;
 import com.freelance.rest.app.endpoint.response.BaseResponse;
 import com.freelance.rest.app.service.exception.BaseException;
@@ -23,9 +22,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Global JAX-RS exception mapper. Catches any {@link Throwable} thrown
- * during request processing, ensures the current transaction is rolled
- * back, and converts the failure into a standardized JSON error response.
+ * Global JAX-RS exception mapper translating server throwables into standardized API error JSON payloads.
+ * <p>
+ * Flags the active transaction for rollback and maps application {@link BaseException}, {@link ValidationException},
+ * or unexpected {@link Throwable} instances into structured error DTOs via {@link ConfigurationEngine}.
+ * </p>
  */
 @Provider
 public class ExceptionHandler implements ExceptionMapper<Throwable> {
@@ -36,25 +37,35 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> {
 
     private final ObjectMapper json = new ObjectMapper();
 
+
     /**
-     * JSON shape for a single field-level validation failure.
+     * Represents an individual field-level validation failure detailing the error code, offending field name, and message.
      */
     private record ValidationErrorItem(String errorCode, String fieldName, String message) {
     }
 
-    /** JSON shape for a response containing multiple validation failures. */
+    /**
+     * Response payload used specifically for {@link ValidationException}.
+     * <p>
+     * Input validation can accumulate multiple failures across different fields during request evaluation.
+     * The {@code message} field is therefore a list of {@link ValidationErrorItem} entries, enabling clients
+     * to inspect all field-level validation errors in a single consolidated response.
+     * </p>
+     */
     private record ValidationResponse(String errorCode, List<ValidationErrorItem> message) {
     }
 
-    /** JSON shape for a single, non-validation error response. */
+    /**
+     * Standard response payload used for all non-validation errors (domain constraints, business exceptions, and unexpected failures).
+     * <p>
+     * Because these failures represent a single discrete error rather than multiple field-level issues,
+     * the {@code message} property is a single descriptive string.
+     * </p>
+     */
     private record StandardErrorResponse(String errorCode, String message) {
     }
 
-    /**
-     * Entry point invoked by JAX-RS whenever an unhandled exception
-     * escapes an endpoint. Marks the current transaction for rollback
-     * (if one exists) and delegates to {@link #buildResponse(Throwable)}.
-     */
+
     @Override
     public Response toResponse(Throwable throwable) {
 
@@ -62,6 +73,7 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> {
             TransactionContext ctx = Transaction.peek();
             ctx.markRollbackOnly();
         } catch (IllegalStateException e) {
+            logger.debug("No active transaction found on this thread to mark for rollback: {}", e.getMessage());
         }
 
         BaseResponse internalRes = buildResponse(throwable);
@@ -72,12 +84,6 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> {
                 .build();
     }
 
-    /**
-     * Maps a thrown exception to an internal {@link BaseResponse}, branching
-     * on the exception type: field-level validation errors, a single
-     * structured {@link BaseException}, or an unclassified failure
-     * (falls back to a generic 500).
-     */
     public BaseResponse buildResponse(Throwable throwable) {
         try {
             TransactionContext ctx = Transaction.peek();
@@ -118,20 +124,16 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> {
         }
     }
 
-    /**
-     * Converts the current transaction's accumulated field validation
-     * errors into a flat list of response-ready items.
-     */
     private List<ValidationErrorItem> getValidationErrorItems(TransactionContext ctx) {
-        Map<String, List<IBadRequestError>> validationErrors = ctx.getValidationErrors();
+        Map<String, List<IError>> validationErrors = ctx.getValidationErrors();
         List<ValidationErrorItem> items = new ArrayList<>();
 
         if (validationErrors != null && !validationErrors.isEmpty()) {
-            for (Map.Entry<String, List<IBadRequestError>> entry : validationErrors.entrySet()) {
+            for (Map.Entry<String, List<IError>> entry : validationErrors.entrySet()) {
                 String fieldName = entry.getKey();
-                List<IBadRequestError> errors = entry.getValue();
+                List<IError> errors = entry.getValue();
 
-                for (IBadRequestError error : errors) {
+                for (IError error : errors) {
                     items.add(new ValidationErrorItem(
                             error.getIndirectionCode(),
                             fieldName,
@@ -142,10 +144,7 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> {
         }
         return items;
     }
-
-    /**
-     * Serializes the given payload to JSON and wraps it into a {@link BaseResponse}.
-     */
+    
     private BaseResponse createResponse(int statusCode, Object payload) {
         try {
             String failureJSON = json.writeValueAsString(payload);

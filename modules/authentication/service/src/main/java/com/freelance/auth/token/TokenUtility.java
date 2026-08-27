@@ -20,9 +20,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
-/**
- * Owns the JWT logic for the Authentication module.
- */
 public class TokenUtility {
 
     private static final int MIN_SECRET_BYTES = 32;
@@ -71,6 +68,13 @@ public class TokenUtility {
         String secret = ConfigurationEngine.get(AuthenticationConfigKeys.JWT_SECRET_KEY);
         if (secret == null || secret.isBlank()) {
             throw new ConfigException(AuthenticationConfigKeys.JWT_SECRET_KEY.getKey());
+        }
+
+        if (secret.equals(AuthenticationConfigKeys.JWT_SECRET_KEY.getDefaultValue())) {
+            throw new IllegalStateException(
+                    "FATAL: JWT signing secret cannot be the default placeholder value! " +
+                    "Please configure a valid, secure 'authentication.jwt.secret' in the configuration system."
+            );
         }
 
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);

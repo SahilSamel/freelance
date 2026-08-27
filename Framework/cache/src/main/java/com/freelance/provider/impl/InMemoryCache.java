@@ -10,8 +10,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
- * In-memory cache backend. Values live only in this JVM's heap and are
- * lost on restart. Expiry is checked lazily on read, with periodic background sweeps.
+ * Thread-safe in-memory cache backend backed by a {@link ConcurrentHashMap}.
+ * <p>
+ * Evaluates entry expiration lazily on read access and runs a periodic background daemon thread
+ * to evict expired entries when a finite time-to-live is configured.
+ * </p>
  */
 public final class InMemoryCache implements Cache {
 
@@ -34,11 +37,11 @@ public final class InMemoryCache implements Cache {
     public InMemoryCache(CacheDefinition definition) {
         this.definition = definition;
         if (definition.hasExpiry()) {
-            CLEANER.scheduleAtFixedRate(this::evictExpired, 5, 5, TimeUnit.MINUTES);
+            CLEANER.scheduleAtFixedRate(this::evictIfExpired, 5, 5, TimeUnit.MINUTES);
         }
     }
 
-    private void evictExpired() {
+    private void evictIfExpired() {
         store.entrySet().removeIf(entry -> entry.getValue().isExpired());
     }
 
@@ -57,7 +60,6 @@ public final class InMemoryCache implements Cache {
             return null;
         }
 
-        // Miss or expired: compute and store non-null values.
         Object value = loader.get();
         if (value != null) {
             put(key, value);

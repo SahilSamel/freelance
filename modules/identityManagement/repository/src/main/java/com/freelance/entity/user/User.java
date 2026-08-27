@@ -1,17 +1,19 @@
 package com.freelance.entity.user;
 
 import com.freelance.entity.credential.UserCredential;
-import com.freelance.rest.app.repository.entity.AbstractEntity;
+import com.freelance.rest.app.repository.entity.AbstractAuditEntity;
 import jakarta.persistence.*;
 
 import java.util.UUID;
 
 @Entity
 @NamedQueries({
-        @NamedQuery(name = "User.findByUsername", query = "SELECT u FROM User u WHERE u.username = :username")
+        @NamedQuery(name = User.QUERY_FIND_BY_USERNAME, query = "SELECT u FROM User u WHERE u.username = :username")
 })
 @Table(name = "FL_USERS", schema = "freelance")
-public class User extends AbstractEntity {
+public class User extends AbstractAuditEntity {
+
+    public static final String QUERY_FIND_BY_USERNAME = "User.findByUsername";
 
     @Id
     @Column(name = "id", updatable = false, nullable = false)
@@ -31,8 +33,6 @@ public class User extends AbstractEntity {
     )
     private UserCredential userCredential;
 
-    // ─── CONSTRUCTORS ────────────────────────────────────────────────────────
-
     public User() {
     }
 
@@ -40,16 +40,12 @@ public class User extends AbstractEntity {
         this.email = email;
     }
 
-    // ─── LIFECYCLE HOOKS ─────────────────────────────────────────────────────
-
     @PrePersist
     protected void onCreateUser() {
         if (this.id == null) {
             this.id = UUID.randomUUID();
         }
     }
-
-    // ─── GETTERS AND SETTERS ─────────────────────────────────────────────────
 
     public UUID getId() {
         return id;

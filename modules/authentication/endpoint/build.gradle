@@ -15,8 +15,6 @@ dependencies {
     implementation project(":modules:authentication:authentication-service")
     implementation project(":Framework:appcore")
     implementation project(":Common:enum")
-    compileOnly project(':Framework:jobs')
-    annotationProcessor project(':Framework:jobs')
 }
 
 test {

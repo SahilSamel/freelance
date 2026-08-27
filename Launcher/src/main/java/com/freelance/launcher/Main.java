@@ -23,8 +23,11 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Application entry point. Boots the database, JPA, transaction
- * framework, configuration cache, and embedded HTTP server, in that order.
+ * Application bootstrap entry point.
+ * <p>
+ * In its current development stage, the application is bootstrapped and started using a rudimentary
+ * embedded Grizzly HTTP server to serve endpoints and filters.
+ * </p>
  */
 public class Main {
 
@@ -38,10 +41,9 @@ public class Main {
     }
 
     /**
-     * Runs the full application startup sequence: parses config, applies
-     * database migrations, builds the JPA factory, initializes the
-     * transaction framework, loads the configuration cache, and only then
-     * starts accepting HTTP traffic.
+     * Executes the main application boot sequence.
+     *
+     * @param args command-line arguments specifying database configuration
      */
     public static void main(String[] args) {
         EntityManagerFactory entityManagerFactory = null;
@@ -90,11 +92,9 @@ public class Main {
     }
 
     /**
-     * Configures and starts the embedded Grizzly/Jersey HTTP server,
-     * registering all JAX-RS resources and providers found under the
-     * application's endpoint and framework packages.
+     * Configures and starts the embedded Grizzly HTTPS server registering JAX-RS endpoints and filters.
      *
-     * @return the started HttpServer instance, or null if startup failed
+     * @return the started {@link HttpServer} instance
      */
     private static HttpServer bootHttpServer() {
         String baseUri = "https://localhost:8080/";
@@ -120,9 +120,9 @@ public class Main {
     }
 
     /**
-     * Groups registered resource classes by their sub-package (relative to
-     * the scanned base package) and logs a count per group, e.g.
-     * "Registered 3 endpoints from login".
+     * Groups registered resource classes by package and logs a startup summary.
+     *
+     * @param registeredClasses set of discovered and registered class types
      */
     private static void logResourceSummary(Set<Class<?>> registeredClasses) {
         Map<String, Map<String, Integer>> counts = new TreeMap<>();

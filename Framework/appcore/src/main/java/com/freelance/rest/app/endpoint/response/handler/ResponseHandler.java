@@ -4,17 +4,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.freelance.rest.app.endpoint.response.BaseResponse;
 
 /**
- * Serializes DTOs into JSON and wraps them into a standard {@link BaseResponse}
- * for returning from REST endpoints.
+ * Serializes transfer objects into JSON format and builds standardized {@link BaseResponse} containers.
  */
 public class ResponseHandler {
     private final ObjectMapper json = new ObjectMapper();
 
     /**
-     * Maps any given DTO object into a JSON string and constructs a framework Response object.
-     * @param dto Any plain-old-Java-object (POJO) or record representing your return payload.
-     * @param statusCode The specific HTTP status code for this response (e.g., 200, 201, 202).
-     * @return A compiled Response object ready for network transmission.
+     * Serializes the provided DTO payload into JSON and wraps it in a {@link BaseResponse}.
+     *
+     * @param dto        payload object or record to serialize; if {@code null}, produces {@code "{}"}
+     * @param statusCode HTTP status code for the response (e.g., 200, 201)
+     * @return a structured {@link BaseResponse} containing the serialized payload
+     * @throws RuntimeException if JSON serialization fails unexpectedly
      */
     public BaseResponse buildResponse(Object dto, int statusCode) {
         try {

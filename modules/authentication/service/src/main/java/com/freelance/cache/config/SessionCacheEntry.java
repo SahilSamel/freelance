@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Cache entry holding an authenticated user's active session keys mapped to their expiry timestamps.
+ */
 public class SessionCacheEntry implements Serializable {
 
     private static final long serialVersionUID = 1L;

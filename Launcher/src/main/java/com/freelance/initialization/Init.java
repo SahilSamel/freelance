@@ -1,5 +1,6 @@
 package com.freelance.initialization;
 
+import com.freelance.authorization.seeder.AuthorizationSeeder;
 import com.freelance.configuration.error.ErrorConfigurationService;
 import com.freelance.configuration.seeder.ConfigurationSeeder;
 import com.freelance.configuration.system.SystemConfigurationService;
@@ -11,33 +12,43 @@ import jakarta.persistence.EntityManagerFactory;
 
 public class Init {
 
+    /**
+     * Executes the bootstrap sequence for the application.
+     * <p>
+     * Initializes the {@link Transaction} manager, seeds default system/error configurations and authorization roles
+     * into the database, initializes {@link CacheManager}, and preloads system config, error message, and role authorization caches.
+     * </p>
+     *
+     * @param entityManagerFactory the open JPA entity manager factory; must not be null
+     * @throws IllegalStateException if {@code entityManagerFactory} is null/closed or if startup initialization fails
+     */
     public static void startUp(EntityManagerFactory entityManagerFactory) {
         if (entityManagerFactory == null || !entityManagerFactory.isOpen()) {
             throw new IllegalStateException("FATAL: EntityManagerFactory is null or closed. Cannot initialize application startup!");
         }
 
         try {
-            // Starting transaction management
             Transaction.init(entityManagerFactory);
 
             try (Transaction tx = Transaction.start()) {
+
+                //Setting the userId as System UUID so that all automatically seeded entries are marked as such
                 Transaction.getRequestContext().withUserId(SystemHardcoding.SYSTEM_USER_ID.asUuid());
 
-                // 1. Seeding system configurations and keys messages from code defaults
                 ConfigurationSeeder configurationSeeder = new ConfigurationSeeder();
                 configurationSeeder.seed();
 
-                // 2. Initializing Cache Management
+                AuthorizationSeeder authorizationSeeder = new AuthorizationSeeder();
+                authorizationSeeder.seed();
+
                 CacheManager.getInstance().init("com.freelance.cache.config");
 
-                // 3. Preloading Configuration and Error cache
                 SystemConfigurationService systemConfigurationService = new SystemConfigurationService();
                 systemConfigurationService.preloadSystemCacheEntries();
 
                 ErrorConfigurationService errorConfigurationService = new ErrorConfigurationService();
                 errorConfigurationService.preloadErrorCacheEntries();
 
-                // 4. Preloading AuthorizationCache
                 RoleAuthorizationService roleAuthorizationService = new RoleAuthorizationService();
                 roleAuthorizationService.preloadRoleAuthorizationCacheEntries();
             }

@@ -7,10 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
-/**
- * Scans the classpath for concrete AbstractCacheConfig subclasses so
- * cache designers don't need to register their caches anywhere manually.
- */
 public final class CacheConfigScanner {
 
     private static final String CLASS_NAME = CacheConfigScanner.class.getSimpleName();

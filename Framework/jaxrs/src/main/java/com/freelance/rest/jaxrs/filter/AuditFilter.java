@@ -20,10 +20,12 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Global JAX-RS filter that audits incoming requests and outgoing responses.
- * Intercepts request metadata at ingress and persists the full audit record
- * to the database at egress. Runs with strict compliance: if auditing fails,
- * the active transaction fails.
+ * Global audit filter intercepting all incoming HTTP requests and outgoing responses.
+ * <p>
+ * Because auditing is a system task, this filter is wrapped around all other filters using {@code @Priority(1)}.
+ * It executes first on ingress (to initialize trace IDs and timing) and last on egress, where it builds its own
+ * dedicated {@link Transaction} context to persist the audit record.
+ * </p>
  */
 @Provider
 @Priority(1)
@@ -34,7 +36,6 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
     private static final String START_TIME_PROP = "audit.startTime";
     private static final String TIMESTAMP_PROP = "audit.timestamp";
     private static final String TRACE_ID_PROP = "audit.traceId";
-    private static final String TENANT_ID_PROP = "audit.tenantId";
     private static final String IP_ADDRESS_PROP = "audit.ipAddress";
     private static final String USER_AGENT_PROP = "audit.userAgent";
     private static final String AUTH_MECHANISM_PROP = "audit.authMechanism";
@@ -42,7 +43,6 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
 
     private static final String TRACE_ID_MDC_KEY = "traceId";
     private static final String TRACE_ID_HEADER = "X-Trace-ID";
-    private static final String TENANT_ID_HEADER = "X-Tenant-ID";
 
     @Context
     private ResourceInfo resourceInfo;
@@ -61,7 +61,6 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
         String traceId = resolveTraceId(requestContext);
         MDC.put(TRACE_ID_MDC_KEY, traceId);
 
-        String tenantId = extractTenantId(requestContext);
         String ipAddress = extractClientIp(requestContext);
         String userAgent = requestContext.getHeaderString("User-Agent");
         String authMechanism = resolveAuthMechanism(requestContext);
@@ -69,7 +68,6 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
         requestContext.setProperty(START_TIME_PROP, startTime);
         requestContext.setProperty(TIMESTAMP_PROP, timestamp);
         requestContext.setProperty(TRACE_ID_PROP, traceId);
-        requestContext.setProperty(TENANT_ID_PROP, tenantId);
         requestContext.setProperty(IP_ADDRESS_PROP, ipAddress);
         requestContext.setProperty(USER_AGENT_PROP, userAgent);
         requestContext.setProperty(AUTH_MECHANISM_PROP, authMechanism);
@@ -79,7 +77,15 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
                 requestContext.getUriInfo() != null ? requestContext.getUriInfo().getPath() : "unknown",
                 traceId);
     }
-
+    
+    /**
+     * Records request telemetry and persists the audit log entry upon response delivery.
+     * <p>
+     * Because this filter executes outside {@link TransactionFilter}, it opens its own dedicated transaction
+     * to synchronously persist the audit log record. This is handled synchronously as the application's expected
+     * request volume is low.
+     * </p>
+     */
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         String traceId = (String) requestContext.getProperty(TRACE_ID_PROP);
@@ -96,11 +102,6 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
             Instant timestamp = (Instant) requestContext.getProperty(TIMESTAMP_PROP);
             if (timestamp == null) {
                 timestamp = Instant.now();
-            }
-
-            String tenantId = (String) requestContext.getProperty(TENANT_ID_PROP);
-            if (tenantId == null) {
-                tenantId = extractTenantId(requestContext);
             }
 
             String ipAddress = (String) requestContext.getProperty(IP_ADDRESS_PROP);
@@ -128,7 +129,6 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
                     timestamp,
                     traceId,
                     userId,
-                    tenantId,
                     httpMethod,
                     endpoint,
                     statusCode,
@@ -159,14 +159,6 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
         }
 
         return UUID.randomUUID().toString();
-    }
-
-    private String extractTenantId(ContainerRequestContext requestContext) {
-        String tenantId = requestContext.getHeaderString(TENANT_ID_HEADER);
-        if (tenantId != null && !tenantId.isBlank()) {
-            return tenantId.trim();
-        }
-        return null;
     }
 
     private String extractClientIp(ContainerRequestContext requestContext) {

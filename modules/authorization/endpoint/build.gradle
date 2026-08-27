@@ -14,6 +14,4 @@ dependencies {
     implementation("jakarta.ws.rs:jakarta.ws.rs-api:3.1.0")
     implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
     implementation 'ch.qos.logback:logback-classic:1.5.18'
-    compileOnly project(':Framework:jobs')
-    annotationProcessor project(':Framework:jobs')
 }

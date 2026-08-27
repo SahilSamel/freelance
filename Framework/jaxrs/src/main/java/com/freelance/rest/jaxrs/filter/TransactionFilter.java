@@ -11,9 +11,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * JAX-RS filter that binds the transaction lifecycle to each HTTP request:
- * starts a transaction when a request arrives, and finishes it (commit or
- * rollback) once the response is ready to be sent.
+ * Global JAX-RS filter coordinating request-scoped database transaction boundaries and context lifecycle.
+ * <p>
+ * Configured with {@code @Priority(2)} so that it executes before the system requires database access
+ * or needs thread-local request context storage to provide contextual data to downstream services.
+ * </p>
  */
 @Provider
 @Priority(2)
@@ -23,18 +25,12 @@ public class TransactionFilter implements ContainerRequestFilter, ContainerRespo
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionFilter.class);
 
-    /**
-     * Starts a new transaction for the incoming request.
-     */
     @Override
     public void filter(ContainerRequestContext requestContext) {
         Transaction.start();
         logger.debug("Transaction started for {}", requestContext.getUriInfo());
     }
 
-    /**
-     * Finalizes the transaction once the response has been produced.
-     */
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         Transaction.finish();

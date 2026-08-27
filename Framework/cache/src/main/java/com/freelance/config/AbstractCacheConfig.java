@@ -6,39 +6,40 @@ import com.freelance.config.data.CacheType;
 import java.io.Serializable;
 
 /**
- * Base class for defining a cache. Each concrete subclass represents
- * exactly one named cache: its storage type, TTL, and how to load a
- * value on a miss, all in one place.
+ * Serves as the abstract base class for defining typed application caches.
+ * <p>
+ * <b>Package Requirement:</b> All implementations extending this class <b>MUST</b> be located
+ * within the package {@code com.freelance.cache.config} across any module.
+ * {@code CacheManager} scans this specific package at application startup to discover, instantiate,
+ * and register all cache definitions. Classes placed in any other package will not be discovered.
+ * </p>
  *
  * @param <K> the cache key type
  * @param <V> the cached value type
  */
 public abstract class AbstractCacheConfig<K extends Serializable, V extends Serializable> {
 
-    /**
-     * Cache name used by developers to call com.freelance.manager.CacheManager.get(name, key). Defaults to the class name.
-     */
     protected String name() {
         return getClass().getSimpleName();
     }
 
-    /**
-     * Time-to-live in seconds. Defaults to infinite (-1).
-     */
     protected long ttlSeconds() {
         return -1;
     }
 
-    /**
-     * Storage backend for this cache. Defaults to in-memory.
-     */
     protected CacheType type() {
         return CacheType.IN_MEMORY;
     }
 
     /**
-     * Computes the value for a given key on a cache miss or expiry.
-     * This is the only method every designer MUST implement.
+     * Loads the cache entry value synchronously when no entry is present for the specified key.
+     * <p>
+     * Invoked synchronously during a cache miss to retrieve the value from the underlying data source
+     * and populate the cache.
+     * </p>
+     *
+     * @param key the requested cache key; guaranteed non-null
+     * @return the loaded value to store in the cache, or {@code null} if no entry exists for the key
      */
     protected abstract V load(K key);
 

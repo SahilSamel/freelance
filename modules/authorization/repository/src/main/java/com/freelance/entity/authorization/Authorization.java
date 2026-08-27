@@ -4,8 +4,17 @@ import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
+@NamedQueries({
+        @NamedQuery(name = Authorization.QUERY_FIND_ALL, query = "SELECT a FROM Authorization a"),
+        @NamedQuery(name = Authorization.QUERY_FIND_ALL_KEYS, query = "SELECT a.key FROM Authorization a"),
+        @NamedQuery(name = Authorization.QUERY_FIND_BY_KEY, query = "SELECT a FROM Authorization a WHERE a.key = :key")
+})
 @Table(name = "FL_AUTHORIZATION", schema = "freelance")
 public class Authorization {
+
+    public static final String QUERY_FIND_ALL = "Authorization.findAll";
+    public static final String QUERY_FIND_ALL_KEYS = "Authorization.findAllKeys";
+    public static final String QUERY_FIND_BY_KEY = "Authorization.findByKey";
 
     @Id
     @Column(name = "id", nullable = false, updatable = false)
@@ -33,7 +42,6 @@ public class Authorization {
         this.groupPath = groupPath;
     }
 
-    // Getters and Setters
     public UUID getId() {
         return id;
     }

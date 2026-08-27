@@ -2,9 +2,17 @@ package com.freelance.system;
 
 import java.util.UUID;
 
+/**
+ * Declares system-wide immutable constants and well-known identifiers.
+ */
 public enum SystemHardcoding {
 
-    SYSTEM_USER_ID(UUID.fromString("00000000-0000-0000-0000-000000000000"));
+    /**
+     * Known UUID representing the automated system actor.
+     */
+    SYSTEM_USER_ID(UUID.fromString("00000000-0000-0000-0000-000000000000")),
+
+    ANONYMOUS_USER_ID(UUID.fromString("11111111-1111-1111-1111-111111111111"));
 
     private final Object value;
 
@@ -22,9 +30,5 @@ public enum SystemHardcoding {
 
     public String asString() {
         return String.valueOf(value);
-    }
-
-    public int asInt() {
-        return (Integer) value;
     }
 }

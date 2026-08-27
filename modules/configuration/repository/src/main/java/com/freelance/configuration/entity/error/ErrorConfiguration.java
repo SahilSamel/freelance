@@ -1,14 +1,26 @@
 package com.freelance.configuration.entity.error;
 
-import com.freelance.rest.app.repository.entity.AbstractEntity;
+import com.freelance.rest.app.repository.entity.AbstractAuditEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+
 @Entity
+@NamedQueries({
+        @NamedQuery(name = ErrorConfiguration.QUERY_FIND_ALL, query = "SELECT e FROM ErrorConfiguration e"),
+        @NamedQuery(name = ErrorConfiguration.QUERY_FIND_ALL_IDS, query = "SELECT e.errorId FROM ErrorConfiguration e"),
+        @NamedQuery(name = ErrorConfiguration.QUERY_DELETE_SYSTEM_OWNED, query = "DELETE FROM ErrorConfiguration e WHERE e.lastUpdatedBy IS NULL OR e.lastUpdatedBy = :systemUserId")
+})
 @Table(name = "FL_ERROR_MESSAGE")
-public class ErrorConfiguration extends AbstractEntity {
+public class ErrorConfiguration extends AbstractAuditEntity {
+
+    public static final String QUERY_FIND_ALL = "ErrorConfiguration.findAll";
+    public static final String QUERY_FIND_ALL_IDS = "ErrorConfiguration.findAllIds";
+    public static final String QUERY_DELETE_SYSTEM_OWNED = "ErrorConfiguration.deleteSystemOwned";
 
     @Id
     @Column(name = "error_id", nullable = false, length = 255)
@@ -33,7 +45,6 @@ public class ErrorConfiguration extends AbstractEntity {
         this.description = description;
     }
 
-    // Getters and Setters
     public String getErrorId() {
         return errorId;
     }

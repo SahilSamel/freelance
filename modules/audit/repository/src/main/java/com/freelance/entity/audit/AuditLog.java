@@ -1,6 +1,6 @@
 package com.freelance.entity.audit;
 
-import com.freelance.rest.app.repository.entity.AbstractEntity;
+import com.freelance.rest.app.repository.entity.AbstractAuditEntity;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "FL_AUDIT_LOG", schema = "freelance")
-public class AuditLog extends AbstractEntity {
+public class AuditLog extends AbstractAuditEntity {
 
     @Id
     @Column(name = "id", nullable = false, updatable = false)
@@ -76,6 +76,9 @@ public class AuditLog extends AbstractEntity {
         this.authMechanism = authMechanism;
     }
 
+    /**
+     * Assigns primary key UUID and timestamp if not already provided prior to insertion.
+     */
     @PrePersist
     protected void onPersistAudit() {
         if (this.id == null) {
@@ -85,8 +88,6 @@ public class AuditLog extends AbstractEntity {
             this.timestamp = Instant.now();
         }
     }
-
-    // --- Getters & Setters ---
 
     public UUID getId() {
         return id;

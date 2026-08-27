@@ -3,41 +3,26 @@ package com.freelance.rest.app.service.exception;
 import com.freelance.config.IError;
 
 /**
- * Base class for all application-specific runtime exceptions. Carries
- * the structured {@link IError} that caused the failure, so it can be
- * mapped to a proper HTTP response by the exception handler.
+ * Serves as the abstract base class for all application-specific runtime exceptions.
+ * <p>
+ * Binds an {@link IError} token to the runtime failure, allowing the JAX-RS
+ * exception mapping layer to resolve error indirection codes, localized messages,
+ * and HTTP response status codes.
+ * </p>
  */
 public abstract class BaseException extends RuntimeException {
     private final IError error;
 
-    /**
-     * Builds a default message from the keys's code.
-     *
-     * @param error the structured keys describing this failure
-     */
     protected BaseException(IError error) {
         super("Failure triggered for error key: " + (error != null ? error.getErrorKey() : "unknown"));
         this.error = error;
     }
 
-    /**
-     * Constructor with a diagnostic message for internal logging.
-     *
-     * @param error             the structured keys describing this failure
-     * @param diagnosticMessage a human-readable message for logs/diagnostics
-     */
     protected BaseException(IError error, String diagnosticMessage) {
         super(diagnosticMessage);
         this.error = error;
     }
 
-    /**
-     * Full constructor allowing a root cause.
-     *
-     * @param error             the structured keys describing this failure
-     * @param diagnosticMessage a human-readable message for logs/diagnostics
-     * @param cause             the underlying exception that triggered this failure
-     */
     protected BaseException(IError error, String diagnosticMessage, Throwable cause) {
         super(diagnosticMessage, cause);
         this.error = error;

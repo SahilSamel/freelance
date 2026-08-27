@@ -15,7 +15,7 @@ public class AuditLogAssembler {
                 request.timestamp(),
                 request.traceId(),
                 request.userId(),
-                request.tenantId(),
+                null,
                 request.httpMethod(),
                 request.endpoint(),
                 request.statusCode(),

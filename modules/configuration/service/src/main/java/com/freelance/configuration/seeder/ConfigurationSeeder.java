@@ -1,11 +1,11 @@
 package com.freelance.configuration.seeder;
 
 import com.freelance.config.IConfig;
+import com.freelance.config.IError;
 import com.freelance.configuration.entity.error.ErrorConfiguration;
 import com.freelance.configuration.entity.system.SystemConfiguration;
 import com.freelance.configuration.repository.error.ErrorConfigurationRepository;
 import com.freelance.configuration.repository.system.SystemConfigurationRepository;
-import com.freelance.config.IError;
 import com.freelance.system.SystemHardcoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +13,16 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Synchronizes code-defined IConfig and IError defaults into the database at boot.
- * Deletes all non-modified system-owned entries, then inserts code definitions if not already
- * preserved as an admin modification.
+ * Synchronizes code-defined {@link IConfig} and {@link IError} default constants into the database at application startup.
+ * <p>
+ * Performs full 2-way reconciliation:
+ * <ul>
+ *     <li>Inserts new system configurations and error messages.</li>
+ *     <li>Updates changed descriptions/metadata and default values for system-owned rows while preserving administrator custom values.</li>
+ *     <li>Deletes stale system-owned configurations and errors removed from code enums.</li>
+ *     <li>Bypasses database writes entirely if no changes are detected.</li>
+ * </ul>
+ * </p>
  */
 public class ConfigurationSeeder {
 
@@ -37,34 +44,87 @@ public class ConfigurationSeeder {
     public void seed() {
         UUID systemUserId = SystemHardcoding.SYSTEM_USER_ID.asUuid();
 
-        seedSystemConfigurations();
-        seedErrorConfigurations(systemUserId);
+        syncSystemConfigurations(systemUserId);
+        syncErrorConfigurations(systemUserId);
+
+        logger.info("[ConfigurationSeeder] Configuration database synchronization completed successfully.");
     }
 
-    private void seedSystemConfigurations() {
-        int deleted = systemConfigRepo.deleteSystemOwned();
-        logger.debug("[ConfigurationSeeder] Cleared {} unmodified system config rows.", deleted);
-
+    private void syncSystemConfigurations(UUID systemUserId) {
         List<IConfig> configs = ConfigurationRegistry.getAllConfigs();
-        Set<String> existingKeys = systemConfigRepo.findAllIds();
+        Map<String, SystemConfiguration> existingMap = systemConfigRepo.findAllEntitiesAsMap();
+        Set<String> codeKeys = new HashSet<>();
 
-        List<SystemConfiguration> toInsert = configs.stream()
-                .filter(c -> !existingKeys.contains(c.getKey()))
-                .map(c -> new SystemConfiguration(
-                        c.getKey(),
-                        c.getDefaultValue(),
-                        c.getDescription()
-                ))
-                .toList();
+        List<SystemConfiguration> toInsert = new ArrayList<>();
+        List<SystemConfiguration> toUpdate = new ArrayList<>();
 
-        systemConfigRepo.persistBatch(toInsert, BATCH_SIZE);
-        logger.debug("[ConfigurationSeeder] Seeded {} system config rows from code.", toInsert.size());
+        for (IConfig config : configs) {
+            String key = config.getKey();
+            codeKeys.add(key);
+            SystemConfiguration existing = existingMap.get(key);
+
+            if (existing == null) {
+                toInsert.add(new SystemConfiguration(
+                        key,
+                        config.getDefaultValue(),
+                        config.getDescription()
+                ));
+            } else {
+                boolean isSystemOwned = (existing.getLastUpdatedBy() == null || existing.getLastUpdatedBy().equals(systemUserId));
+                boolean changed = false;
+
+                if (isSystemOwned) {
+                    if (!Objects.equals(existing.getConfigValue(), config.getDefaultValue())) {
+                        existing.setConfigValue(config.getDefaultValue());
+                        changed = true;
+                    }
+                }
+
+                if (!Objects.equals(existing.getDescription(), config.getDescription())) {
+                    existing.setDescription(config.getDescription());
+                    changed = true;
+                }
+
+                if (changed) {
+                    toUpdate.add(existing);
+                }
+            }
+        }
+
+        List<SystemConfiguration> toDelete = new ArrayList<>();
+        for (Map.Entry<String, SystemConfiguration> entry : existingMap.entrySet()) {
+            if (!codeKeys.contains(entry.getKey())) {
+                SystemConfiguration entity = entry.getValue();
+                boolean isSystemOwned = (entity.getLastUpdatedBy() == null || entity.getLastUpdatedBy().equals(systemUserId));
+                if (isSystemOwned) {
+                    toDelete.add(entity);
+                }
+            }
+        }
+
+        if (!toInsert.isEmpty()) {
+            systemConfigRepo.persistEntriesInBatch(toInsert, BATCH_SIZE);
+            logger.info("[ConfigurationSeeder] Inserted {} new system config row(s).", toInsert.size());
+        }
+
+        if (!toUpdate.isEmpty()) {
+            systemConfigRepo.mergeEntriesInBatch(toUpdate, BATCH_SIZE);
+            logger.info("[ConfigurationSeeder] Updated {} system config row(s).", toUpdate.size());
+        }
+
+        if (!toDelete.isEmpty()) {
+            systemConfigRepo.removeEntriesInBatch(toDelete, BATCH_SIZE);
+            logger.info("[ConfigurationSeeder] Removed {} stale system config row(s) no longer in code.", toDelete.size());
+        }
+
+        if (toInsert.isEmpty() && toUpdate.isEmpty() && toDelete.isEmpty()) {
+            logger.debug("[ConfigurationSeeder] System configurations are up to date. 0 DB modifications required.");
+        }
     }
 
-    private void seedErrorConfigurations(UUID systemUserId) {
+    private void syncErrorConfigurations(UUID systemUserId) {
         List<IError> errors = ConfigurationRegistry.getAllErrors();
 
-        // Validate uniqueness of error indirection codes across the codebase
         Map<String, IError> seenCodes = new HashMap<>();
         for (IError error : errors) {
             String code = error.getIndirectionCode();
@@ -80,22 +140,78 @@ public class ConfigurationSeeder {
             }
         }
 
-        int deleted = errorConfigRepo.deleteSystemOwned(systemUserId);
-        logger.debug("[ConfigurationSeeder] Cleared {} unmodified error message rows.", deleted);
+        Map<String, ErrorConfiguration> existingMap = errorConfigRepo.findAllEntitiesAsMap();
+        Set<String> codeKeys = new HashSet<>();
 
-        Set<String> existingKeys = errorConfigRepo.findAllIds();
+        List<ErrorConfiguration> toInsert = new ArrayList<>();
+        List<ErrorConfiguration> toUpdate = new ArrayList<>();
 
-        List<ErrorConfiguration> toInsert = errors.stream()
-                .filter(e -> !existingKeys.contains(e.getErrorKey()))
-                .map(e -> new ErrorConfiguration(
-                        e.getErrorKey(),
-                        e.getDefaultStatusCode(),
-                        e.getDefaultMessage(),
-                        e.getDescription()
-                ))
-                .toList();
+        for (IError error : errors) {
+            String key = error.getErrorKey();
+            codeKeys.add(key);
+            ErrorConfiguration existing = existingMap.get(key);
 
-        errorConfigRepo.persistBatch(toInsert, BATCH_SIZE);
-        logger.debug("[ConfigurationSeeder] Seeded {} error message rows from code.", toInsert.size());
+            if (existing == null) {
+                toInsert.add(new ErrorConfiguration(
+                        key,
+                        error.getDefaultStatusCode(),
+                        error.getDefaultMessage(),
+                        error.getDescription()
+                ));
+            } else {
+                boolean isSystemOwned = (existing.getLastUpdatedBy() == null || existing.getLastUpdatedBy().equals(systemUserId));
+                boolean changed = false;
+
+                if (isSystemOwned) {
+                    if (existing.getStatusCode() != error.getDefaultStatusCode()) {
+                        existing.setStatusCode(error.getDefaultStatusCode());
+                        changed = true;
+                    }
+                    if (!Objects.equals(existing.getErrorMessage(), error.getDefaultMessage())) {
+                        existing.setErrorMessage(error.getDefaultMessage());
+                        changed = true;
+                    }
+                }
+
+                if (!Objects.equals(existing.getDescription(), error.getDescription())) {
+                    existing.setDescription(error.getDescription());
+                    changed = true;
+                }
+
+                if (changed) {
+                    toUpdate.add(existing);
+                }
+            }
+        }
+
+        List<ErrorConfiguration> toDelete = new ArrayList<>();
+        for (Map.Entry<String, ErrorConfiguration> entry : existingMap.entrySet()) {
+            if (!codeKeys.contains(entry.getKey())) {
+                ErrorConfiguration entity = entry.getValue();
+                boolean isSystemOwned = (entity.getLastUpdatedBy() == null || entity.getLastUpdatedBy().equals(systemUserId));
+                if (isSystemOwned) {
+                    toDelete.add(entity);
+                }
+            }
+        }
+
+        if (!toInsert.isEmpty()) {
+            errorConfigRepo.persistEntriesInBatch(toInsert, BATCH_SIZE);
+            logger.info("[ConfigurationSeeder] Inserted {} new error configuration row(s).", toInsert.size());
+        }
+
+        if (!toUpdate.isEmpty()) {
+            errorConfigRepo.mergeEntriesInBatch(toUpdate, BATCH_SIZE);
+            logger.info("[ConfigurationSeeder] Updated {} error configuration row(s).", toUpdate.size());
+        }
+
+        if (!toDelete.isEmpty()) {
+            errorConfigRepo.removeEntriesInBatch(toDelete, BATCH_SIZE);
+            logger.info("[ConfigurationSeeder] Removed {} stale error configuration row(s) no longer in code.", toDelete.size());
+        }
+
+        if (toInsert.isEmpty() && toUpdate.isEmpty() && toDelete.isEmpty()) {
+            logger.debug("[ConfigurationSeeder] Error configurations are up to date. 0 DB modifications required.");
+        }
     }
 }

@@ -94,7 +94,7 @@ public class Session {
                 long newExpiresAt = getExpiryMillis();
 
                 synchronized (keys) {
-                    keys.remove(request.sessionKey());  // old key is dead immediately
+                    keys.remove(request.sessionKey());
                     keys.put(newSessionKey, newExpiresAt);
                 }
 

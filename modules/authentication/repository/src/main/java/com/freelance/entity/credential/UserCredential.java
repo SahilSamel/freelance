@@ -1,13 +1,13 @@
 package com.freelance.entity.credential;
 
-import com.freelance.rest.app.repository.entity.AbstractEntity;
+import com.freelance.rest.app.repository.entity.AbstractAuditEntity;
 import jakarta.persistence.*;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "FL_USER_CREDENTIALS", schema = "freelance")
-public class UserCredential extends AbstractEntity {
+public class UserCredential extends AbstractAuditEntity {
 
     @Id
     @Column(name = "id", updatable = false, nullable = false)
@@ -16,8 +16,6 @@ public class UserCredential extends AbstractEntity {
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
-    // ─── CONSTRUCTORS ────────────────────────────────────────────────────────
-
     public UserCredential() {
     }
 
@@ -25,16 +23,15 @@ public class UserCredential extends AbstractEntity {
         this.password = password;
     }
 
-    // ─── LIFECYCLE HOOKS ─────────────────────────────────────────────────────
-
+    /**
+     * Generates a primary key UUID prior to entity insertion if unassigned.
+     */
     @PrePersist
     protected void onCreateCredential() {
         if (this.id == null) {
             this.id = UUID.randomUUID();
         }
     }
-
-    // ─── GETTERS AND SETTERS ─────────────────────────────────────────────────
 
     public UUID getId() {
         return id;

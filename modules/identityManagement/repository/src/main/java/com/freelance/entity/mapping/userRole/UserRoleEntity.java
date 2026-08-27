@@ -1,6 +1,6 @@
 package com.freelance.entity.mapping.userRole;
 
-import com.freelance.rest.app.repository.entity.AbstractEntity;
+import com.freelance.rest.app.repository.entity.AbstractAuditEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -14,7 +14,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "user_role", schema = "freelance")
 @IdClass(UserRoleEntity.Pk.class)
-public class UserRoleEntity extends AbstractEntity {
+public class UserRoleEntity extends AbstractAuditEntity {
 
     @Id
     @Column(name = "user_id", nullable = false)
@@ -33,12 +33,13 @@ public class UserRoleEntity extends AbstractEntity {
     }
 
     public UUID getUserId() { return userId; }
+
     public void setUserId(UUID userId) { this.userId = userId; }
 
     public UUID getRoleId() { return roleId; }
+
     public void setRoleId(UUID roleId) { this.roleId = roleId; }
 
-    // Inner class representing the Composite Primary Key
     public static class Pk implements Serializable {
         private UUID userId;
         private UUID roleId;

@@ -12,24 +12,16 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Generic base repository providing common CRUD and query operations
- * for a given entity type, backed by the active transaction's
- * {@link EntityManager}.
+ * Generic base repository providing standardized CRUD and query operations
+ * for JPA entities, backed by the current transaction's {@link EntityManager}.
  *
  * @param <T>  the entity type
- * @param <ID> the entity's primary key type
+ * @param <ID> the primary key identifier type
  */
 public abstract class AbstractRepository<T, ID> {
 
-    /**
-     * Runtime class of the entity, resolved via reflection for use with JPA.
-     */
     protected final Class<T> entityClass;
 
-    /**
-     * Resolves the concrete entity type from the generic type parameter
-     * of the subclass (e.g. {@code class UserRepository extends AbstractRepository<User, Long>}).
-     */
     @SuppressWarnings("unchecked")
     protected AbstractRepository() {
         Class<?> current = getClass();
@@ -55,28 +47,44 @@ public abstract class AbstractRepository<T, ID> {
         return Transaction.peek().getEntityManager();
     }
 
-    /**
-     * Finds an entity by its primary key.
-     *
-     * @param id the primary key; if null, no lookup is performed
-     * @return the matching entity, or null if not found (or if id was null)
-     */
     public T get(ID id) {
         return id == null ? null : em().find(entityClass, id);
     }
 
-    /**
-     * Persists a new entity into the active persistence context.
-     */
     public void persist(T entity) {
         em().persist(entity);
     }
 
-    public void persistBatch(List<T> entities, int batchSize) {
+    public T merge(T entity) {
+        return em().merge(entity);
+    }
+
+    public void remove(T entity) {
+        if (entity != null) {
+            EntityManager em = em();
+            em.remove(em.contains(entity) ? entity : em.merge(entity));
+        }
+    }
+
+    /**
+     * Persists a collection of entities in batches, periodically flushing and clearing the persistence context.
+     *
+     * @param entities  the list of entity instances to persist
+     * @param batchSize optional custom batch size for periodic flush and clear cycles (defaults to 50 if omitted)
+     */
+    public void persistEntriesInBatch(List<T> entities, int... batchSize) {
+        if (entities == null || entities.isEmpty()) {
+            return;
+        }
+
+        int effectiveBatchSize = (batchSize != null && batchSize.length > 0 && batchSize[0] > 0)
+                ? batchSize[0]
+                : 50;
+
         EntityManager em = em();
         for (int i = 0; i < entities.size(); i++) {
             em.persist(entities.get(i));
-            if ((i + 1) % batchSize == 0) {
+            if ((i + 1) % effectiveBatchSize == 0) {
                 em.flush();
                 em.clear();
             }
@@ -86,33 +94,86 @@ public abstract class AbstractRepository<T, ID> {
     }
 
     /**
-     * Merges changes made to a detached entity back into the current
-     * persistence context.
+     * Merges a collection of entities in batches, periodically flushing and clearing the persistence context.
      *
-     * @return the managed entity instance reflecting the merge
+     * @param entities  the list of entity instances to merge
+     * @param batchSize optional custom batch size for periodic flush and clear cycles (defaults to 50 if omitted)
+     * @return list of managed merged entity instances
      */
-    public T merge(T entity) {
-        return em().merge(entity);
-    }
-
-    /**
-     * Deletes the given entity, merging it into the persistence context
-     * first if it isn't already managed.
-     */
-    public void remove(T entity) {
-        if (entity != null) {
-            EntityManager em = em();
-            em.remove(em.contains(entity) ? entity : em.merge(entity));
+    public List<T> mergeEntriesInBatch(List<T> entities, int... batchSize) {
+        if (entities == null || entities.isEmpty()) {
+            return java.util.Collections.emptyList();
         }
+
+        int effectiveBatchSize = (batchSize != null && batchSize.length > 0 && batchSize[0] > 0)
+                ? batchSize[0]
+                : 50;
+
+        EntityManager em = em();
+        List<T> mergedList = new java.util.ArrayList<>(entities.size());
+
+        for (int i = 0; i < entities.size(); i++) {
+            T entity = entities.get(i);
+            if (entity != null) {
+                mergedList.add(em.merge(entity));
+            }
+            if ((i + 1) % effectiveBatchSize == 0) {
+                em.flush();
+                em.clear();
+            }
+        }
+        em.flush();
+        em.clear();
+        return mergedList;
     }
 
     /**
-     * Executes a named query with the given parameters and returns an Optional containing
-     * the single result, or an empty Optional if no match is found.
+     * Removes a collection of entities in batches, periodically flushing and clearing the persistence context.
      *
-     * @param queryName the named query identifier (e.g. "User.findByUsername")
-     * @param params    parameter name/value pairs to bind, or null if none are needed
-     * @return an Optional containing the matching entity, or empty if not found
+     * @param entities  the list of entity instances to remove
+     * @param batchSize optional custom batch size for periodic flush and clear cycles (defaults to 50 if omitted)
+     */
+    public void removeEntriesInBatch(List<T> entities, int... batchSize) {
+        if (entities == null || entities.isEmpty()) {
+            return;
+        }
+
+        int effectiveBatchSize = (batchSize != null && batchSize.length > 0 && batchSize[0] > 0)
+                ? batchSize[0]
+                : 50;
+
+        EntityManager em = em();
+        for (int i = 0; i < entities.size(); i++) {
+            T entity = entities.get(i);
+            if (entity != null) {
+                em.remove(em.contains(entity) ? entity : em.merge(entity));
+            }
+            if ((i + 1) % effectiveBatchSize == 0) {
+                em.flush();
+                em.clear();
+            }
+        }
+        em.flush();
+        em.clear();
+    }
+
+    /**
+     * Executes a registered JPA {@link jakarta.persistence.NamedQuery} that expects at most a single result.
+     * <p>
+     * <b>Usage Guidelines:</b>
+     * <ul>
+     *   <li>{@code queryName} must be the exact identifier of a {@code @NamedQuery} declared on the entity class
+     *       (e.g., {@code "User.findByUsername"}), <b>not</b> raw JPQL/SQL query strings.</li>
+     *   <li>{@code params} binds named parameters defined in the query (e.g., a query containing {@code :username}
+     *       is mapped with key {@code "username"}). Pass {@code null} or an empty map if no parameters are needed.</li>
+     * </ul>
+     * </p>
+     *
+     * @param queryName the exact registered {@code @NamedQuery} name (e.g., {@code "User.findByUsername"})
+     * @param params    map of parameter names (without the leading colon) to parameter values; may be {@code null}
+     * @return an {@link Optional} containing the matched entity, or {@link Optional#empty()} if no row was found
+     * @throws jakarta.persistence.NonUniqueResultException if more than one matching entity is found
+     * @throws IllegalArgumentException                    if no named query is registered under {@code queryName}
      */
     protected Optional<T> executeSingleResultSearch(String queryName, Map<String, Object> params) {
         try {
@@ -126,4 +187,27 @@ public abstract class AbstractRepository<T, ID> {
         }
     }
 
+    protected List<T> executeListResultSearch(String queryName, Map<String, Object> params) {
+        TypedQuery<T> query = em().createNamedQuery(queryName, entityClass);
+        if (params != null) {
+            params.forEach(query::setParameter);
+        }
+        return query.getResultList();
+    }
+
+    protected <R> List<R> executeTypedListQuery(String queryName, Class<R> resultClass, Map<String, Object> params) {
+        TypedQuery<R> query = em().createNamedQuery(queryName, resultClass);
+        if (params != null) {
+            params.forEach(query::setParameter);
+        }
+        return query.getResultList();
+    }
+
+    protected int executeUpdateQuery(String queryName, Map<String, Object> params) {
+        var query = em().createNamedQuery(queryName);
+        if (params != null) {
+            params.forEach(query::setParameter);
+        }
+        return query.executeUpdate();
+    }
 }

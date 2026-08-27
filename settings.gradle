@@ -12,7 +12,6 @@ include 'Common:error'
 include 'Framework:configuration'
 include 'Common:config'
 include 'Framework:jaxrs'
-include 'Framework:jobs'
 
 // Feature Modules (Grouped under the 'modules' directory)
 include 'modules:authentication'

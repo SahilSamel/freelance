@@ -11,7 +11,6 @@ import com.freelance.rest.app.transaction.Transaction;
 import java.util.Set;
 import java.util.UUID;
 
-
 public class VerifyConstraint extends AbstractConstraint {
 
     public void checkConstraints(){
@@ -21,11 +20,10 @@ public class VerifyConstraint extends AbstractConstraint {
         Set<String> authorizedKeysForRole;
         for(UUID roleId : rolesAssignedToUser.roleIds()){
             authorizedKeysForRole = CacheManager.getInstance().get(RoleAuthorizationKeyCacheConfig.NAME, roleId.toString());
-            if(authorizedKeysForRole.contains(Transaction.getRequestContext().authorizationKey())){
+            if(authorizedKeysForRole != null && authorizedKeysForRole.contains(Transaction.getRequestContext().authorizationKey())){
                 return;
             }
         }
         raiseConstraintError(ConstraintErrors.UNAUTHORIZED);
     }
-
 }

@@ -1,12 +1,12 @@
 package com.freelance.keys.identityManagement;
 
-import com.freelance.config.IBadRequestError;
+import com.freelance.config.IError;
 
 /**
  * Enumerates client-facing constraint violation errors for the identity
  * management domain (e.g. duplicate users, weak passwords).
  */
-public enum ConstraintErrors implements IBadRequestError {
+public enum ConstraintErrors implements IError {
 
     USER_ALREADY_EXISTS(
             "FL_3101",

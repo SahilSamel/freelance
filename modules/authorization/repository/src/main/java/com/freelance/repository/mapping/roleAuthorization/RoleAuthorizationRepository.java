@@ -4,25 +4,13 @@ import com.freelance.entity.mapping.roleAuthorization.RoleAuthorization;
 import com.freelance.entity.mapping.roleAuthorization.RoleAuthorizationKey;
 import com.freelance.rest.app.repository.AbstractRepository;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class RoleAuthorizationRepository extends AbstractRepository<RoleAuthorization, RoleAuthorizationKey> {
 
     public Map<UUID, List<RoleAuthorization>> getAllMappingsGroupedByRoleId() {
-        String jpql =
-            """
-            SELECT ra 
-            FROM RoleAuthorization ra 
-            JOIN FETCH ra.authorization
-            JOIN FETCH ra.role
-            """;
-
-        return em().createQuery(jpql, RoleAuthorization.class)
-                .getResultList()
+        return executeListResultSearch(RoleAuthorization.QUERY_FIND_ALL_WITH_DETAILS, null)
                 .stream()
                 .collect(Collectors.groupingBy(ra -> ra.getId().getRoleId()));
     }
@@ -31,16 +19,19 @@ public class RoleAuthorizationRepository extends AbstractRepository<RoleAuthoriz
         if (roleId == null) {
             return Collections.emptyList();
         }
+        return executeListResultSearch(RoleAuthorization.QUERY_FIND_BY_ROLE_ID, Map.of("roleId", roleId));
+    }
 
-        String jpql =
-                """
-                SELECT ra 
-                FROM RoleAuthorization ra 
-                WHERE ra.id.roleId = :roleId
-                """;
+    public int deleteBySystemRoles() {
+        return executeUpdateQuery(RoleAuthorization.QUERY_DELETE_BY_SYSTEM_ROLES, null);
+    }
 
-        return em().createQuery(jpql, RoleAuthorization.class)
-                .setParameter("roleId", roleId)
-                .getResultList();
+    public Map<RoleAuthorizationKey, RoleAuthorization> findAllSystemRoleMappings() {
+        List<RoleAuthorization> list = executeListResultSearch(RoleAuthorization.QUERY_FIND_ALL_SYSTEM_ROLE_MAPPINGS, null);
+        Map<RoleAuthorizationKey, RoleAuthorization> map = new HashMap<>();
+        for (RoleAuthorization ra : list) {
+            map.put(ra.getId(), ra);
+        }
+        return map;
     }
 }

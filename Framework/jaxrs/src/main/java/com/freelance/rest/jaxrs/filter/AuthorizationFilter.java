@@ -14,8 +14,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Global JAX-RS filter that intercepts all API requests to ensure the authenticated user
- * is authorized to access the endpoint.
+ * Global JAX-RS request filter enforcing Role-Based Access Control (RBAC) authorization.
+ * <p>
+ * Configured with {@code @Priority(4)} because it requires the caller's identity to have already been
+ * authenticated and resolved in the request context. For endpoints marked {@link Anonymous}, no authorization
+ * checks are required and the request is permitted through. Consequently, all endpoints must be annotated with
+ * either {@link Anonymous} or {@link Authorization}, or authorization verification will fail.
+ * </p>
  */
 @Provider
 @Priority(4)

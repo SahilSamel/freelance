@@ -10,8 +10,6 @@ repositories {
 }
 
 dependencies {
-    compileOnly project(':Framework:jobs')
-    annotationProcessor project(':Framework:jobs')
 }
 
 test {

@@ -4,9 +4,6 @@ import com.freelance.config.AbstractCacheConfig;
 import com.freelance.configuration.dto.ErrorConfigEntry;
 import com.freelance.configuration.error.ErrorConfigurationService;
 
-/**
- * Backs ConfigurationEngine's keys code and message lookups.
- */
 public class ErrorMessageCache extends AbstractCacheConfig<String, ErrorConfigEntry> {
 
     public static final String NAME = "cache_ErrorMessage";

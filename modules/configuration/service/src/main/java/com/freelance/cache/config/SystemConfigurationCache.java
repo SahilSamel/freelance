@@ -3,11 +3,6 @@ package com.freelance.cache.config;
 import com.freelance.config.AbstractCacheConfig;
 import com.freelance.configuration.system.SystemConfigurationService;
 
-/**
- * Backs ConfigurationEngine's application property lookups. The actual
- * DB read lives in ConfigurationEngine; this class only wires that
- * lookup into the cache.
- */
 public class SystemConfigurationCache extends AbstractCacheConfig<String, String> {
 
     public static final String NAME = "cache_SystemConfig";

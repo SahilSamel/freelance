@@ -13,7 +13,9 @@ public class RoleAuthorizationKeyCacheEntry implements Serializable {
     public RoleAuthorizationKeyCacheEntry(){}
 
     public RoleAuthorizationKeyCacheEntry(Set<UUID> authorizationKeys){
-        this.authorizationKeys.addAll(authorizationKeys);
+        if (authorizationKeys != null) {
+            this.authorizationKeys.addAll(authorizationKeys);
+        }
     }
 
     public Set<UUID> getAuthorizationKeys() {

@@ -1,6 +1,6 @@
 package com.freelance.rest.app.transaction.context;
 
-import com.freelance.config.IBadRequestError;
+import com.freelance.config.IError;
 import com.freelance.rest.context.RequestContext;
 import jakarta.persistence.EntityManager;
 
@@ -10,26 +10,20 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Holds per-transaction state: the bound {@link EntityManager}, any
- * accumulated field validation errors, request context (logged-in user ID),
- * and whether the transaction has been flagged for rollback.
+ * Holds transactional and contextual data for incoming API requests.
+ * <p>
+ * This class is designed to be encapsulated by a wrapper, storing any state and data that must
+ * be maintained throughout request processing.
+ * </p>
  */
 public class TransactionContext {
 
-    /**
-     * The EntityManager bound to this transaction.
-     */
     private final EntityManager entityManager;
 
-    /**
-     * Per-request contextual information (e.g., authenticated user ID).
-     */
     private RequestContext requestContext = RequestContext.empty();
 
-    /** Accumulated validation errors, keyed by field name. */
-    private final Map<String, List<IBadRequestError>> validationErrors = new ConcurrentHashMap<>();
+    private final Map<String, List<IError>> validationErrors = new ConcurrentHashMap<>();
 
-    /** Whether this transaction has been flagged to roll back rather than commit. */
     private boolean rollbackOnly = false;
 
     public TransactionContext(EntityManager entityManager) {
@@ -55,34 +49,23 @@ public class TransactionContext {
         this.requestContext = requestContext != null ? requestContext : RequestContext.empty();
     }
 
-    public Map<String, List<IBadRequestError>> getValidationErrors() {
+    public Map<String, List<IError>> getValidationErrors() {
         return this.validationErrors;
     }
 
-    // --- State Mutators ---
-
-    /**
-     * Records a validation error against a specific field.
-     */
-    public void addValidationError(String fieldName, IBadRequestError error) {
+    public void addValidationError(String fieldName, IError error) {
         if (fieldName != null && error != null) {
             this.validationErrors.computeIfAbsent(fieldName, k -> new ArrayList<>()).add(error);
         }
     }
 
     /**
-     * Explicitly flags the transaction for rollback.
+     * Flags this transaction to roll back rather than commit when completed.
      */
     public void markRollbackOnly() {
         this.rollbackOnly = true;
     }
 
-    // --- Evaluation ---
-
-    /**
-     * Checks whether the transaction has no validation errors and has
-     * not been flagged for rollback.
-     */
     public boolean isClean() {
         return validationErrors.isEmpty() && !rollbackOnly;
     }

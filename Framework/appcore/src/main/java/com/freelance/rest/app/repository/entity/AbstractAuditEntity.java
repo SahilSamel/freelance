@@ -9,8 +9,13 @@ import jakarta.persistence.PreUpdate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * To be extended by entities containing the four audit metadata fields ({@code createdBy},
+ * {@code createdDate}, {@code lastUpdatedBy}, {@code lastUpdatedDate}) for automatic handling
+ * and population of their data.
+ */
 @MappedSuperclass
-public abstract class AbstractEntity {
+public abstract class AbstractAuditEntity {
 
     @Column(name = "created_by", nullable = false, updatable = false)
     private UUID createdBy;
@@ -41,7 +46,6 @@ public abstract class AbstractEntity {
         this.lastUpdatedBy = Transaction.getRequestContext().userId();
     }
 
-    // Getters and Setters
     public UUID getCreatedBy() {
         return createdBy;
     }

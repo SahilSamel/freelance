@@ -6,8 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a JAX-RS endpoint or resource class as anonymous, meaning it can be
- * accessed without a valid authentication token.
+ * Signals that an annotated JAX-RS resource method is meant to be access via public facing APIs without any
+ * security restrictions.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
