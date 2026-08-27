@@ -20,8 +20,12 @@ public final class ConfigurationEngine {
 
     public static String get(IConfig config) {
         if (config == null) return null;
-        String value = CacheManager.getInstance().get("cache_SystemConfig", config.getKey());
-        return (value != null && !value.isBlank()) ? value : config.getDefaultValue();
+        try {
+            String value = CacheManager.getInstance().get("cache_SystemConfig", config.getKey());
+            return (value != null && !value.isBlank()) ? value : config.getDefaultValue();
+        } catch (IllegalStateException e) {
+            return config.getDefaultValue();
+        }
     }
 
     public static int getInt(IConfig config) {
@@ -49,18 +53,26 @@ public final class ConfigurationEngine {
 
     public static int getStatusCode(IError error) {
         if (error == null) return 500;
-        ErrorConfigEntry entry = CacheManager.getInstance().get("cache_ErrorMessage", error.getErrorKey());
-        return (entry != null && entry.statusCode() > 0)
-                ? entry.statusCode()
-                : error.getDefaultStatusCode();
+        try {
+            ErrorConfigEntry entry = CacheManager.getInstance().get("cache_ErrorMessage", error.getErrorKey());
+            return (entry != null && entry.statusCode() > 0)
+                    ? entry.statusCode()
+                    : error.getDefaultStatusCode();
+        } catch (IllegalStateException e) {
+            return error.getDefaultStatusCode();
+        }
     }
 
     public static String getErrorMessage(IError error) {
         if (error == null) return null;
-        ErrorConfigEntry entry = CacheManager.getInstance().get("cache_ErrorMessage", error.getErrorKey());
-        return (entry != null && entry.errorMessage() != null && !entry.errorMessage().isBlank())
-                ? entry.errorMessage()
-                : error.getDefaultMessage();
+        try {
+            ErrorConfigEntry entry = CacheManager.getInstance().get("cache_ErrorMessage", error.getErrorKey());
+            return (entry != null && entry.errorMessage() != null && !entry.errorMessage().isBlank())
+                    ? entry.errorMessage()
+                    : error.getDefaultMessage();
+        } catch (IllegalStateException e) {
+            return error.getDefaultMessage();
+        }
     }
 
     public static void invalidateConfig(IConfig config) {
