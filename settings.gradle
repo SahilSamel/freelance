@@ -40,6 +40,7 @@ include 'modules:configuration:repository'
 
 include 'modules:audit'
 include 'modules:audit:dto'
+include 'modules:audit:endpoint'
 include 'modules:audit:service'
 include 'modules:audit:repository'
 
@@ -65,7 +66,9 @@ project(':modules:configuration:endpoint').name = 'configuration-endpoint'
 project(':modules:configuration:repository').name = 'configuration-repository'
 
 project(':modules:audit:dto').name = 'audit-dto'
+project(':modules:audit:endpoint').name = 'audit-endpoint'
 project(':modules:audit:service').name = 'audit-service'
 project(':modules:audit:repository').name = 'audit-repository'
 
 include 'Common:enum'
+include 'testing'

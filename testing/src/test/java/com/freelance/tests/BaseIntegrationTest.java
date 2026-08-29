@@ -55,4 +55,11 @@ public abstract class BaseIntegrationTest {
                 .jsonPath()
                 .getString("token");
     }
+
+    /**
+     * Convenience: logs in as the pre-seeded superadmin user.
+     */
+    protected String loginAsSuperAdmin() {
+        return loginAndGetToken("superadmin", "Welcome@1");
+    }
 }

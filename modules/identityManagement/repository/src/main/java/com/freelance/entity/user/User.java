@@ -1,6 +1,5 @@
 package com.freelance.entity.user;
 
-import com.freelance.entity.credential.UserCredential;
 import com.freelance.rest.app.repository.entity.AbstractAuditEntity;
 import jakarta.persistence.*;
 
@@ -8,36 +7,39 @@ import java.util.UUID;
 
 @Entity
 @NamedQueries({
-        @NamedQuery(name = User.QUERY_FIND_BY_USERNAME, query = "SELECT u FROM User u WHERE u.username = :username")
+        @NamedQuery(name = User.QUERY_FIND_BY_USERNAME, query = "SELECT u FROM User u WHERE u.username = :username"),
+        @NamedQuery(name = User.QUERY_FIND_BY_ID, query = "SELECT u FROM User u WHERE u.id = :id"),
+        @NamedQuery(name = User.QUERY_COUNT_BY_USERNAME, query = "SELECT COUNT(u) FROM User u WHERE u.username = :username")
 })
 @Table(name = "FL_USERS", schema = "freelance")
 public class User extends AbstractAuditEntity {
 
     public static final String QUERY_FIND_BY_USERNAME = "User.findByUsername";
+    public static final String QUERY_FIND_BY_ID = "User.findById";
+    public static final String QUERY_COUNT_BY_USERNAME = "User.countByUsername";
 
     @Id
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "username", nullable = false, unique = true)
+    @Column(name = "username", nullable = false, unique = true, length = 255)
     private String username;
 
-    @Column(name = "email", nullable = false, unique = true, length = 255)
-    private String email;
-
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JoinColumn(
-            name = "user_credentials_id",
-            referencedColumnName = "id",
-            foreignKey = @ForeignKey(name = "fk_fl_users_credentials")
-    )
-    private UserCredential userCredential;
+    @Column(name = "password", nullable = false, length = 255)
+    private String password;
 
     public User() {
     }
 
-    public User(String email) {
-        this.email = email;
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
+    public User(UUID id, String username, String password) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
     }
 
     @PrePersist
@@ -63,23 +65,11 @@ public class User extends AbstractAuditEntity {
         this.username = username;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public UserCredential getUserCredential() {
-        return userCredential;
-    }
-
-    public void setUserCredential(UserCredential userCredential) {
-        this.userCredential = userCredential;
-    }
-
     public String getPassword() {
-        return this.userCredential != null ? this.userCredential.getPassword() : null;
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

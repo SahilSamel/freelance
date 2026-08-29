@@ -48,29 +48,31 @@ class TokenUtilityTest {
     }
 
     @Test
-    @DisplayName("generateToken throws IllegalStateException when JWT secret is the default placeholder value")
-    void generateToken_throwsWhenSecretIsDefault() {
-        TokenGenerateRequestDTO request = new TokenGenerateRequestDTO(UUID.randomUUID(), "sample-session-key");
+    @DisplayName("generateToken and parse succeed with default secret")
+    void generateAndParse_succeedWithDefaultSecret() {
+        UUID userId = UUID.randomUUID();
+        String sessionKey = "sample-session-key";
+        TokenGenerateRequestDTO request = new TokenGenerateRequestDTO(userId, sessionKey);
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                () -> tokenUtility.generateToken(request)
-        );
+        TokenGenerateResponseDTO generateResponse = tokenUtility.generateToken(request);
+        assertNotNull(generateResponse);
+        assertNotNull(generateResponse.token());
 
-        assertTrue(exception.getMessage().contains("FATAL: JWT signing secret cannot be the default placeholder value"));
+        TokenParseResponseDTO parseResponse = tokenUtility.parse(new TokenParseRequestDTO(generateResponse.token()));
+        assertNotNull(parseResponse);
+        assertEquals(userId, parseResponse.userId());
+        assertEquals(sessionKey, parseResponse.sessionKey());
     }
 
     @Test
-    @DisplayName("parse throws IllegalStateException when JWT secret is the default placeholder value")
-    void parse_throwsWhenSecretIsDefault() {
-        TokenParseRequestDTO request = new TokenParseRequestDTO("some.jwt.token");
+    @DisplayName("parse throws ConstraintException when token is malformed")
+    void parse_throwsWhenTokenIsMalformed() {
+        TokenParseRequestDTO request = new TokenParseRequestDTO("some.invalid.jwt.token");
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
+        assertThrows(
+                com.freelance.rest.app.service.exception.constraint.ConstraintException.class,
                 () -> tokenUtility.parse(request)
         );
-
-        assertTrue(exception.getMessage().contains("FATAL: JWT signing secret cannot be the default placeholder value"));
     }
 
     @Test

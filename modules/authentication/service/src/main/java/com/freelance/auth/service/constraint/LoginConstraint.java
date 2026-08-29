@@ -2,7 +2,7 @@ package com.freelance.auth.service.constraint;
 
 import com.freelance.auth.dto.AuthLoginRequestDTO;
 import com.freelance.keys.authentication.ConstraintErrors;
-import com.freelance.auth.service.utility.password.HashUtility;
+import com.freelance.utility.password.HashUtility;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 import com.freelance.user.read.User;
 import com.freelance.user.read.UserReadRequestDTO;

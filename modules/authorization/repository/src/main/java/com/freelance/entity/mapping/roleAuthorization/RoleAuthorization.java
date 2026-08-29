@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
         ),
         @NamedQuery(
                 name = RoleAuthorization.QUERY_FIND_BY_ROLE_ID,
-                query = "SELECT ra FROM RoleAuthorization ra WHERE ra.id.roleId = :roleId"
+                query = "SELECT ra FROM RoleAuthorization ra JOIN FETCH ra.authorization JOIN FETCH ra.role WHERE ra.id.roleId = :roleId"
         ),
         @NamedQuery(
                 name = RoleAuthorization.QUERY_FIND_ALL_SYSTEM_ROLE_MAPPINGS,

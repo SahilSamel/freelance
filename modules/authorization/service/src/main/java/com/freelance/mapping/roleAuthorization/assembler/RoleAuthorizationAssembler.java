@@ -17,11 +17,11 @@ public class RoleAuthorizationAssembler {
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         entry -> {
-                            Set<UUID> authIds = entry.getValue().stream()
-                                    .map(ra -> ra.getId().getAuthorizationId())
+                            Set<String> authKeys = entry.getValue().stream()
+                                    .map(ra -> ra.getAuthorization() != null ? ra.getAuthorization().getKey() : null)
                                     .filter(Objects::nonNull)
                                     .collect(Collectors.toSet());
-                            return new RoleAuthorizationKeyCacheEntry(authIds);
+                            return new RoleAuthorizationKeyCacheEntry(authKeys);
                         }
                 ));
     }
@@ -31,11 +31,11 @@ public class RoleAuthorizationAssembler {
             return new RoleAuthorizationKeyCacheEntry();
         }
 
-        Set<UUID> authIds = roleAuthorizations.stream()
-                .map(ra -> ra.getId().getAuthorizationId())
+        Set<String> authKeys = roleAuthorizations.stream()
+                .map(ra -> ra.getAuthorization() != null ? ra.getAuthorization().getKey() : null)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        return new RoleAuthorizationKeyCacheEntry(authIds);
+        return new RoleAuthorizationKeyCacheEntry(authKeys);
     }
 }

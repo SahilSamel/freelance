@@ -34,4 +34,10 @@ public class RoleAuthorizationRepository extends AbstractRepository<RoleAuthoriz
         }
         return map;
     }
+
+    public void removeByRoleId(UUID roleId) {
+        if (roleId == null) return;
+        List<RoleAuthorization> list = getRoleAuthorizationsByRoleId(roleId);
+        removeEntriesInBatch(list);
+    }
 }

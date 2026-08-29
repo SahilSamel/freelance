@@ -1,4 +1,4 @@
-CREATE TABLE FL_SYSTEM_CONFIGURATION
+CREATE TABLE IF NOT EXISTS freelance.FL_SYSTEM_CONFIGURATION
 (
     config_id         VARCHAR(255) PRIMARY KEY,
     config_value      TEXT         NOT NULL,
@@ -9,4 +9,4 @@ CREATE TABLE FL_SYSTEM_CONFIGURATION
     last_updated_date TIMESTAMPTZ
 );
 
-CREATE INDEX idx_fl_sys_config_id ON FL_SYSTEM_CONFIGURATION (config_id);
+CREATE INDEX IF NOT EXISTS idx_fl_sys_config_id ON freelance.FL_SYSTEM_CONFIGURATION (config_id);

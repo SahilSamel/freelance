@@ -43,8 +43,10 @@ dependencies {
     implementation project(":modules:authorization:authorization-service")
 
     implementation project(":modules:configuration:configuration-service")
+    implementation project(":modules:configuration:configuration-endpoint")
     implementation project(":modules:audit:audit-repository")
     implementation project(":modules:audit:audit-service")
+    implementation project(":modules:audit:audit-endpoint")
 }
 
 test {
@@ -52,5 +54,5 @@ test {
 }
 
 application {
-    mainClass = 'launcher.Main'
+    mainClass = 'com.freelance.launcher.Main'
 }

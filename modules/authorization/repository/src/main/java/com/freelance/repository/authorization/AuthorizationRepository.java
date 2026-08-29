@@ -29,4 +29,8 @@ public class AuthorizationRepository extends AbstractRepository<Authorization, U
         if (key == null) return null;
         return executeSingleResultSearch(Authorization.QUERY_FIND_BY_KEY, Map.of("key", key)).orElse(null);
     }
+
+    public List<Authorization> findAll() {
+        return executeListResultSearch(Authorization.QUERY_FIND_ALL, null);
+    }
 }

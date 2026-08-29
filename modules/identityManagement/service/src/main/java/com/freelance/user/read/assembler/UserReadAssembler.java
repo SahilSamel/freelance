@@ -5,13 +5,12 @@ import com.freelance.user.UserDTO;
 import com.freelance.user.read.UserReadRequestDTO;
 import com.freelance.user.read.UserReadResponseDTO;
 
-import java.util.UUID;
-
 public class UserReadAssembler {
 
     public User toEntity(UserReadRequestDTO userReadRequestDTO) {
+        if (userReadRequestDTO == null) return null;
         User user = new User();
-        user.setId(UUID.fromString(userReadRequestDTO.userId()));
+        user.setId(userReadRequestDTO.id());
         user.setUsername(userReadRequestDTO.username());
         return user;
     }
@@ -23,11 +22,10 @@ public class UserReadAssembler {
                 new UserDTO(
                         user.getId(),
                         user.getUsername(),
-                        user.getEmail(),
                         user.getPassword(),
-                        user.getCreatedDate()
+                        user.getCreatedDate(),
+                        user.getLastUpdatedDate()
                 )
         );
-
     }
 }

@@ -1,0 +1,96 @@
+package com.freelance.configuration.system;
+
+import com.freelance.configuration.dto.system.list.SystemConfigurationListRequestDTO;
+import com.freelance.configuration.dto.system.list.SystemConfigurationListResponseDTO;
+import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateRequestDTO;
+import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateResponseDTO;
+import com.freelance.configuration.entity.system.SystemConfiguration;
+import com.freelance.fixtures.FakeSystemConfigurationRepository;
+import com.freelance.fixtures.TestContextHelper;
+import com.freelance.keys.configuration.ConstraintErrors;
+import com.freelance.keys.configuration.ValidationErrors;
+import com.freelance.rest.app.service.exception.constraint.ConstraintException;
+import com.freelance.rest.app.service.exception.validation.ValidationException;
+import com.freelance.rest.app.transaction.context.TransactionContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@DisplayName("SystemConfigurationService Tests")
+class SystemConfigurationServiceTest {
+
+    private TransactionContext context;
+
+    @BeforeEach
+    void setUp() {
+        context = TestContextHelper.setUp();
+    }
+
+    @AfterEach
+    void tearDown() {
+        TestContextHelper.tearDown();
+    }
+
+    @Test
+    @DisplayName("listConfigurations returns all configs in groups and filters by prefix")
+    void listConfigurations_works() {
+        FakeSystemConfigurationRepository repo = new FakeSystemConfigurationRepository();
+        repo.storage.put("auth.jwt.ttl", new SystemConfiguration("auth.jwt.ttl", "3600", "TTL"));
+        repo.storage.put("identity.username.min", new SystemConfiguration("identity.username.min", "3", "Min length"));
+
+        SystemConfigurationService service = new SystemConfigurationService(repo);
+        SystemConfigurationListResponseDTO all = service.listConfigurations(SystemConfigurationListRequestDTO.empty());
+        assertEquals(2, all.totalCount());
+        assertEquals(2, all.groups().size());
+
+        SystemConfigurationListResponseDTO filtered = service.listConfigurations(new SystemConfigurationListRequestDTO("auth"));
+        assertEquals(1, filtered.totalCount());
+        assertEquals(1, filtered.groups().size());
+        assertEquals("auth", filtered.groups().get(0).name());
+        assertEquals("jwt", filtered.groups().get(0).subGroups().get(0).name());
+        assertEquals("auth.jwt.ttl", filtered.groups().get(0).subGroups().get(0).configurations().get(0).configId());
+    }
+
+    @Test
+    @DisplayName("updateConfiguration successfully updates value and description while preserving key")
+    void updateConfiguration_success() {
+        FakeSystemConfigurationRepository repo = new FakeSystemConfigurationRepository();
+        repo.storage.put("auth.jwt.ttl", new SystemConfiguration("auth.jwt.ttl", "3600", "Old TTL"));
+
+        SystemConfigurationService service = new SystemConfigurationService(repo);
+        SystemConfigurationUpdateResponseDTO response = service.updateConfiguration(
+                new SystemConfigurationUpdateRequestDTO("auth.jwt.ttl", "7200", "New TTL")
+        );
+
+        assertNotNull(response);
+        assertEquals("auth.jwt.ttl", response.configId());
+        assertEquals("7200", response.configValue());
+        assertEquals("New TTL", response.description());
+        assertEquals(1, repo.mergeCalls);
+    }
+
+    @Test
+    @DisplayName("updateConfiguration with non-existent configId raises CONFIGURATION_NOT_FOUND")
+    void updateConfiguration_notFound_raisesError() {
+        FakeSystemConfigurationRepository repo = new FakeSystemConfigurationRepository();
+
+        SystemConfigurationService service = new SystemConfigurationService(repo);
+        ConstraintException ex = assertThrows(ConstraintException.class,
+                () -> service.updateConfiguration(new SystemConfigurationUpdateRequestDTO("unknown.key", "val", "desc")));
+        assertEquals(ConstraintErrors.CONFIGURATION_NOT_FOUND, ex.getError());
+    }
+
+    @Test
+    @DisplayName("updateConfiguration with null or blank configId raises INVALID_CONFIG_ID")
+    void updateConfiguration_nullId_raisesValidationError() {
+        FakeSystemConfigurationRepository repo = new FakeSystemConfigurationRepository();
+
+        SystemConfigurationService service = new SystemConfigurationService(repo);
+        assertThrows(ValidationException.class,
+                () -> service.updateConfiguration(new SystemConfigurationUpdateRequestDTO("", "val", "desc")));
+        assertTrue(context.getValidationErrors().get("configId").contains(ValidationErrors.INVALID_CONFIG_ID));
+    }
+}

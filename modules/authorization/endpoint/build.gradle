@@ -9,6 +9,7 @@ repositories {
 dependencies {
     implementation project(":Framework:appcore")
     implementation project(":Framework:jaxrs")
+    implementation project(":Common:enum")
     implementation project(":modules:authorization:authorization-dto")
     implementation project(":modules:authorization:authorization-service")
     implementation("jakarta.ws.rs:jakarta.ws.rs-api:3.1.0")

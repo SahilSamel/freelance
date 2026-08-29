@@ -11,9 +11,23 @@ public class RoleRepository extends AbstractRepository<Role, UUID> {
         super();
     }
 
+    public Optional<Role> findById(UUID id) {
+        if (id == null) return Optional.empty();
+        return Optional.ofNullable(get(id));
+    }
+
     public Role findByName(String name) {
-        if (name == null) return null;
+        if (name == null || name.isBlank()) return null;
         return executeSingleResultSearch(Role.QUERY_FIND_BY_NAME, Map.of("name", name)).orElse(null);
+    }
+
+    public boolean existsByName(String name) {
+        if (name == null || name.isBlank()) return false;
+        return findByName(name) != null;
+    }
+
+    public List<Role> findAll() {
+        return executeListResultSearch(Role.QUERY_FIND_ALL, null);
     }
 
     public List<Role> findAllSystemRoles() {

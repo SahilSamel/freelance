@@ -8,21 +8,43 @@ import java.util.UUID;
  *     Meant to be wrapped in a threadLocal holder for restricting data access to currently executing thread.
  * </p>
  */
-public record RequestContext(UUID userId, String sessionKey, String authorizationKey) {
+public class RequestContext {
+
+    private UUID userId;
+    private String sessionKey;
+    private String authorizationKey;
+
+    public RequestContext(UUID userId, String sessionKey, String authorizationKey) {
+        this.userId = userId;
+        this.sessionKey = sessionKey;
+        this.authorizationKey = authorizationKey;
+    }
 
     public static RequestContext empty() {
         return new RequestContext(null, null, null);
     }
 
+    public UUID userId() {
+        return userId;
+    }
+
+    public String sessionKey() {
+        return sessionKey;
+    }
+
+    public String authorizationKey() {
+        return authorizationKey;
+    }
+
     public void withUserId(UUID userId) {
-        new RequestContext(userId, this.sessionKey, this.authorizationKey);
+        this.userId = userId;
     }
 
     public void withSessionKey(String sessionKey) {
-        new RequestContext(this.userId, sessionKey, this.authorizationKey);
+        this.sessionKey = sessionKey;
     }
 
     public void withAuthorizationKey(String authorizationKey) {
-        new RequestContext(this.userId, this.sessionKey, authorizationKey);
+        this.authorizationKey = authorizationKey;
     }
 }

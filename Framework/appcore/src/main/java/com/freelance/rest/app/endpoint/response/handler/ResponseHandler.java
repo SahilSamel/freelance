@@ -1,13 +1,21 @@
 package com.freelance.rest.app.endpoint.response.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.freelance.rest.app.endpoint.response.BaseResponse;
 
 /**
  * Serializes transfer objects into JSON format and builds standardized {@link BaseResponse} containers.
  */
 public class ResponseHandler {
-    private final ObjectMapper json = new ObjectMapper();
+    private final ObjectMapper json;
+
+    public ResponseHandler() {
+        this.json = new ObjectMapper();
+        this.json.registerModule(new JavaTimeModule());
+        this.json.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    }
 
     /**
      * Serializes the provided DTO payload into JSON and wraps it in a {@link BaseResponse}.

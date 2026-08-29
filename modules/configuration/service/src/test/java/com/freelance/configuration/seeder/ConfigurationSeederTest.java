@@ -95,8 +95,8 @@ class ConfigurationSeederTest {
         }
 
         @Override
-        public Set<String> findAllIds() {
-            return new HashSet<>(storage.keySet());
+        public List<ErrorConfiguration> findAllEntities() {
+            return new ArrayList<>(storage.values());
         }
 
         @Override

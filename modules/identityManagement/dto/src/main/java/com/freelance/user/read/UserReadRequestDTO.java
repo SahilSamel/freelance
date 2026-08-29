@@ -1,7 +1,9 @@
 package com.freelance.user.read;
 
+import java.util.UUID;
+
 public record UserReadRequestDTO(
-        String userId,
+        UUID id,
         String username
 ) {
 }

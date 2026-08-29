@@ -17,15 +17,6 @@ public class ErrorConfigurationRepository extends AbstractRepository<ErrorConfig
         return map;
     }
 
-    public Set<String> findAllIds() {
-        List<String> ids = executeTypedListQuery(ErrorConfiguration.QUERY_FIND_ALL_IDS, String.class, null);
-        return new HashSet<>(ids);
-    }
-
-    public int deleteSystemOwned(UUID systemUserId) {
-        return executeUpdateQuery(ErrorConfiguration.QUERY_DELETE_SYSTEM_OWNED, Map.of("systemUserId", systemUserId));
-    }
-
     public Map<String, ErrorConfiguration> findAllEntitiesAsMap() {
         List<ErrorConfiguration> list = executeListResultSearch(ErrorConfiguration.QUERY_FIND_ALL, null);
         Map<String, ErrorConfiguration> map = new HashMap<>();
@@ -33,6 +24,10 @@ public class ErrorConfigurationRepository extends AbstractRepository<ErrorConfig
             map.put(config.getErrorId(), config);
         }
         return map;
+    }
+
+    public List<ErrorConfiguration> findAllEntities() {
+        return executeListResultSearch(ErrorConfiguration.QUERY_FIND_ALL, null);
     }
 
     @Override

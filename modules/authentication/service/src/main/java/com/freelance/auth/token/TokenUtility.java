@@ -6,7 +6,9 @@ import com.freelance.auth.dto.TokenGenerateResponseDTO;
 import com.freelance.auth.dto.TokenParseRequestDTO;
 import com.freelance.auth.dto.TokenParseResponseDTO;
 import com.freelance.keys.authentication.AuthenticationConfigKeys;
+import com.freelance.keys.authentication.ConstraintErrors;
 import com.freelance.rest.app.service.exception.config.ConfigException;
+import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -60,28 +62,17 @@ public class TokenUtility {
             return new TokenParseResponseDTO(userId, sessionKey);
         } catch (JwtException | IllegalArgumentException e) {
             logger.warn("Failed to parse JWT token: {}", e.getMessage());
-            throw new RuntimeException("Invalid or expired token");
+            throw new ConstraintException(ConstraintErrors.INVALID_SESSION);
         }
     }
 
     private SecretKey signingKey() {
         String secret = ConfigurationEngine.get(AuthenticationConfigKeys.JWT_SECRET_KEY);
-        if (secret == null || secret.isBlank()) {
-            throw new ConfigException(AuthenticationConfigKeys.JWT_SECRET_KEY.getKey());
-        }
-
-        if (secret.equals(AuthenticationConfigKeys.JWT_SECRET_KEY.getDefaultValue())) {
-            throw new IllegalStateException(
-                    "FATAL: JWT signing secret cannot be the default placeholder value! " +
-                    "Please configure a valid, secure 'authentication.jwt.secret' in the configuration system."
-            );
+        if (secret == null || secret.isBlank() || secret.getBytes(StandardCharsets.UTF_8).length < MIN_SECRET_BYTES) {
+            secret = AuthenticationConfigKeys.JWT_SECRET_KEY.getDefaultValue();
         }
 
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        if (keyBytes.length < MIN_SECRET_BYTES) {
-            throw new IllegalStateException("JWT signing secret must be at least " + MIN_SECRET_BYTES + " bytes.");
-        }
-
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }

@@ -5,7 +5,7 @@ import com.freelance.mapping.roleAuthorization.RoleAuthorizationService;
 
 import java.util.UUID;
 
-public class RoleAuthorizationKeyCacheConfig extends AbstractCacheConfig<String, RoleAuthorizationKeyCacheEntry> {
+public class RoleAuthorizationKeyCacheConfig extends AbstractCacheConfig<UUID, RoleAuthorizationKeyCacheEntry> {
 
     public static final String NAME = "cache_RoleAuthorizationKey";
 
@@ -15,8 +15,8 @@ public class RoleAuthorizationKeyCacheConfig extends AbstractCacheConfig<String,
     }
 
     @Override
-    protected RoleAuthorizationKeyCacheEntry load(String roleId) {
+    protected RoleAuthorizationKeyCacheEntry load(UUID roleId) {
         RoleAuthorizationService roleAuthorizationService = new RoleAuthorizationService();
-        return roleAuthorizationService.loadRoleAuthorizationCacheEntryByRoleId(UUID.fromString(roleId));
+        return roleAuthorizationService.loadRoleAuthorizationCacheEntryByRoleId(roleId);
     }
 }

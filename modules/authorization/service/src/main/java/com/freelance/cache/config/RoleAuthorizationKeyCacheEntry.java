@@ -8,21 +8,21 @@ import java.util.UUID;
 public class RoleAuthorizationKeyCacheEntry implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private Set<UUID> authorizationKeys = new HashSet<>();
+    private Set<String> authorizationKeys = new HashSet<>();
 
     public RoleAuthorizationKeyCacheEntry(){}
 
-    public RoleAuthorizationKeyCacheEntry(Set<UUID> authorizationKeys){
+    public RoleAuthorizationKeyCacheEntry(Set<String> authorizationKeys){
         if (authorizationKeys != null) {
             this.authorizationKeys.addAll(authorizationKeys);
         }
     }
 
-    public Set<UUID> getAuthorizationKeys() {
+    public Set<String> getAuthorizationKeys() {
         return authorizationKeys;
     }
 
-    public void setAuthorizationKeys(Set<UUID> authorizationKeys) {
+    public void setAuthorizationKeys(Set<String> authorizationKeys) {
         this.authorizationKeys = authorizationKeys;
     }
 }

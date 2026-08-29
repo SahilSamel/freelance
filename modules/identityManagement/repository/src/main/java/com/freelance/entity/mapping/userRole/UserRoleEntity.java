@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_role", schema = "freelance")
+@Table(name = "FL_USER_ROLE", schema = "freelance")
 @IdClass(UserRoleEntity.Pk.class)
 public class UserRoleEntity extends AbstractAuditEntity {
 

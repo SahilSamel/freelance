@@ -70,6 +70,36 @@ public enum ValidationErrors implements IError {
             "Trace ID is required.",
             "Missing or blank trace ID",
             400
+    ),
+
+    /**
+     * Raised when the pagination limit is non-positive or invalid.
+     */
+    INVALID_LIMIT(
+            "FL_5007",
+            "Limit must be greater than zero.",
+            "Pagination limit is non-positive or exceeds maximum allowed",
+            400
+    ),
+
+    /**
+     * Raised when the pagination offset is negative.
+     */
+    INVALID_OFFSET(
+            "FL_5008",
+            "Offset must be greater than or equal to zero.",
+            "Pagination offset is negative",
+            400
+    ),
+
+    /**
+     * Raised when fromTimestamp is after toTimestamp.
+     */
+    INVALID_DATE_RANGE(
+            "FL_5009",
+            "Start timestamp cannot be after end timestamp.",
+            "fromTimestamp is greater than toTimestamp",
+            400
     );
 
     private static final String CATEGORY = "audit.validation";

@@ -29,21 +29,53 @@ public abstract class AbstractAuditEntity {
     @Column(name = "last_updated_date")
     private LocalDateTime lastUpdatedDate;
 
+    private static final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
-        this.createdDate = now;
-        this.lastUpdatedDate = now;
+        if (this.createdDate == null) {
+            this.createdDate = now;
+        }
+        if (this.lastUpdatedDate == null) {
+            this.lastUpdatedDate = now;
+        }
 
-        UUID currentUserId = Transaction.getRequestContext().userId();
-        this.createdBy = currentUserId;
-        this.lastUpdatedBy = currentUserId;
+        UUID currentUserId = null;
+        try {
+            if (Transaction.getRequestContext() != null) {
+                currentUserId = Transaction.getRequestContext().userId();
+            }
+        } catch (Exception ignored) {
+        }
+        if (currentUserId == null) {
+            currentUserId = SYSTEM_USER_ID;
+        }
+
+        if (this.createdBy == null) {
+            this.createdBy = currentUserId;
+        }
+        if (this.lastUpdatedBy == null) {
+            this.lastUpdatedBy = currentUserId;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.lastUpdatedDate = LocalDateTime.now();
-        this.lastUpdatedBy = Transaction.getRequestContext().userId();
+
+        UUID currentUserId = null;
+        try {
+            if (Transaction.getRequestContext() != null) {
+                currentUserId = Transaction.getRequestContext().userId();
+            }
+        } catch (Exception ignored) {
+        }
+        if (currentUserId == null) {
+            currentUserId = SYSTEM_USER_ID;
+        }
+
+        this.lastUpdatedBy = currentUserId;
     }
 
     public UUID getCreatedBy() {

@@ -10,9 +10,33 @@ public enum ConstraintErrors implements IError {
 
     USER_ALREADY_EXISTS(
             "FL_3101",
-            "A user with this username or email already exists.",
+            "A user with this username already exists.",
             "Raised when a user with the same identity already exists",
             409
+    ),
+    USER_NOT_FOUND(
+            "FL_3102",
+            "The requested user was not found.",
+            "Raised when a user could not be found",
+            404
+    ),
+    CANNOT_DELETE_SELF(
+            "FL_3103",
+            "You cannot delete your own account.",
+            "Raised when caller attempts to delete their own account",
+            400
+    ),
+    USER_TO_UPDATE_NOT_FOUND(
+            "FL_3104",
+            "The user you are trying to update does not exist.",
+            "Raised when the target user for an update operation does not exist",
+            404
+    ),
+    USER_TO_DELETE_NOT_FOUND(
+            "FL_3105",
+            "The user you are trying to delete does not exist.",
+            "Raised when the target user for a delete operation does not exist",
+            404
     );
 
     private static final String CATEGORY = "identity.constraint";

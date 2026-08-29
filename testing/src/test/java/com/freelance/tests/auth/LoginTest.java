@@ -11,9 +11,6 @@ import static org.hamcrest.Matchers.*;
 
 /**
  * Integration tests for POST /auth/login
- * <p>
- * Expects a user with username="testuser" and password="Test@1234" to exist in the DB.
- * Create it manually once via your identity management endpoint before running.
  */
 @DisplayName("POST /auth/login")
 class LoginTest extends BaseIntegrationTest {
@@ -21,16 +18,15 @@ class LoginTest extends BaseIntegrationTest {
     // ── Happy path ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("valid credentials → 200 with a non-blank token")
+    @DisplayName("valid superadmin credentials → 200 with a non-blank token")
     void login_validCredentials_returns200WithToken() {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("testuser", "Test@1234"))
+                .body(new AuthLoginRequestDTO("superadmin", "Welcome@1"))
                 .when()
                 .post("/auth/login")
                 .then()
-                .log().all()
                 .statusCode(200)
                 .body("token", notNullValue())
                 .body("token", not(emptyString()));
@@ -39,78 +35,78 @@ class LoginTest extends BaseIntegrationTest {
     // ── Wrong credentials ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("wrong password → 400 INVALID_CREDENTIALS constraint keys")
+    @DisplayName("wrong password → 400 INVALID_CREDENTIALS (FL_2101)")
     void login_wrongPassword_returns400() {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("testuser", "wrongpassword"))
+                .body(new AuthLoginRequestDTO("superadmin", "WrongPassword123"))
                 .when()
                 .post("/auth/login")
                 .then()
                 .statusCode(400)
-                .body("errorCode", equalTo("CONSTRAINT_ERROR"));
+                .body("errorCode", equalTo("FL_2101"));
     }
 
     @Test
-    @DisplayName("unknown username → 400 INVALID_CREDENTIALS constraint keys")
+    @DisplayName("unknown username → 400 INVALID_CREDENTIALS (FL_2101)")
     void login_unknownUsername_returns400() {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("no_such_user_xyz", "Test@1234"))
+                .body(new AuthLoginRequestDTO("no_such_user_xyz", "Welcome@1"))
                 .when()
                 .post("/auth/login")
                 .then()
                 .statusCode(400)
-                .body("errorCode", equalTo("CONSTRAINT_ERROR"));
+                .body("errorCode", equalTo("FL_2101"));
     }
 
     // ── Validation errors (format) ────────────────────────────────────────────
 
     @Test
-    @DisplayName("blank username → 400 VALIDATION_ERROR")
+    @DisplayName("blank username → 400 VALIDATION_ERROR (FL_1001) with item FL_2001")
     void login_blankUsername_returns400ValidationError() {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("", "Test@1234"))
+                .body(new AuthLoginRequestDTO("", "Welcome@1"))
                 .when()
                 .post("/auth/login")
                 .then()
                 .statusCode(400)
-                .body("errorCode", equalTo("VALIDATION_ERROR"))
-                .body("message", hasItem(hasEntry("errorCode", "INVALID_USERNAME")));
+                .body("errorCode", equalTo("FL_1001"))
+                .body("message", hasItem(hasEntry("errorCode", "FL_2001")));
     }
 
     @Test
-    @DisplayName("blank password → 400 VALIDATION_ERROR")
+    @DisplayName("blank password → 400 VALIDATION_ERROR (FL_1001) with item FL_2002")
     void login_blankPassword_returns400ValidationError() {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("testuser", ""))
+                .body(new AuthLoginRequestDTO("superadmin", ""))
                 .when()
                 .post("/auth/login")
                 .then()
                 .statusCode(400)
-                .body("errorCode", equalTo("VALIDATION_ERROR"))
-                .body("message", hasItem(hasEntry("errorCode", "INVALID_PASSWORD")));
+                .body("errorCode", equalTo("FL_1001"))
+                .body("message", hasItem(hasEntry("errorCode", "FL_2002")));
     }
 
     @Test
-    @DisplayName("username too short → 400 VALIDATION_ERROR")
+    @DisplayName("username too short → 400 VALIDATION_ERROR (FL_1001) with item FL_2001")
     void login_usernameTooShort_returns400ValidationError() {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("ab", "Test@1234"))
+                .body(new AuthLoginRequestDTO("ab", "Welcome@1"))
                 .when()
                 .post("/auth/login")
                 .then()
                 .statusCode(400)
-                .body("errorCode", equalTo("VALIDATION_ERROR"))
-                .body("message", hasItem(hasEntry("errorCode", "INVALID_USERNAME")));
+                .body("errorCode", equalTo("FL_1001"))
+                .body("message", hasItem(hasEntry("errorCode", "FL_2001")));
     }
 
     @Test

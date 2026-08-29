@@ -16,7 +16,7 @@ class LogoutTest extends BaseIntegrationTest {
     @Test
     @DisplayName("valid token → 200, session is invalidated")
     void logout_validToken_returns200() {
-        String token = loginAndGetToken("testuser", "Test@1234");
+        String token = loginAsSuperAdmin();
 
         RestAssured
                 .given()
@@ -30,7 +30,7 @@ class LogoutTest extends BaseIntegrationTest {
     @Test
     @DisplayName("after logout, the same token is rejected on a protected endpoint")
     void logout_tokenRejectedAfterLogout() {
-        String token = loginAndGetToken("testuser", "Test@1234");
+        String token = loginAsSuperAdmin();
 
         // Logout
         RestAssured

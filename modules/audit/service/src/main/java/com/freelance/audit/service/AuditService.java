@@ -2,10 +2,15 @@ package com.freelance.audit.service;
 
 import com.freelance.audit.dto.AuditLogCreateRequestDTO;
 import com.freelance.audit.dto.AuditLogCreateResponseDTO;
+import com.freelance.audit.dto.list.AuditLogListRequestDTO;
+import com.freelance.audit.dto.list.AuditLogListResponseDTO;
 import com.freelance.audit.service.assembler.AuditLogAssembler;
+import com.freelance.audit.service.validation.AuditLogListValidation;
 import com.freelance.audit.service.validation.AuditValidation;
 import com.freelance.entity.audit.AuditLog;
 import com.freelance.repository.audit.AuditLogRepository;
+
+import java.util.List;
 
 public class AuditService {
 
@@ -13,8 +18,12 @@ public class AuditService {
     private final AuditLogAssembler auditLogAssembler;
 
     public AuditService() {
-        this.auditLogRepository = new AuditLogRepository();
-        this.auditLogAssembler = new AuditLogAssembler();
+        this(new AuditLogRepository(), new AuditLogAssembler());
+    }
+
+    public AuditService(AuditLogRepository auditLogRepository, AuditLogAssembler auditLogAssembler) {
+        this.auditLogRepository = auditLogRepository;
+        this.auditLogAssembler = auditLogAssembler;
     }
 
     public AuditLogCreateResponseDTO createAuditLog(AuditLogCreateRequestDTO request) {
@@ -24,5 +33,12 @@ public class AuditService {
         auditLogRepository.persist(entity);
 
         return auditLogAssembler.toResponse(entity);
+    }
+
+    public AuditLogListResponseDTO listAuditLogs(AuditLogListRequestDTO request) {
+        new AuditLogListValidation().validateRequest(request);
+
+        List<AuditLog> logs = auditLogRepository.findAuditLogs(request);
+        return auditLogAssembler.toListResponse(logs);
     }
 }

@@ -18,6 +18,42 @@ public enum ConstraintErrors implements IError {
             "You do not have permission to perform this action.",
             "Caller lacks required role or permission",
             403
+    ),
+    ROLE_ALREADY_EXISTS(
+            "FL_4102",
+            "A role with this name already exists.",
+            "Raised when attempting to create or rename a role to an existing name",
+            409
+    ),
+    ROLE_NOT_FOUND(
+            "FL_4103",
+            "The requested role was not found.",
+            "Raised when a role could not be found",
+            404
+    ),
+    ROLE_TO_UPDATE_NOT_FOUND(
+            "FL_4104",
+            "The role you are trying to update does not exist.",
+            "Raised when the target role for an update operation does not exist",
+            404
+    ),
+    ROLE_TO_DELETE_NOT_FOUND(
+            "FL_4105",
+            "The role you are trying to delete does not exist.",
+            "Raised when the target role for a delete operation does not exist",
+            404
+    ),
+    SYSTEM_ROLE_CANNOT_BE_MANAGED(
+            "FL_4106",
+            "System roles cannot be modified or deleted.",
+            "Raised when an attempt is made to update or delete a system-defined role",
+            400
+    ),
+    AUTHORIZATION_NOT_FOUND(
+            "FL_4107",
+            "One or more specified authorizations do not exist.",
+            "Raised when assigned authorization identifiers are not found in the database",
+            400
     );
 
     private static final String CATEGORY = "authorization.constraint";

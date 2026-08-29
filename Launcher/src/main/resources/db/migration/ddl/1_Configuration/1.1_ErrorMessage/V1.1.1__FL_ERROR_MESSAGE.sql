@@ -1,4 +1,4 @@
-CREATE TABLE FL_ERROR_MESSAGE
+CREATE TABLE IF NOT EXISTS freelance.FL_ERROR_MESSAGE
 (
     error_id          VARCHAR(255) PRIMARY KEY,
     status_code       INT          NOT NULL,
@@ -10,4 +10,4 @@ CREATE TABLE FL_ERROR_MESSAGE
     last_updated_date TIMESTAMPTZ
 );
 
-CREATE INDEX idx_fl_error_map_id ON FL_ERROR_MESSAGE (error_id);
+CREATE INDEX IF NOT EXISTS idx_fl_error_map_id ON freelance.FL_ERROR_MESSAGE (error_id);

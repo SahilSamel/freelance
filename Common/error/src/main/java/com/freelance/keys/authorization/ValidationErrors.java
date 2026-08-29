@@ -18,6 +18,36 @@ public enum ValidationErrors implements IError {
             "Authorization context is missing or invalid.",
             "Missing authorization context in request",
             401
+    ),
+    INVALID_ROLE_ID(
+            "FL_4002",
+            "Role ID must be a valid non-null identifier.",
+            "Raised when a role identifier is null or invalid",
+            400
+    ),
+    INVALID_ROLE_NAME(
+            "FL_4003",
+            "Role name is required.",
+            "Raised when a role name is null or blank",
+            400
+    ),
+    ROLE_NAME_TOO_SHORT(
+            "FL_4004",
+            "Role name is too short.",
+            "Raised when role name length is below minimum",
+            400
+    ),
+    ROLE_NAME_TOO_LONG(
+            "FL_4005",
+            "Role name is too long.",
+            "Raised when role name length exceeds maximum",
+            400
+    ),
+    ROLE_NAME_HAS_INVALID_CHARS(
+            "FL_4006",
+            "Role name contains invalid characters.",
+            "Raised when role name does not match allowed pattern",
+            400
     );
 
     private static final String CATEGORY = "authorization.validation";

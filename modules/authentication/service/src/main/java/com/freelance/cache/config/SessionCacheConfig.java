@@ -3,7 +3,9 @@ package com.freelance.cache.config;
 import com.freelance.config.AbstractCacheConfig;
 import com.freelance.config.data.CacheType;
 
-public class SessionCacheConfig extends AbstractCacheConfig<String, SessionCacheEntry> {
+import java.util.UUID;
+
+public class SessionCacheConfig extends AbstractCacheConfig<UUID, SessionCacheEntry> {
 
     public static final String NAME = "cache_Session";
 
@@ -18,7 +20,7 @@ public class SessionCacheConfig extends AbstractCacheConfig<String, SessionCache
     }
 
     @Override
-    protected SessionCacheEntry load(String sessionKey) {
+    protected SessionCacheEntry load(UUID userId) {
         return null;
     }
 

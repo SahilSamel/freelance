@@ -2,7 +2,12 @@ package com.freelance.audit.service.assembler;
 
 import com.freelance.audit.dto.AuditLogCreateRequestDTO;
 import com.freelance.audit.dto.AuditLogCreateResponseDTO;
+import com.freelance.audit.dto.AuditLogDTO;
+import com.freelance.audit.dto.list.AuditLogListResponseDTO;
 import com.freelance.entity.audit.AuditLog;
+
+import java.util.Collections;
+import java.util.List;
 
 public class AuditLogAssembler {
 
@@ -35,5 +40,38 @@ public class AuditLogAssembler {
                 entity.getId(),
                 entity.getTraceId()
         );
+    }
+
+    public AuditLogDTO toDTO(AuditLog entity) {
+        if (entity == null) {
+            return null;
+        }
+
+        return new AuditLogDTO(
+                entity.getId(),
+                entity.getTimestamp(),
+                entity.getTraceId(),
+                entity.getUserId(),
+                entity.getTenantId(),
+                entity.getHttpMethod(),
+                entity.getEndpoint(),
+                entity.getStatusCode(),
+                entity.getDurationMs(),
+                entity.getIpAddress(),
+                entity.getUserAgent(),
+                entity.getAuthMechanism()
+        );
+    }
+
+    public AuditLogListResponseDTO toListResponse(List<AuditLog> entities) {
+        if (entities == null || entities.isEmpty()) {
+            return new AuditLogListResponseDTO(Collections.emptyList(), 0);
+        }
+
+        List<AuditLogDTO> dtos = entities.stream()
+                .map(this::toDTO)
+                .toList();
+
+        return new AuditLogListResponseDTO(dtos, dtos.size());
     }
 }

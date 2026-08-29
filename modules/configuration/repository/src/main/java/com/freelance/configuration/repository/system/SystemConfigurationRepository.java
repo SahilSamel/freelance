@@ -36,6 +36,10 @@ public class SystemConfigurationRepository extends AbstractRepository<SystemConf
         return map;
     }
 
+    public List<SystemConfiguration> findAllEntities() {
+        return executeListResultSearch(SystemConfiguration.QUERY_FIND_ALL, null);
+    }
+
     @Override
     public SystemConfiguration get(String configId) {
         return super.get(configId);

@@ -8,46 +8,46 @@ import com.freelance.config.IError;
  */
 public enum ValidationErrors implements IError {
 
-    INVALID_EMAIL_FORMAT(
+    INVALID_USER_ID(
             "FL_3001",
-            "The email address format is invalid.",
-            "Email does not match a valid email format",
+            "The provided user ID is invalid or missing.",
+            "User ID validation failed",
             400
     ),
-    PASSWORD_TOO_SHORT(
+    INVALID_USERNAME(
             "FL_3002",
-            "The password is shorter than the required minimum length.",
-            "Password does not meet the minimum length requirement",
-            400
-    ),
-    PASSWORD_MISSING_NUMBER(
-            "FL_3003",
-            "The password must contain at least one numeric character.",
-            "Password does not contain at least one numeric character",
-            400
-    ),
-    PASSWORD_MISSING_SPECIAL_CHAR(
-            "FL_3004",
-            "The password must contain at least one special character.",
-            "Password does not contain at least one special character",
+            "The username is required and cannot be blank.",
+            "Username is null or blank",
             400
     ),
     USERNAME_TOO_SHORT(
-            "FL_3005",
+            "FL_3003",
             "The username does not meet the minimum length requirement.",
             "Username does not meet the minimum length requirement",
             400
     ),
+    USERNAME_TOO_LONG(
+            "FL_3004",
+            "The username exceeds the maximum allowed length.",
+            "Username exceeds the maximum allowed length",
+            400
+    ),
     USERNAME_HAS_INVALID_CHARS(
-            "FL_3006",
+            "FL_3005",
             "The username contains invalid characters.",
             "Username contains characters outside the allowed set",
             400
     ),
-    PASSWORDS_DO_NOT_MATCH(
+    INVALID_PASSWORD(
+            "FL_3006",
+            "The password is required and cannot be blank.",
+            "Password is null or blank",
+            400
+    ),
+    PASSWORD_TOO_SHORT(
             "FL_3007",
-            "Password and confirmation password do not match.",
-            "Password and confirmation password do not match",
+            "The password is shorter than the required minimum length.",
+            "Password does not meet the minimum length requirement",
             400
     );
 

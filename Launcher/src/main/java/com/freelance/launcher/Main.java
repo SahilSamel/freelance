@@ -58,7 +58,7 @@ public class Main {
             JpaFactory jpaFactory = new JpaFactory();
             entityManagerFactory = jpaFactory.createEntityManagerFactory(
                     databaseConfig,
-                    "com.freelance.entity"
+                    "com.freelance"
             );
 
             Init.startUp(entityManagerFactory);

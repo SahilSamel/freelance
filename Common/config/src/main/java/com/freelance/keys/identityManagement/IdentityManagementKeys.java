@@ -19,6 +19,20 @@ public enum IdentityManagementKeys implements IConfig {
             "identityManagement.username.maximumLength",
             "50",
             "Maximum allowed length for usernames"
+    ),
+
+    /** Minimum character length permitted for a password. */
+    PASSWORD_MINIMUM_LENGTH(
+            "identityManagement.password.minimumLength",
+            "6",
+            "Minimum allowed length for passwords"
+    ),
+
+    /** Regex pattern for allowed characters in a username. */
+    USERNAME_PATTERN(
+            "identityManagement.username.pattern",
+            "^[a-zA-Z0-9_.-]+$",
+            "Regex pattern defining allowed characters for usernames"
     );
 
     private final String key;

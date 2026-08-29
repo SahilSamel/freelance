@@ -12,7 +12,10 @@ repositories {
 dependencies {
     // DTO types — so tests can build typed request bodies without raw maps
     testImplementation project(':modules:authentication:authentication-dto')
-    testImplementation project(':modules:IdentityManagement:identity-dto')
+    testImplementation project(':modules:identityManagement:identity-dto')
+    testImplementation project(':modules:authorization:authorization-dto')
+    testImplementation project(':modules:audit:audit-dto')
+    testImplementation project(':modules:configuration:configuration-dto')
 
     // REST Assured — fluent HTTP test DSL
     testImplementation 'io.rest-assured:rest-assured:5.5.0'
