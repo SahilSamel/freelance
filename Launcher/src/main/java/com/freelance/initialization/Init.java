@@ -42,7 +42,7 @@ public class Init {
                 AuthorizationSeeder authorizationSeeder = new AuthorizationSeeder();
                 authorizationSeeder.seed();
 
-                CacheManager.getInstance().init("com.freelance.cache.config");
+                CacheManager.getInstance().init();
 
                 SystemConfigurationService systemConfigurationService = new SystemConfigurationService();
                 systemConfigurationService.preloadSystemCacheEntries();

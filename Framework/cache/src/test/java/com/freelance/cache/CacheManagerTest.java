@@ -70,6 +70,12 @@ class CacheManagerTest {
         assertDoesNotThrow(() -> CacheManager.getInstance().get("FooCache", "any"));
     }
 
+    @Test
+    void init_parameterless_usesDefaultMandatedPackage() {
+        assertEquals("com.freelance.cache.config", CacheManager.MANDATED_CACHE_CONFIG_PACKAGE);
+        assertDoesNotThrow(() -> CacheManager.getInstance().init());
+    }
+
     // -----------------------------------------------------------------------
     // get()
     // -----------------------------------------------------------------------

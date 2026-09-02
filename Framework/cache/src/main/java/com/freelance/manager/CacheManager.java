@@ -20,6 +20,7 @@ public final class CacheManager {
 
     private static final String CLASS_NAME = CacheManager.class.getSimpleName();
     private static final Logger logger = LoggerFactory.getLogger(CacheManager.class);
+    public static final String MANDATED_CACHE_CONFIG_PACKAGE = "com.freelance.cache.config";
 
     private static final class Holder {
         private static final CacheManager INSTANCE = new CacheManager();
@@ -35,6 +36,19 @@ public final class CacheManager {
     private volatile boolean initialized = false;
 
     private CacheManager() {
+    }
+
+    /**
+     * Discovers and registers all {@link AbstractCacheConfig} implementations in the mandated
+     * package {@value #MANDATED_CACHE_CONFIG_PACKAGE}.
+     * <p>
+     * Must be invoked during application boot before accessing any cache operations.
+     * </p>
+     *
+     * @throws IllegalStateException if duplicate cache names are detected or configuration instantiation fails
+     */
+    public synchronized void init() {
+        init(MANDATED_CACHE_CONFIG_PACKAGE);
     }
 
     /**
