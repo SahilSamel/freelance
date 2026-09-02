@@ -2,33 +2,26 @@ package com.freelance.keys.identityManagement;
 
 import com.freelance.config.IConfig;
 
-/**
- * Configuration keys for the Identity Management domain.
- */
 public enum IdentityManagementKeys implements IConfig {
 
-    /** Minimum character length permitted for a username. */
     USERNAME_MINIMUM_LENGTH(
             "identityManagement.username.minimumLength",
             "3",
             "Minimum allowed length for usernames"
     ),
 
-    /** Maximum character length permitted for a username. */
     USERNAME_MAXIMUM_LENGTH(
             "identityManagement.username.maximumLength",
             "50",
             "Maximum allowed length for usernames"
     ),
 
-    /** Minimum character length permitted for a password. */
     PASSWORD_MINIMUM_LENGTH(
             "identityManagement.password.minimumLength",
             "6",
             "Minimum allowed length for passwords"
     ),
 
-    /** Regex pattern for allowed characters in a username. */
     USERNAME_PATTERN(
             "identityManagement.username.pattern",
             "^[a-zA-Z0-9_.-]+$",
