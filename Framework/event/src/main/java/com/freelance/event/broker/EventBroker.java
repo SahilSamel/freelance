@@ -28,8 +28,14 @@ import com.freelance.event.model.EventMessage;
  *   <li><b>Task Execution:</b> Worker threads must delegate actual task execution to {@link GenericConsumerWorker}
  *       to ensure thread-local JPA transactions, MDC logging trace IDs, caller user contexts, retry backoffs, and dead-letter
  *       handling are correctly established.</li>
+ *   <li><b>Broker Driver Registration:</b> Any new implementation of {@code EventBroker} (e.g. RabbitMQ, Kafka, SQS)
+ *       <b>MUST</b> register a corresponding enum constant in {@link EventBrokerType} and configure its creation in
+ *       {@link EventBrokerFactory}.</li>
  * </ul>
  * </p>
+ *
+ * @see EventBrokerType
+ * @see EventBrokerFactory
  */
 public interface EventBroker {
 

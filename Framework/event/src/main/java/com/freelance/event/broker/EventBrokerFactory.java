@@ -15,22 +15,27 @@ public final class EventBrokerFactory {
     }
 
     public static EventBroker createBroker() {
-        String brokerType = ConfigurationEngine.get(EventConfigKeys.EVENT_BROKER_TYPE);
-        if (brokerType == null || brokerType.isBlank()) {
-            brokerType = EventConfigKeys.EVENT_BROKER_TYPE.getDefaultValue();
-        }
+        String brokerTypeStr = ConfigurationEngine.get(EventConfigKeys.EVENT_BROKER_TYPE);
+        EventBrokerType brokerType = EventBrokerType.fromString(brokerTypeStr);
 
         logger.info("[EventBrokerFactory] Initializing event broker with driver type: '{}'", brokerType);
 
-        if ("REDIS".equalsIgnoreCase(brokerType.trim())) {
-            String host = ConfigurationEngine.get(EventConfigKeys.REDIS_HOST);
-            int port = ConfigurationEngine.getInt(EventConfigKeys.REDIS_PORT);
-            String password = ConfigurationEngine.get(EventConfigKeys.REDIS_PASSWORD);
-            int database = ConfigurationEngine.getInt(EventConfigKeys.REDIS_DATABASE);
+        switch (brokerType) {
+            case REDIS -> {
+                String host = ConfigurationEngine.get(EventConfigKeys.REDIS_HOST);
+                int port = ConfigurationEngine.getInt(EventConfigKeys.REDIS_PORT);
+                String password = ConfigurationEngine.get(EventConfigKeys.REDIS_PASSWORD);
+                int database = ConfigurationEngine.getInt(EventConfigKeys.REDIS_DATABASE);
 
-            return new RedisEventBroker(host, port, password, database);
+                return new RedisEventBroker(host, port, password, database);
+            }
+            case IN_MEMORY -> {
+                return new InMemoryEventBroker();
+            }
+            default -> {
+                logger.warn("[EventBrokerFactory] Unrecognized broker type '{}', defaulting to IN_MEMORY", brokerType);
+                return new InMemoryEventBroker();
+            }
         }
-
-        return new InMemoryEventBroker();
     }
 }
