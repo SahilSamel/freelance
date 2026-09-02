@@ -32,13 +32,21 @@ public class SystemConfiguration extends AbstractAuditEntity {
     @Column(name = "description", length = 255)
     private String description;
 
+    @Column(name = "validation", length = 255)
+    private String validation;
+
     public SystemConfiguration() {
     }
 
     public SystemConfiguration(String configId, String configValue, String description) {
+        this(configId, configValue, description, null);
+    }
+
+    public SystemConfiguration(String configId, String configValue, String description, String validation) {
         this.configId = configId;
         this.configValue = configValue;
         this.description = description;
+        this.validation = validation;
     }
 
     public String getConfigId() {
@@ -63,5 +71,13 @@ public class SystemConfiguration extends AbstractAuditEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getValidation() {
+        return validation;
+    }
+
+    public void setValidation(String validation) {
+        this.validation = validation;
     }
 }

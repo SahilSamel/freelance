@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS freelance.FL_SYSTEM_CONFIGURATION
     config_id         VARCHAR(255) PRIMARY KEY,
     config_value      TEXT         NOT NULL,
     description       VARCHAR(255),
+    validation        VARCHAR(255),
     created_by        UUID         NOT NULL,
     created_date     TIMESTAMPTZ  NOT NULL,
     last_updated_by   UUID,

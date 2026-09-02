@@ -44,4 +44,17 @@ public interface IConfig {
      * @return human-readable description string
      */
     String getDescription();
+
+    /**
+     * Retrieves an optional regular expression pattern used to validate configuration values.
+     * <p>
+     * If specified, any attempt to set or update this configuration value must match this pattern.
+     * Return {@code null} or an empty string if no validation restriction applies.
+     * </p>
+     *
+     * @return regular expression validation string, or {@code null} if unrestricted
+     */
+    default String getValidation() {
+        return null;
+    }
 }

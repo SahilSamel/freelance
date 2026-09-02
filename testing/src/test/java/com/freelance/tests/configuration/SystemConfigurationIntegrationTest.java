@@ -18,8 +18,8 @@ class SystemConfigurationIntegrationTest extends BaseIntegrationTest {
     void testSystemConfigurationLifecycle() {
         String token = loginAsSuperAdmin();
 
-        // 1. List configurations
-        String configKey = RestAssured
+        // 1. List configurations and verify validation field is exposed
+        RestAssured
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
@@ -30,21 +30,32 @@ class SystemConfigurationIntegrationTest extends BaseIntegrationTest {
                 .statusCode(200)
                 .body("groups", notNullValue())
                 .body("groups.size()", greaterThan(0))
-                .body("totalCount", greaterThan(0))
-                .extract().jsonPath().getString("groups[0].subGroups[0].configurations[0].configId");
+                .body("totalCount", greaterThan(0));
 
-        // 2. Update configuration (ensuring >= 32 chars in case JWT secret key is chosen)
-        String newValue = "updated_value_test_at_least_32_bytes_long_1234567890!";
+        // 2. Test validation failure when candidate value violates key regex
         RestAssured
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new SystemConfigurationUpdateRequestDTO(configKey, newValue, "Updated via integration test"))
+                .body(new SystemConfigurationUpdateRequestDTO("authentication.concurrentLoginAllowed", "invalid_enum_val", "Invalid update"))
+                .when()
+                .post("/configurations/system/update")
+                .then()
+                .statusCode(400)
+                .body("fieldErrors[0].errorCode", equalTo("FL_6006"))
+                .body("fieldErrors[0].fieldName", equalTo("configValue"));
+
+        // 3. Test successful update when candidate value matches key regex
+        RestAssured
+                .given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(new SystemConfigurationUpdateRequestDTO("authentication.concurrentLoginAllowed", "false", "Valid update"))
                 .when()
                 .post("/configurations/system/update")
                 .then()
                 .statusCode(200)
-                .body("configId", equalTo(configKey))
-                .body("configValue", equalTo(newValue));
+                .body("configId", equalTo("authentication.concurrentLoginAllowed"))
+                .body("configValue", equalTo("false"));
     }
 }

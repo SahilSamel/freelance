@@ -1,19 +1,22 @@
-package com.freelance.configuration.seeder;
+package com.freelance.registry;
 
 import com.freelance.config.IConfig;
 import com.freelance.config.IError;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Scans classpath package {@code com.freelance.keys} for {@link IConfig} and {@link IError} implementations
+ * and maintains an indexed lookup by configuration key.
+ */
 public final class ConfigurationRegistry {
 
     private static final String BASE_PACKAGE = "com.freelance.keys";
     private static final Reflections REFLECTIONS = new Reflections(BASE_PACKAGE, Scanners.SubTypes);
+    private static final Map<String, IConfig> CONFIGS_BY_KEY = new ConcurrentHashMap<>();
 
     private ConfigurationRegistry() {
     }
@@ -24,6 +27,27 @@ public final class ConfigurationRegistry {
 
     public static List<IError> getAllErrors() {
         return getEnumImplementations(IError.class);
+    }
+
+    public static IConfig getConfig(String key) {
+        if (key == null || key.isBlank()) {
+            return null;
+        }
+        if (CONFIGS_BY_KEY.isEmpty()) {
+            for (IConfig config : getAllConfigs()) {
+                if (config.getKey() != null) {
+                    CONFIGS_BY_KEY.put(config.getKey(), config);
+                }
+            }
+        }
+        return CONFIGS_BY_KEY.get(key);
+    }
+
+    /**
+     * Resets the internal cache. Intended for testing.
+     */
+    public static void resetCacheForTesting() {
+        CONFIGS_BY_KEY.clear();
     }
 
     private static <T> List<T> getEnumImplementations(Class<T> interfaceClass) {

@@ -6,6 +6,7 @@ public record SystemConfigurationDTO(
         String configId,
         String configValue,
         String description,
+        String validation,
         LocalDateTime createdDate,
         LocalDateTime lastUpdatedDate
 ) {}

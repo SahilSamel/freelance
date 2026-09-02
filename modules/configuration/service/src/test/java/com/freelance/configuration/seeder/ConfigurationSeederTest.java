@@ -2,6 +2,7 @@ package com.freelance.configuration.seeder;
 
 import com.freelance.config.IConfig;
 import com.freelance.config.IError;
+import com.freelance.registry.ConfigurationRegistry;
 import com.freelance.configuration.dto.ErrorConfigEntry;
 import com.freelance.configuration.entity.error.ErrorConfiguration;
 import com.freelance.configuration.entity.system.SystemConfiguration;
@@ -197,7 +198,17 @@ class ConfigurationSeederTest {
 
         // Populate repos so all code keys already exist with admin values and outdated descriptions
         for (IConfig config : ConfigurationRegistry.getAllConfigs()) {
-            SystemConfiguration sc = new SystemConfiguration(config.getKey(), "admin_custom_val", "outdated desc");
+            String val = "admin_custom_val";
+            if (config.getValidation() != null) {
+                if (config.getValidation().contains("true|false")) {
+                    val = "false";
+                } else if (config.getValidation().startsWith("^[1-9]") || config.getValidation().startsWith("^[0-9]")) {
+                    val = "99999";
+                } else if (config.getValidation().contains("IN_MEMORY|REDIS")) {
+                    val = "REDIS";
+                }
+            }
+            SystemConfiguration sc = new SystemConfiguration(config.getKey(), val, "outdated desc", config.getValidation());
             sc.setLastUpdatedBy(adminUserId);
             fakeSysRepo.storage.put(config.getKey(), sc);
         }
@@ -216,7 +227,17 @@ class ConfigurationSeederTest {
 
         // Existing admin overrides must remain intact
         var sampleConfig = ConfigurationRegistry.getAllConfigs().get(0);
-        assertEquals("admin_custom_val", fakeSysRepo.get(sampleConfig.getKey()).getConfigValue());
+        String expectedVal = "admin_custom_val";
+        if (sampleConfig.getValidation() != null) {
+            if (sampleConfig.getValidation().contains("true|false")) {
+                expectedVal = "false";
+            } else if (sampleConfig.getValidation().startsWith("^[1-9]") || sampleConfig.getValidation().startsWith("^[0-9]")) {
+                expectedVal = "99999";
+            } else if (sampleConfig.getValidation().contains("IN_MEMORY|REDIS")) {
+                expectedVal = "REDIS";
+            }
+        }
+        assertEquals(expectedVal, fakeSysRepo.get(sampleConfig.getKey()).getConfigValue());
         assertEquals(sampleConfig.getDescription(), fakeSysRepo.get(sampleConfig.getKey()).getDescription(),
                 "Description should be updated to match code definition");
 
@@ -225,6 +246,62 @@ class ConfigurationSeederTest {
         assertEquals("admin custom message", fakeErrRepo.get(sampleError.getErrorKey()).getErrorMessage());
         assertEquals(sampleError.getDescription(), fakeErrRepo.get(sampleError.getErrorKey()).getDescription(),
                 "Error description should be updated to match code definition");
+    }
+
+    @Test
+    @DisplayName("seed() reverts value to default when validation pattern changes and current value violates it")
+    void seed_revertsValueWhenValidationPatternChangesAndCurrentValueViolatesPattern() {
+        FakeSystemConfigurationRepository fakeSysRepo = new FakeSystemConfigurationRepository();
+        FakeErrorConfigurationRepository fakeErrRepo = new FakeErrorConfigurationRepository();
+        UUID adminUserId = UUID.randomUUID();
+
+        // Find a config with a non-null validation pattern
+        IConfig configWithValidation = ConfigurationRegistry.getAllConfigs().stream()
+                .filter(c -> c.getValidation() != null && !c.getValidation().isBlank())
+                .findFirst()
+                .orElseThrow();
+
+        // Simulate existing entry with old validation (null) and an invalid value
+        SystemConfiguration sc = new SystemConfiguration(configWithValidation.getKey(), "invalid_garbage_value", "desc", null);
+        sc.setLastUpdatedBy(adminUserId);
+        fakeSysRepo.storage.put(configWithValidation.getKey(), sc);
+
+        ConfigurationSeeder seeder = new ConfigurationSeeder(fakeSysRepo, fakeErrRepo);
+        seeder.seed();
+
+        SystemConfiguration updated = fakeSysRepo.get(configWithValidation.getKey());
+        assertEquals(configWithValidation.getDefaultValue(), updated.getConfigValue(),
+                "Value should be reverted to code default because 'invalid_garbage_value' violates the new pattern");
+        assertEquals(configWithValidation.getValidation(), updated.getValidation(),
+                "Validation column should be updated to match the code pattern");
+    }
+
+    @Test
+    @DisplayName("seed() preserves custom admin value when validation pattern changes and current value conforms to it")
+    void seed_preservesValueWhenValidationPatternChangesAndCurrentValueConforms() {
+        FakeSystemConfigurationRepository fakeSysRepo = new FakeSystemConfigurationRepository();
+        FakeErrorConfigurationRepository fakeErrRepo = new FakeErrorConfigurationRepository();
+        UUID adminUserId = UUID.randomUUID();
+
+        // Use SESSION_TTL_SECONDS (validation: ^[1-9][0-9]*$, default: 86400)
+        IConfig config = ConfigurationRegistry.getAllConfigs().stream()
+                .filter(c -> c.getKey().equals("authentication.session.ttlSeconds"))
+                .findFirst()
+                .orElseThrow();
+
+        // Set conforming custom value "7200" with old validation (null)
+        SystemConfiguration sc = new SystemConfiguration(config.getKey(), "7200", "desc", null);
+        sc.setLastUpdatedBy(adminUserId);
+        fakeSysRepo.storage.put(config.getKey(), sc);
+
+        ConfigurationSeeder seeder = new ConfigurationSeeder(fakeSysRepo, fakeErrRepo);
+        seeder.seed();
+
+        SystemConfiguration updated = fakeSysRepo.get(config.getKey());
+        assertEquals("7200", updated.getConfigValue(),
+                "Conforming custom admin value should be preserved even when validation pattern is added");
+        assertEquals(config.getValidation(), updated.getValidation(),
+                "Validation column should be updated to match the code pattern");
     }
 
     @Test

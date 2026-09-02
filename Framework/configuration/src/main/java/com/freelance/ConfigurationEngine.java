@@ -86,4 +86,26 @@ public final class ConfigurationEngine {
             CacheManager.getInstance().invalidate("cache_ErrorMessage", error.getErrorKey());
         }
     }
+
+    public static boolean validate(String configKey, String value) {
+        if (configKey == null || value == null) {
+            return false;
+        }
+        IConfig config = com.freelance.registry.ConfigurationRegistry.getConfig(configKey);
+        if (config != null) {
+            String pattern = config.getValidation();
+            if (pattern != null && !pattern.isBlank()) {
+                return value.matches(pattern);
+            }
+        }
+        return true;
+    }
+
+    public static String getValidationPattern(String configKey) {
+        if (configKey == null) {
+            return null;
+        }
+        IConfig config = com.freelance.registry.ConfigurationRegistry.getConfig(configKey);
+        return config != null ? config.getValidation() : null;
+    }
 }

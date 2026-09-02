@@ -2,6 +2,7 @@ package com.freelance.configuration.seeder;
 
 import com.freelance.config.IConfig;
 import com.freelance.config.IError;
+import com.freelance.registry.ConfigurationRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

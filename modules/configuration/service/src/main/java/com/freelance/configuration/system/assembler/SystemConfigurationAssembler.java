@@ -35,6 +35,7 @@ public class SystemConfigurationAssembler {
                 entity.getConfigId(),
                 entity.getConfigValue(),
                 entity.getDescription(),
+                entity.getValidation(),
                 entity.getCreatedDate(),
                 entity.getLastUpdatedDate()
         );

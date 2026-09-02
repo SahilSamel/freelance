@@ -2,6 +2,7 @@ package com.freelance.configuration.seeder;
 
 import com.freelance.config.IConfig;
 import com.freelance.config.IError;
+import com.freelance.registry.ConfigurationRegistry;
 import com.freelance.configuration.entity.error.ErrorConfiguration;
 import com.freelance.configuration.entity.system.SystemConfiguration;
 import com.freelance.configuration.repository.error.ErrorConfigurationRepository;
@@ -67,13 +68,14 @@ public class ConfigurationSeeder {
                 toInsert.add(new SystemConfiguration(
                         key,
                         config.getDefaultValue(),
-                        config.getDescription()
+                        config.getDescription(),
+                        config.getValidation()
                 ));
             } else {
-                boolean isSystemOwned = (existing.getLastUpdatedBy() == null || existing.getLastUpdatedBy().equals(systemUserId));
+                boolean notModifiedByAnyUser = (existing.getLastUpdatedBy() == null || existing.getLastUpdatedBy().equals(systemUserId));
                 boolean changed = false;
 
-                if (isSystemOwned) {
+                if (notModifiedByAnyUser) {
                     if (!Objects.equals(existing.getConfigValue(), config.getDefaultValue())) {
                         existing.setConfigValue(config.getDefaultValue());
                         changed = true;
@@ -83,6 +85,20 @@ public class ConfigurationSeeder {
                 if (!Objects.equals(existing.getDescription(), config.getDescription())) {
                     existing.setDescription(config.getDescription());
                     changed = true;
+                }
+
+                if (!Objects.equals(existing.getValidation(), config.getValidation())) {
+                    existing.setValidation(config.getValidation());
+                    changed = true;
+
+                    String pattern = config.getValidation();
+                    if (pattern != null && !pattern.isBlank()) {
+                        if (existing.getConfigValue() == null || !existing.getConfigValue().matches(pattern)) {
+                            logger.warn("[ConfigurationSeeder] Current value '{}' of configuration '{}' violates updated validation pattern '{}'. Reverting to default value '{}'.",
+                                    existing.getConfigValue(), key, pattern, config.getDefaultValue());
+                            existing.setConfigValue(config.getDefaultValue());
+                        }
+                    }
                 }
 
                 if (changed) {
@@ -95,8 +111,8 @@ public class ConfigurationSeeder {
         for (Map.Entry<String, SystemConfiguration> entry : existingMap.entrySet()) {
             if (!codeKeys.contains(entry.getKey())) {
                 SystemConfiguration entity = entry.getValue();
-                boolean isSystemOwned = (entity.getLastUpdatedBy() == null || entity.getLastUpdatedBy().equals(systemUserId));
-                if (isSystemOwned) {
+                boolean notModifiedByAnyUser = (entity.getLastUpdatedBy() == null || entity.getLastUpdatedBy().equals(systemUserId));
+                if (notModifiedByAnyUser) {
                     toDelete.add(entity);
                 }
             }
@@ -159,10 +175,10 @@ public class ConfigurationSeeder {
                         error.getDescription()
                 ));
             } else {
-                boolean isSystemOwned = (existing.getLastUpdatedBy() == null || existing.getLastUpdatedBy().equals(systemUserId));
+                boolean notModifiedByAnyUser = (existing.getLastUpdatedBy() == null || existing.getLastUpdatedBy().equals(systemUserId));
                 boolean changed = false;
 
-                if (isSystemOwned) {
+                if (notModifiedByAnyUser) {
                     if (existing.getStatusCode() != error.getDefaultStatusCode()) {
                         existing.setStatusCode(error.getDefaultStatusCode());
                         changed = true;
@@ -188,8 +204,8 @@ public class ConfigurationSeeder {
         for (Map.Entry<String, ErrorConfiguration> entry : existingMap.entrySet()) {
             if (!codeKeys.contains(entry.getKey())) {
                 ErrorConfiguration entity = entry.getValue();
-                boolean isSystemOwned = (entity.getLastUpdatedBy() == null || entity.getLastUpdatedBy().equals(systemUserId));
-                if (isSystemOwned) {
+                boolean notModifiedByAnyUser = (entity.getLastUpdatedBy() == null || entity.getLastUpdatedBy().equals(systemUserId));
+                if (notModifiedByAnyUser) {
                     toDelete.add(entity);
                 }
             }

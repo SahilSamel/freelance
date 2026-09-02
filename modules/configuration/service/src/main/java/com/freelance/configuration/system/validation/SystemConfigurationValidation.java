@@ -1,5 +1,6 @@
 package com.freelance.configuration.system.validation;
 
+import com.freelance.ConfigurationEngine;
 import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateRequestDTO;
 import com.freelance.keys.configuration.ValidationErrors;
 import com.freelance.rest.app.service.exception.validation.AbstractValidation;
@@ -19,6 +20,12 @@ public class SystemConfigurationValidation extends AbstractValidation {
 
         if (request.configValue() == null) {
             raiseValidationError(ValidationErrors.INVALID_CONFIG_VALUE, "configValue");
+        }
+
+        if (request.configId() != null && request.configValue() != null) {
+            if (!ConfigurationEngine.validate(request.configId(), request.configValue())) {
+                raiseValidationError(ValidationErrors.CONFIG_VALUE_VALIDATION_FAILED, "configValue");
+            }
         }
 
         validate();

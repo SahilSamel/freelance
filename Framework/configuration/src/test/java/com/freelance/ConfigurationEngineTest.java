@@ -316,4 +316,70 @@ class ConfigurationEngineTest {
             assertDoesNotThrow(() -> ConfigurationEngine.invalidateError(null));
         }
     }
+
+    // ── Validation Tests ──────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("validate(String configKey, String value)")
+    class ValidateTests {
+
+        @Test
+        @DisplayName("validates successfully when value matches key regex pattern")
+        void validValueMatchesPattern() {
+            assertTrue(ConfigurationEngine.validate("authentication.concurrentLoginAllowed", "true"));
+            assertTrue(ConfigurationEngine.validate("authentication.concurrentLoginAllowed", "false"));
+            assertTrue(ConfigurationEngine.validate("authentication.session.ttlSeconds", "3600"));
+            assertTrue(ConfigurationEngine.validate("identityManagement.username.minimumLength", "5"));
+        }
+
+        @Test
+        @DisplayName("returns false when value violates key regex pattern")
+        void invalidValueFailsPattern() {
+            assertFalse(ConfigurationEngine.validate("authentication.concurrentLoginAllowed", "yes"));
+            assertFalse(ConfigurationEngine.validate("authentication.concurrentLoginAllowed", "random_string"));
+            assertFalse(ConfigurationEngine.validate("authentication.session.ttlSeconds", "-10"));
+            assertFalse(ConfigurationEngine.validate("authentication.session.ttlSeconds", "abc"));
+            assertFalse(ConfigurationEngine.validate("identityManagement.username.minimumLength", "0"));
+        }
+
+        @Test
+        @DisplayName("returns true when config has no validation pattern")
+        void unconstrainedConfigPasses() {
+            assertTrue(ConfigurationEngine.validate("authorization.role.pattern", "^[a-z]+$"));
+        }
+
+        @Test
+        @DisplayName("returns false when configKey or value is null")
+        void nullKeyOrValueReturnsFalse() {
+            assertFalse(ConfigurationEngine.validate(null, "some_value"));
+            assertFalse(ConfigurationEngine.validate("authentication.concurrentLoginAllowed", null));
+            assertFalse(ConfigurationEngine.validate(null, null));
+        }
+
+        @Test
+        @DisplayName("returns true for unknown configKey")
+        void unknownKeyPasses() {
+            assertTrue(ConfigurationEngine.validate("unknown.key", "any_value"));
+        }
+    }
+
+    @Nested
+    @DisplayName("getValidationPattern(String configKey)")
+    class GetValidationPatternTests {
+
+        @Test
+        @DisplayName("returns pattern for configured key")
+        void returnsPatternWhenPresent() {
+            assertEquals("^(true|false)$", ConfigurationEngine.getValidationPattern("authentication.concurrentLoginAllowed"));
+            assertEquals("^[1-9][0-9]*$", ConfigurationEngine.getValidationPattern("authentication.session.ttlSeconds"));
+        }
+
+        @Test
+        @DisplayName("returns null when key has no pattern or is null")
+        void returnsNullWhenAbsentOrNullKey() {
+            assertNull(ConfigurationEngine.getValidationPattern("authorization.role.pattern"));
+            assertNull(ConfigurationEngine.getValidationPattern("unknown.key"));
+            assertNull(ConfigurationEngine.getValidationPattern(null));
+        }
+    }
 }

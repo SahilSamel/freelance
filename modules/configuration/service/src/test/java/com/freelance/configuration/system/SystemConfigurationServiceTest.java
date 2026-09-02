@@ -93,4 +93,59 @@ class SystemConfigurationServiceTest {
                 () -> service.updateConfiguration(new SystemConfigurationUpdateRequestDTO("", "val", "desc")));
         assertTrue(context.getValidationErrors().get("configId").contains(ValidationErrors.INVALID_CONFIG_ID));
     }
+
+    @Test
+    @DisplayName("listConfigurations includes validation pattern in DTO")
+    void listConfigurations_includesValidationPattern() {
+        FakeSystemConfigurationRepository repo = new FakeSystemConfigurationRepository();
+        repo.storage.put("auth.jwt.ttl", new SystemConfiguration("auth.jwt.ttl", "3600", "TTL", "^[1-9][0-9]*$"));
+        repo.storage.put("unrestricted.key", new SystemConfiguration("unrestricted.key", "val", "No pattern", null));
+
+        SystemConfigurationService service = new SystemConfigurationService(repo);
+        SystemConfigurationListResponseDTO res = service.listConfigurations(SystemConfigurationListRequestDTO.empty());
+
+        assertEquals(2, res.totalCount());
+        var authConfig = res.groups().stream()
+                .filter(g -> g.name().equals("auth"))
+                .findFirst().orElseThrow()
+                .subGroups().get(0).configurations().get(0);
+        assertEquals("^[1-9][0-9]*$", authConfig.validation());
+
+        var unconstrainedConfig = res.groups().stream()
+                .filter(g -> g.name().equals("unrestricted"))
+                .findFirst().orElseThrow()
+                .configurations().get(0);
+        assertNull(unconstrainedConfig.validation());
+    }
+
+    @Test
+    @DisplayName("updateConfiguration with value violating key regex raises CONFIG_VALUE_VALIDATION_FAILED")
+    void updateConfiguration_invalidValue_raisesValidationError() {
+        FakeSystemConfigurationRepository repo = new FakeSystemConfigurationRepository();
+        repo.storage.put("authentication.session.ttlSeconds",
+                new SystemConfiguration("authentication.session.ttlSeconds", "86400", "TTL", "^[1-9][0-9]*$"));
+
+        SystemConfigurationService service = new SystemConfigurationService(repo);
+        assertThrows(ValidationException.class,
+                () -> service.updateConfiguration(new SystemConfigurationUpdateRequestDTO("authentication.session.ttlSeconds", "invalid_negative_-5", "desc")));
+
+        assertTrue(context.getValidationErrors().containsKey("configValue"));
+        assertTrue(context.getValidationErrors().get("configValue").contains(ValidationErrors.CONFIG_VALUE_VALIDATION_FAILED));
+    }
+
+    @Test
+    @DisplayName("updateConfiguration with value matching key regex succeeds")
+    void updateConfiguration_validValueMatchingRegex_succeeds() {
+        FakeSystemConfigurationRepository repo = new FakeSystemConfigurationRepository();
+        repo.storage.put("authentication.session.ttlSeconds",
+                new SystemConfiguration("authentication.session.ttlSeconds", "86400", "TTL", "^[1-9][0-9]*$"));
+
+        SystemConfigurationService service = new SystemConfigurationService(repo);
+        SystemConfigurationUpdateResponseDTO res = service.updateConfiguration(
+                new SystemConfigurationUpdateRequestDTO("authentication.session.ttlSeconds", "1200", "Updated TTL"));
+
+        assertNotNull(res);
+        assertEquals("1200", res.configValue());
+        assertEquals("Updated TTL", res.description());
+    }
 }

@@ -7,13 +7,15 @@ public enum AuthorizationConfigKeys implements IConfig {
     ROLE_NAME_MINIMUM_LENGTH(
             "authorization.role.minimumLength",
             "3",
-            "Minimum allowed length for role names"
+            "Minimum allowed length for role names",
+            "^[1-9][0-9]*$"
     ),
 
     ROLE_NAME_MAXIMUM_LENGTH(
             "authorization.role.maximumLength",
             "50",
-            "Maximum allowed length for role names"
+            "Maximum allowed length for role names",
+            "^[1-9][0-9]*$"
     ),
 
     ROLE_NAME_PATTERN(
@@ -25,11 +27,17 @@ public enum AuthorizationConfigKeys implements IConfig {
     private final String key;
     private final String defaultValue;
     private final String description;
+    private final String validation;
 
     AuthorizationConfigKeys(String key, String defaultValue, String description) {
+        this(key, defaultValue, description, null);
+    }
+
+    AuthorizationConfigKeys(String key, String defaultValue, String description, String validation) {
         this.key = key;
         this.defaultValue = defaultValue;
         this.description = description;
+        this.validation = validation;
     }
 
     @Override
@@ -45,5 +53,10 @@ public enum AuthorizationConfigKeys implements IConfig {
     @Override
     public String getDescription() {
         return description;
+    }
+
+    @Override
+    public String getValidation() {
+        return validation;
     }
 }

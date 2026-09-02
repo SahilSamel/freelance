@@ -17,6 +17,7 @@ dependencies {
     implementation project(":Common:enum")
     implementation project(":Framework:appcore")
     implementation project(":Framework:cache")
+    implementation project(":Framework:configuration")
     implementation 'ch.qos.logback:logback-classic:1.5.18'
     implementation 'org.reflections:reflections:0.10.2'
 

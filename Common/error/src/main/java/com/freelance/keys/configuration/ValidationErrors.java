@@ -40,6 +40,13 @@ public enum ValidationErrors implements IError {
             "Error message cannot be blank.",
             "Error message is blank",
             400
+    ),
+
+    CONFIG_VALUE_VALIDATION_FAILED(
+            "FL_6006",
+            "Configuration value does not match the required pattern.",
+            "Configuration value failed regex validation pattern",
+            400
     );
 
     private static final String CATEGORY = "configuration.validation";
