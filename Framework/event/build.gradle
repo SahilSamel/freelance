@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+}
+
+group = 'framework'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':Framework:appcore')
+    implementation project(':Framework:configuration')
+    implementation project(':Common:config')
+    implementation project(':Common:enum')
+
+    implementation 'redis.clients:jedis:5.2.0'
+    implementation 'org.reflections:reflections:0.10.2'
+
+    implementation platform('com.fasterxml.jackson:jackson-bom:2.17.2')
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    implementation 'ch.qos.logback:logback-classic:1.5.18'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat = 'full'
+        showExceptions = true
+        showCauses = true
+        showStackTraces = false
+    }
+}

@@ -4,6 +4,7 @@ import com.freelance.authorization.seeder.AuthorizationSeeder;
 import com.freelance.configuration.error.ErrorConfigurationService;
 import com.freelance.configuration.seeder.ConfigurationSeeder;
 import com.freelance.configuration.system.SystemConfigurationService;
+import com.freelance.event.engine.EventManagementEngine;
 import com.freelance.manager.CacheManager;
 import com.freelance.mapping.roleAuthorization.RoleAuthorizationService;
 import com.freelance.rest.app.transaction.Transaction;
@@ -51,6 +52,8 @@ public class Init {
 
                 RoleAuthorizationService roleAuthorizationService = new RoleAuthorizationService();
                 roleAuthorizationService.preloadRoleAuthorizationCacheEntries();
+
+                EventManagementEngine.getInstance().init();
             }
         } catch (Exception e) {
             throw new IllegalStateException("FATAL: Critical failure during application startup in Init.startUp()! Server startup aborted.", e);

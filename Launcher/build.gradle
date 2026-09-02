@@ -34,6 +34,7 @@ dependencies {
     implementation project(":Framework:jaxrs")
     implementation project(":Framework:cache")
     implementation project(":Framework:configuration")
+    implementation project(":Framework:event")
     implementation project(":modules:authentication:authentication-repository")
     implementation project(":modules:authentication:authentication-endpoint")
     implementation project(":modules:identityManagement:identity-repository")
