@@ -5,8 +5,8 @@ import com.freelance.authorization.dto.role.RoleDTO;
 import com.freelance.authorization.dto.role.create.RoleCreateResponseDTO;
 import com.freelance.authorization.dto.role.update.RoleUpdateResponseDTO;
 import com.freelance.authorization.service.list.assembler.AuthorizationListAssembler;
-import com.freelance.entity.authorization.Authorization;
-import com.freelance.entity.role.Role;
+import com.freelance.authorization.entity.Authorization;
+import com.freelance.role.entity.Role;
 
 import java.util.Collections;
 import java.util.List;

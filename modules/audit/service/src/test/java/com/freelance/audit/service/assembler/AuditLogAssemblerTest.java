@@ -2,7 +2,7 @@ package com.freelance.audit.service.assembler;
 
 import com.freelance.audit.dto.AuditLogDTO;
 import com.freelance.audit.dto.list.AuditLogListResponseDTO;
-import com.freelance.entity.audit.AuditLog;
+import com.freelance.audit.entity.AuditLog;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

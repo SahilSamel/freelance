@@ -1,6 +1,6 @@
 package com.freelance.user.update;
 
-import com.freelance.entity.user.User;
+import com.freelance.user.entity.User;
 import com.freelance.fixtures.FakeUserRepository;
 import com.freelance.keys.identityManagement.ConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;

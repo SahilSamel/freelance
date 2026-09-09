@@ -1,6 +1,6 @@
 package com.freelance.user.update.assembler;
 
-import com.freelance.entity.user.User;
+import com.freelance.user.entity.User;
 import com.freelance.user.update.UserUpdateRequestDTO;
 import com.freelance.user.update.UserUpdateResponseDTO;
 import com.freelance.utility.password.HashUtility;

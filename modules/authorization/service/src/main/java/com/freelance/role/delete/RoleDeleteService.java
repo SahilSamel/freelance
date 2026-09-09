@@ -3,10 +3,10 @@ package com.freelance.role.delete;
 import com.freelance.authorization.dto.role.delete.RoleDeleteRequestDTO;
 import com.freelance.authorization.dto.role.delete.RoleDeleteResponseDTO;
 import com.freelance.cache.config.RoleAuthorizationKeyCacheConfig;
-import com.freelance.entity.role.Role;
+import com.freelance.role.entity.Role;
 import com.freelance.manager.CacheManager;
-import com.freelance.repository.mapping.roleAuthorization.RoleAuthorizationRepository;
-import com.freelance.repository.role.RoleRepository;
+import com.freelance.mapping.roleAuthorization.repository.RoleAuthorizationRepository;
+import com.freelance.role.repository.RoleRepository;
 import com.freelance.role.delete.constraint.RoleDeleteConstraint;
 import com.freelance.role.delete.validation.RoleDeleteValidation;
 

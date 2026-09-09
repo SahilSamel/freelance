@@ -1,8 +1,8 @@
 package com.freelance.role.create;
 
 import com.freelance.authorization.dto.role.create.RoleCreateRequestDTO;
-import com.freelance.entity.authorization.Authorization;
-import com.freelance.entity.role.Role;
+import com.freelance.authorization.entity.Authorization;
+import com.freelance.role.entity.Role;
 import com.freelance.fixtures.FakeAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleRepository;
 import com.freelance.keys.authorization.ConstraintErrors;

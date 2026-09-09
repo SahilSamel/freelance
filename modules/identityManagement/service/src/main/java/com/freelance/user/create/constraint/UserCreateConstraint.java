@@ -1,7 +1,7 @@
 package com.freelance.user.create.constraint;
 
 import com.freelance.keys.identityManagement.ConstraintErrors;
-import com.freelance.repository.user.UserRepository;
+import com.freelance.user.repository.UserRepository;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 import com.freelance.user.create.UserCreateRequestDTO;
 

@@ -3,7 +3,7 @@ package com.freelance.audit.service;
 import com.freelance.audit.dto.list.AuditLogListRequestDTO;
 import com.freelance.audit.dto.list.AuditLogListResponseDTO;
 import com.freelance.audit.service.assembler.AuditLogAssembler;
-import com.freelance.entity.audit.AuditLog;
+import com.freelance.audit.entity.AuditLog;
 import com.freelance.fixtures.FakeAuditLogRepository;
 import com.freelance.fixtures.TestContextHelper;
 import org.junit.jupiter.api.AfterEach;

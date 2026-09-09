@@ -5,8 +5,8 @@ import com.freelance.configuration.dto.system.list.SystemConfigurationListReques
 import com.freelance.configuration.dto.system.list.SystemConfigurationListResponseDTO;
 import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateRequestDTO;
 import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateResponseDTO;
-import com.freelance.configuration.entity.system.SystemConfiguration;
-import com.freelance.configuration.repository.system.SystemConfigurationRepository;
+import com.freelance.configuration.system.entity.SystemConfiguration;
+import com.freelance.configuration.system.repository.SystemConfigurationRepository;
 import com.freelance.configuration.system.assembler.SystemConfigurationAssembler;
 import com.freelance.configuration.system.constraint.SystemConfigurationConstraint;
 import com.freelance.configuration.system.validation.SystemConfigurationValidation;

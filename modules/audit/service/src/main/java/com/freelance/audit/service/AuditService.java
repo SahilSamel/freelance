@@ -7,8 +7,8 @@ import com.freelance.audit.dto.list.AuditLogListResponseDTO;
 import com.freelance.audit.service.assembler.AuditLogAssembler;
 import com.freelance.audit.service.validation.AuditLogListValidation;
 import com.freelance.audit.service.validation.AuditValidation;
-import com.freelance.entity.audit.AuditLog;
-import com.freelance.repository.audit.AuditLogRepository;
+import com.freelance.audit.entity.AuditLog;
+import com.freelance.audit.repository.AuditLogRepository;
 
 import java.util.List;
 

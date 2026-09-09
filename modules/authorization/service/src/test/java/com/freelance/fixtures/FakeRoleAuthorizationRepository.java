@@ -1,8 +1,8 @@
 package com.freelance.fixtures;
 
-import com.freelance.entity.mapping.roleAuthorization.RoleAuthorization;
-import com.freelance.entity.mapping.roleAuthorization.RoleAuthorizationKey;
-import com.freelance.repository.mapping.roleAuthorization.RoleAuthorizationRepository;
+import com.freelance.mapping.roleAuthorization.entity.RoleAuthorization;
+import com.freelance.mapping.roleAuthorization.entity.RoleAuthorizationKey;
+import com.freelance.mapping.roleAuthorization.repository.RoleAuthorizationRepository;
 
 import java.util.*;
 import java.util.stream.Collectors;

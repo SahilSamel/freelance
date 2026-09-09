@@ -1,6 +1,6 @@
 package com.freelance.user.delete;
 
-import com.freelance.entity.user.User;
+import com.freelance.user.entity.User;
 import com.freelance.fixtures.FakeUserRepository;
 import com.freelance.fixtures.TestContextHelper;
 import com.freelance.keys.identityManagement.ConstraintErrors;

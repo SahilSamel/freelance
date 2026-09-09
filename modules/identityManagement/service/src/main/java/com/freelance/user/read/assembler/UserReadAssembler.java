@@ -1,6 +1,6 @@
 package com.freelance.user.read.assembler;
 
-import com.freelance.entity.user.User;
+import com.freelance.user.entity.User;
 import com.freelance.user.UserDTO;
 import com.freelance.user.read.UserReadRequestDTO;
 import com.freelance.user.read.UserReadResponseDTO;

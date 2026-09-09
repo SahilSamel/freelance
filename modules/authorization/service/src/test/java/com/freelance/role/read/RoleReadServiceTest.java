@@ -4,9 +4,9 @@ import com.freelance.authorization.dto.role.list.RoleListRequestDTO;
 import com.freelance.authorization.dto.role.list.RoleListResponseDTO;
 import com.freelance.authorization.dto.role.read.RoleReadRequestDTO;
 import com.freelance.authorization.dto.role.read.RoleReadResponseDTO;
-import com.freelance.entity.authorization.Authorization;
-import com.freelance.entity.mapping.roleAuthorization.RoleAuthorization;
-import com.freelance.entity.role.Role;
+import com.freelance.authorization.entity.Authorization;
+import com.freelance.mapping.roleAuthorization.entity.RoleAuthorization;
+import com.freelance.role.entity.Role;
 import com.freelance.fixtures.FakeRoleAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleRepository;
 import com.freelance.fixtures.TestContextHelper;
@@ -47,7 +47,7 @@ class RoleReadServiceTest {
 
         UUID authId = UUID.randomUUID();
         Authorization auth = new Authorization(authId, "USER_CREATE", "Create User", "Desc", "IdentityManagement");
-        roleAuthRepo.storage.put(new com.freelance.entity.mapping.roleAuthorization.RoleAuthorizationKey(roleId, authId),
+        roleAuthRepo.storage.put(new com.freelance.mapping.roleAuthorization.entity.RoleAuthorizationKey(roleId, authId),
                 new RoleAuthorization(role, auth));
 
         RoleReadService service = new RoleReadService(roleRepo, roleAuthRepo, new RoleAssembler());

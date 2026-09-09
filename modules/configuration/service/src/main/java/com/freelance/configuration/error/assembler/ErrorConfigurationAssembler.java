@@ -4,7 +4,7 @@ import com.freelance.configuration.dto.error.ErrorConfigurationDTO;
 import com.freelance.configuration.dto.error.list.ErrorConfigurationGroupDTO;
 import com.freelance.configuration.dto.error.list.ErrorConfigurationListResponseDTO;
 import com.freelance.configuration.dto.error.update.ErrorConfigurationUpdateResponseDTO;
-import com.freelance.configuration.entity.error.ErrorConfiguration;
+import com.freelance.configuration.error.entity.ErrorConfiguration;
 
 import java.util.*;
 

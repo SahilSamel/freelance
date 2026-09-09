@@ -1,7 +1,7 @@
 package com.freelance.fixtures;
 
-import com.freelance.entity.role.Role;
-import com.freelance.repository.role.RoleRepository;
+import com.freelance.role.entity.Role;
+import com.freelance.role.repository.RoleRepository;
 
 import java.util.*;
 

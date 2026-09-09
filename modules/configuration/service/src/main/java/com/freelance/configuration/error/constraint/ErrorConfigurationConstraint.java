@@ -1,8 +1,8 @@
 package com.freelance.configuration.error.constraint;
 
 import com.freelance.configuration.dto.error.update.ErrorConfigurationUpdateRequestDTO;
-import com.freelance.configuration.entity.error.ErrorConfiguration;
-import com.freelance.configuration.repository.error.ErrorConfigurationRepository;
+import com.freelance.configuration.error.entity.ErrorConfiguration;
+import com.freelance.configuration.error.repository.ErrorConfigurationRepository;
 import com.freelance.keys.configuration.ConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 

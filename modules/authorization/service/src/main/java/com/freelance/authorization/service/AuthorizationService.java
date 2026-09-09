@@ -5,8 +5,8 @@ import com.freelance.authorization.dto.list.AuthorizationListResponseDTO;
 import com.freelance.authorization.service.constraint.VerifyConstraint;
 import com.freelance.authorization.service.list.assembler.AuthorizationListAssembler;
 import com.freelance.authorization.service.validation.VerifyValidation;
-import com.freelance.entity.authorization.Authorization;
-import com.freelance.repository.authorization.AuthorizationRepository;
+import com.freelance.authorization.entity.Authorization;
+import com.freelance.authorization.repository.AuthorizationRepository;
 
 import java.util.List;
 

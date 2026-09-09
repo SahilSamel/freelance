@@ -3,7 +3,7 @@ package com.freelance.authorization.service.list;
 import com.freelance.authorization.dto.AuthorizationDTO;
 import com.freelance.authorization.dto.list.AuthorizationListResponseDTO;
 import com.freelance.authorization.service.list.assembler.AuthorizationListAssembler;
-import com.freelance.entity.authorization.Authorization;
+import com.freelance.authorization.entity.Authorization;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -1,13 +1,13 @@
 package com.freelance.authorization.seeder;
 
 import com.freelance.authorization.SystemRoles;
-import com.freelance.entity.authorization.Authorization;
-import com.freelance.entity.mapping.roleAuthorization.RoleAuthorization;
-import com.freelance.entity.mapping.roleAuthorization.RoleAuthorizationKey;
-import com.freelance.entity.role.Role;
-import com.freelance.repository.authorization.AuthorizationRepository;
-import com.freelance.repository.mapping.roleAuthorization.RoleAuthorizationRepository;
-import com.freelance.repository.role.RoleRepository;
+import com.freelance.authorization.entity.Authorization;
+import com.freelance.mapping.roleAuthorization.entity.RoleAuthorization;
+import com.freelance.mapping.roleAuthorization.entity.RoleAuthorizationKey;
+import com.freelance.role.entity.Role;
+import com.freelance.authorization.repository.AuthorizationRepository;
+import com.freelance.mapping.roleAuthorization.repository.RoleAuthorizationRepository;
+import com.freelance.role.repository.RoleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,7 +1,7 @@
 package com.freelance.fixtures;
 
-import com.freelance.configuration.entity.error.ErrorConfiguration;
-import com.freelance.configuration.repository.error.ErrorConfigurationRepository;
+import com.freelance.configuration.error.entity.ErrorConfiguration;
+import com.freelance.configuration.error.repository.ErrorConfigurationRepository;
 
 import java.util.*;
 

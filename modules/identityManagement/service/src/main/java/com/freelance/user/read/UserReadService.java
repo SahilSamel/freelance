@@ -1,6 +1,6 @@
 package com.freelance.user.read;
 
-import com.freelance.repository.user.UserRepository;
+import com.freelance.user.repository.UserRepository;
 import com.freelance.user.read.assembler.UserReadAssembler;
 
 public class UserReadService extends User {

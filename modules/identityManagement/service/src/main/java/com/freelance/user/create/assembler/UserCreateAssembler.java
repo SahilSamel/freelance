@@ -1,6 +1,6 @@
 package com.freelance.user.create.assembler;
 
-import com.freelance.entity.user.User;
+import com.freelance.user.entity.User;
 import com.freelance.user.create.UserCreateRequestDTO;
 import com.freelance.user.create.UserCreateResponseDTO;
 import com.freelance.utility.password.HashUtility;

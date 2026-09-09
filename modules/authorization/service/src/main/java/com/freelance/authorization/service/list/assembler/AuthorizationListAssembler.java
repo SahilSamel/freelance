@@ -3,7 +3,7 @@ package com.freelance.authorization.service.list.assembler;
 import com.freelance.authorization.dto.AuthorizationDTO;
 import com.freelance.authorization.dto.list.AuthorizationGroupDTO;
 import com.freelance.authorization.dto.list.AuthorizationListResponseDTO;
-import com.freelance.entity.authorization.Authorization;
+import com.freelance.authorization.entity.Authorization;
 
 import java.util.*;
 

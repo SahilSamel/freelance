@@ -3,8 +3,8 @@ package com.freelance.mapping.roleAuthorization;
 import com.freelance.cache.config.RoleAuthorizationKeyCacheConfig;
 import com.freelance.cache.config.RoleAuthorizationKeyCacheEntry;
 import com.freelance.manager.CacheManager;
-import com.freelance.entity.mapping.roleAuthorization.RoleAuthorization;
-import com.freelance.repository.mapping.roleAuthorization.RoleAuthorizationRepository;
+import com.freelance.mapping.roleAuthorization.entity.RoleAuthorization;
+import com.freelance.mapping.roleAuthorization.repository.RoleAuthorizationRepository;
 import com.freelance.mapping.roleAuthorization.assembler.RoleAuthorizationAssembler;
 
 import java.util.List;

@@ -1,9 +1,9 @@
 package com.freelance.role.delete.constraint;
 
 import com.freelance.authorization.dto.role.delete.RoleDeleteRequestDTO;
-import com.freelance.entity.role.Role;
+import com.freelance.role.entity.Role;
 import com.freelance.keys.authorization.ConstraintErrors;
-import com.freelance.repository.role.RoleRepository;
+import com.freelance.role.repository.RoleRepository;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 
 public class RoleDeleteConstraint extends AbstractConstraint {

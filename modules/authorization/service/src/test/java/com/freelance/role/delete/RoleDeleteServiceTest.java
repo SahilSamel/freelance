@@ -2,7 +2,7 @@ package com.freelance.role.delete;
 
 import com.freelance.authorization.dto.role.delete.RoleDeleteRequestDTO;
 import com.freelance.authorization.dto.role.delete.RoleDeleteResponseDTO;
-import com.freelance.entity.role.Role;
+import com.freelance.role.entity.Role;
 import com.freelance.fixtures.FakeRoleAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleRepository;
 import com.freelance.fixtures.TestContextHelper;

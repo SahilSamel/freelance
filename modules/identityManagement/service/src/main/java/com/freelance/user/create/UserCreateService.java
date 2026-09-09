@@ -1,7 +1,7 @@
 package com.freelance.user.create;
 
-import com.freelance.entity.user.User;
-import com.freelance.repository.user.UserRepository;
+import com.freelance.user.entity.User;
+import com.freelance.user.repository.UserRepository;
 import com.freelance.user.create.assembler.UserCreateAssembler;
 import com.freelance.user.create.constraint.UserCreateConstraint;
 import com.freelance.user.create.validation.UserCreateValidation;

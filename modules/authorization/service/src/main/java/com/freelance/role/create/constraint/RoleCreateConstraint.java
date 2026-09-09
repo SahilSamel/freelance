@@ -1,10 +1,10 @@
 package com.freelance.role.create.constraint;
 
 import com.freelance.authorization.dto.role.create.RoleCreateRequestDTO;
-import com.freelance.entity.authorization.Authorization;
+import com.freelance.authorization.entity.Authorization;
 import com.freelance.keys.authorization.ConstraintErrors;
-import com.freelance.repository.authorization.AuthorizationRepository;
-import com.freelance.repository.role.RoleRepository;
+import com.freelance.authorization.repository.AuthorizationRepository;
+import com.freelance.role.repository.RoleRepository;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 
 import java.util.ArrayList;

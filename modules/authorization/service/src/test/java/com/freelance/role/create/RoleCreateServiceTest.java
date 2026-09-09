@@ -2,7 +2,7 @@ package com.freelance.role.create;
 
 import com.freelance.authorization.dto.role.create.RoleCreateRequestDTO;
 import com.freelance.authorization.dto.role.create.RoleCreateResponseDTO;
-import com.freelance.entity.authorization.Authorization;
+import com.freelance.authorization.entity.Authorization;
 import com.freelance.fixtures.FakeAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleRepository;

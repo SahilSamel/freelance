@@ -1,7 +1,7 @@
 package com.freelance.fixtures;
 
-import com.freelance.entity.authorization.Authorization;
-import com.freelance.repository.authorization.AuthorizationRepository;
+import com.freelance.authorization.entity.Authorization;
+import com.freelance.authorization.repository.AuthorizationRepository;
 
 import java.util.*;
 

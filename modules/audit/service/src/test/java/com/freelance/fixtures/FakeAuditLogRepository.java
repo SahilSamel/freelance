@@ -1,8 +1,8 @@
 package com.freelance.fixtures;
 
 import com.freelance.audit.dto.list.AuditLogListRequestDTO;
-import com.freelance.entity.audit.AuditLog;
-import com.freelance.repository.audit.AuditLogRepository;
+import com.freelance.audit.entity.AuditLog;
+import com.freelance.audit.repository.AuditLogRepository;
 
 import java.util.*;
 

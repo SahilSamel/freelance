@@ -2,8 +2,8 @@ package com.freelance.role.update;
 
 import com.freelance.authorization.dto.role.update.RoleUpdateRequestDTO;
 import com.freelance.authorization.dto.role.update.RoleUpdateResponseDTO;
-import com.freelance.entity.authorization.Authorization;
-import com.freelance.entity.role.Role;
+import com.freelance.authorization.entity.Authorization;
+import com.freelance.role.entity.Role;
 import com.freelance.fixtures.FakeAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleRepository;

@@ -1,7 +1,7 @@
 package com.freelance.user.update;
 
-import com.freelance.entity.user.User;
-import com.freelance.repository.user.UserRepository;
+import com.freelance.user.entity.User;
+import com.freelance.user.repository.UserRepository;
 import com.freelance.user.update.assembler.UserUpdateAssembler;
 import com.freelance.user.update.constraint.UserUpdateConstraint;
 import com.freelance.user.update.validation.UserUpdateValidation;

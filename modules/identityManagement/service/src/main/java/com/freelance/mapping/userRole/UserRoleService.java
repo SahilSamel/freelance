@@ -2,7 +2,7 @@ package com.freelance.mapping.userRole;
 
 import com.freelance.identityManagement.mapping.userRole.UserRoleSearchRequestDTO;
 import com.freelance.identityManagement.mapping.userRole.UserRoleSearchResponseDTO;
-import com.freelance.repository.mapping.userRole.UserRoleRepository;
+import com.freelance.mapping.userRole.repository.UserRoleRepository;
 
 import java.util.List;
 import java.util.UUID;

@@ -4,7 +4,7 @@ import com.freelance.configuration.dto.system.SystemConfigurationDTO;
 import com.freelance.configuration.dto.system.list.SystemConfigurationGroupDTO;
 import com.freelance.configuration.dto.system.list.SystemConfigurationListResponseDTO;
 import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateResponseDTO;
-import com.freelance.configuration.entity.system.SystemConfiguration;
+import com.freelance.configuration.system.entity.SystemConfiguration;
 
 import java.util.*;
 

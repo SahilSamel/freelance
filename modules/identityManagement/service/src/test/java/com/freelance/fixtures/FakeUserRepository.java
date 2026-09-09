@@ -1,7 +1,7 @@
 package com.freelance.fixtures;
 
-import com.freelance.entity.user.User;
-import com.freelance.repository.user.UserRepository;
+import com.freelance.user.entity.User;
+import com.freelance.user.repository.UserRepository;
 
 import java.util.*;
 

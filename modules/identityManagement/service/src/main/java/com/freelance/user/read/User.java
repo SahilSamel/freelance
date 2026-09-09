@@ -1,6 +1,6 @@
 package com.freelance.user.read;
 
-import com.freelance.repository.user.UserRepository;
+import com.freelance.user.repository.UserRepository;
 import com.freelance.user.read.assembler.UserReadAssembler;
 import com.freelance.user.read.constraint.UserReadConstraint;
 import com.freelance.user.read.validation.UserReadValidation;
@@ -23,14 +23,14 @@ public class User {
         if (userReadRequestDTO == null || userReadRequestDTO.username() == null) {
             return null;
         }
-        com.freelance.entity.user.User user = userRepository.findByUsername(userReadRequestDTO.username()).orElse(null);
+        com.freelance.user.entity.User user = userRepository.findByUsername(userReadRequestDTO.username()).orElse(null);
         return assembler.fromEntity(user);
     }
 
     public UserReadResponseDTO readUser(UserReadRequestDTO request) {
         new UserReadValidation().validateRequest(request);
 
-        com.freelance.entity.user.User user = null;
+        com.freelance.user.entity.User user = null;
         if (request.id() != null) {
             user = userRepository.findById(request.id()).orElse(null);
         } else if (request.username() != null && !request.username().isBlank()) {

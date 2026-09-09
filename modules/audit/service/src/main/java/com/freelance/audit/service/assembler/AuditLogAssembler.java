@@ -4,7 +4,7 @@ import com.freelance.audit.dto.AuditLogCreateRequestDTO;
 import com.freelance.audit.dto.AuditLogCreateResponseDTO;
 import com.freelance.audit.dto.AuditLogDTO;
 import com.freelance.audit.dto.list.AuditLogListResponseDTO;
-import com.freelance.entity.audit.AuditLog;
+import com.freelance.audit.entity.AuditLog;
 
 import java.util.Collections;
 import java.util.List;

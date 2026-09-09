@@ -6,11 +6,11 @@ import com.freelance.configuration.dto.error.list.ErrorConfigurationListRequestD
 import com.freelance.configuration.dto.error.list.ErrorConfigurationListResponseDTO;
 import com.freelance.configuration.dto.error.update.ErrorConfigurationUpdateRequestDTO;
 import com.freelance.configuration.dto.error.update.ErrorConfigurationUpdateResponseDTO;
-import com.freelance.configuration.entity.error.ErrorConfiguration;
 import com.freelance.configuration.error.assembler.ErrorConfigurationAssembler;
 import com.freelance.configuration.error.constraint.ErrorConfigurationConstraint;
+import com.freelance.configuration.error.entity.ErrorConfiguration;
+import com.freelance.configuration.error.repository.ErrorConfigurationRepository;
 import com.freelance.configuration.error.validation.ErrorConfigurationValidation;
-import com.freelance.configuration.repository.error.ErrorConfigurationRepository;
 import com.freelance.manager.CacheManager;
 
 import java.util.List;

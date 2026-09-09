@@ -1,7 +1,7 @@
 package com.freelance.mapping.roleAuthorization.assembler;
 
 import com.freelance.cache.config.RoleAuthorizationKeyCacheEntry;
-import com.freelance.entity.mapping.roleAuthorization.RoleAuthorization;
+import com.freelance.mapping.roleAuthorization.entity.RoleAuthorization;
 
 import java.util.*;
 import java.util.stream.Collectors;

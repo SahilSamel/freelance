@@ -1,7 +1,7 @@
 package com.freelance.fixtures;
 
-import com.freelance.configuration.entity.system.SystemConfiguration;
-import com.freelance.configuration.repository.system.SystemConfigurationRepository;
+import com.freelance.configuration.system.entity.SystemConfiguration;
+import com.freelance.configuration.system.repository.SystemConfigurationRepository;
 
 import java.util.*;
 
