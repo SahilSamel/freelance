@@ -39,3 +39,30 @@ CROSS JOIN freelance.FL_ROLE r
 WHERE u.username = 'superadmin'
   AND r.name = 'SUPER_ADMIN'
 ON CONFLICT (user_id, role_id) DO NOTHING;
+
+-- Seed default WhatsApp contact for superadmin
+INSERT INTO freelance.FL_USER_CONTACT (
+    id,
+    user_id,
+    channel,
+    contact_value,
+    is_opted_out,
+    is_active,
+    human_session_expires_at,
+    created_by,
+    created_date,
+    last_updated_by,
+    last_updated_date
+) VALUES (
+             'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d',
+             '00000000-0000-0000-0000-000000000001',
+             'WHATSAPP',
+             '918450932085',
+             FALSE,
+             TRUE,
+             NULL,
+             '00000000-0000-0000-0000-000000000000',
+             CURRENT_TIMESTAMP,
+             '00000000-0000-0000-0000-000000000000',
+             CURRENT_TIMESTAMP
+         ) ON CONFLICT (user_id, channel) DO NOTHING;

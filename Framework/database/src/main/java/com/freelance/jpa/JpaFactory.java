@@ -43,11 +43,7 @@ public class JpaFactory {
                         .applySetting("jakarta.persistence.jdbc.driver", "org.postgresql.Driver")
                         .applySetting("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect")
                         .applySetting("hibernate.default_schema", "freelance")
-
                         .applySetting("hibernate.hbm2ddl.auto", "validate")
-
-                        .applySetting("hibernate.show_sql", "true")
-                        .applySetting("hibernate.format_sql", "true")
                         .build();
 
         MetadataSources metadataSources = new MetadataSources(serviceRegistry);

@@ -76,9 +76,10 @@ public class Main {
                 }
             }));
 
+            Thread.currentThread().join();
         } catch (Exception e) {
             logger.error("================================================================================");
-            logger.error("[{}] FATAL ERROR DURING STARTUP: Application initialization failed! Server is shutting down.", CLASS_NAME, e);
+            logger.error("FATAL ERROR DURING STARTUP: Application initialization failed! Server is shutting down.", e);
             logger.error("================================================================================");
             if (httpServer != null && httpServer.isStarted()) {
                 httpServer.shutdownNow();

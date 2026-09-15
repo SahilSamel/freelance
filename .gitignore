@@ -6,6 +6,7 @@ build/
 .kotlin
 gradle
 app.log
+logs/
 keystore.jks
 
 ### IntelliJ IDEA ###

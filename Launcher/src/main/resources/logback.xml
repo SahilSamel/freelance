@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+    <shutdownHook class="ch.qos.logback.core.hook.DefaultShutdownHook"/>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} %magenta([%thread]) %yellow([%X{traceId:-SYSTEM}]) %highlight(%-5level) %cyan(%logger) - %msg%n</pattern>
@@ -9,6 +11,7 @@
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/app.log</file>
+        <immediateFlush>true</immediateFlush>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>logs/archive/app-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
@@ -22,13 +25,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.freelance" level="DEBUG"/>
-
-    <logger name="org.hibernate" level="WARN"/>
-    <logger name="org.glassfish" level="INFO"/>
-    <logger name="org.flywaydb" level="INFO"/>
-
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </root>

@@ -19,6 +19,7 @@ public class FlywayMigrationRunner {
                 .locations("classpath:db/migration")
                 .load();
 
+        flyway.repair();
         flyway.migrate();
     }
 }
