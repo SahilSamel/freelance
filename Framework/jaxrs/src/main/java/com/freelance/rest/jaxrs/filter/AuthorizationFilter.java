@@ -1,6 +1,8 @@
 package com.freelance.rest.jaxrs.filter;
 
+import com.freelance.ConfigurationEngine;
 import com.freelance.authorization.service.AuthorizationService;
+import com.freelance.keys.authorization.AuthorizationConfigKeys;
 import com.freelance.rest.app.endpoint.annotation.Anonymous;
 import com.freelance.rest.app.endpoint.annotation.Authorization;
 import com.freelance.rest.app.transaction.Transaction;
@@ -43,6 +45,10 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         Transaction.getRequestContext().withAuthorizationKey(authAnnotation == null ? null : authAnnotation.key());
 
         if (isResourceAnonymous()) {
+            return;
+        }
+
+        if (!ConfigurationEngine.getBoolean(AuthorizationConfigKeys.AUTHORIZATION_ENABLED)) {
             return;
         }
 

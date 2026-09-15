@@ -4,6 +4,13 @@ import com.freelance.config.IConfig;
 
 public enum AuthorizationConfigKeys implements IConfig {
 
+    AUTHORIZATION_ENABLED(
+            "authorization.enabled",
+            "true",
+            "Controls whether role-based access control (RBAC) authorization verification is enabled",
+            "^(true|false)$"
+    ),
+
     ROLE_NAME_MINIMUM_LENGTH(
             "authorization.role.minimumLength",
             "3",
