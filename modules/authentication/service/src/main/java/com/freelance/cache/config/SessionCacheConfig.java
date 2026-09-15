@@ -26,6 +26,6 @@ public class SessionCacheConfig extends AbstractCacheConfig<UUID, SessionCacheEn
 
     @Override
     public long ttlSeconds() {
-        return 600;
+        return -1;
     }
 }

@@ -56,6 +56,19 @@ public class Session {
     public void verifySession(SessionVerifyRequestDTO request) {
         new VerifySessionValidation().validateRequest(request);
         new VerifySessionConstraint().checkConstraints(request);
+
+        SessionCacheEntry sessionCache = CacheManager.getInstance().get(SessionCacheConfig.NAME, request.userId());
+        if (sessionCache != null) {
+            Map<String, Long> keys = sessionCache.getSessions();
+            if (keys != null && keys.containsKey(request.sessionKey())) {
+                long newExpiresAt = getExpiryMillis();
+                synchronized (keys) {
+                    keys.put(request.sessionKey(), newExpiresAt);
+                }
+                sessionCache.setSessions(keys);
+                CacheManager.getInstance().put(SessionCacheConfig.NAME, request.userId(), sessionCache);
+            }
+        }
     }
 
     public SessionInvalidateResponseDTO invalidateSession(SessionInvalidateRequestDTO request) {
@@ -90,18 +103,23 @@ public class Session {
         if (sessionCache != null) {
             Map<String, Long> keys = sessionCache.getSessions();
             if (keys != null && keys.containsKey(request.sessionKey())) {
-                String newSessionKey = UUID.randomUUID().toString();
-                long newExpiresAt = getExpiryMillis();
+                long now = System.currentTimeMillis();
+                Long currentExpiresAt = keys.get(request.sessionKey());
 
-                synchronized (keys) {
-                    keys.remove(request.sessionKey());
-                    keys.put(newSessionKey, newExpiresAt);
+                if (currentExpiresAt != null && currentExpiresAt > now) {
+                    String newSessionKey = UUID.randomUUID().toString();
+                    long newExpiresAt = getExpiryMillis();
+
+                    synchronized (keys) {
+                        keys.remove(request.sessionKey());
+                        keys.put(newSessionKey, newExpiresAt);
+                    }
+
+                    sessionCache.setSessions(keys);
+                    CacheManager.getInstance().put(SessionCacheConfig.NAME, request.userId(), sessionCache);
+
+                    return new SessionRefreshResponseDTO(newSessionKey);
                 }
-
-                sessionCache.setSessions(keys);
-                CacheManager.getInstance().put(SessionCacheConfig.NAME, request.userId(), sessionCache);
-
-                return new SessionRefreshResponseDTO(newSessionKey);
             }
         }
 

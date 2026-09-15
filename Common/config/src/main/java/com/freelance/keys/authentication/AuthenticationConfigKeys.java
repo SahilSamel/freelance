@@ -6,7 +6,7 @@ public enum AuthenticationConfigKeys implements IConfig {
 
     SESSION_TTL_SECONDS(
             "authentication.session.ttlSeconds",
-            "86400",
+            "600",
             "Session time-to-live in seconds",
             "^[1-9][0-9]*$"
     ),

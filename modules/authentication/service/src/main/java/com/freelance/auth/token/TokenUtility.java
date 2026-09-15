@@ -33,14 +33,11 @@ public class TokenUtility {
             throw new IllegalArgumentException("UserId and sessionKey are required to generate token.");
         }
 
-        long ttlSeconds = ConfigurationEngine.getLong(AuthenticationConfigKeys.SESSION_TTL_SECONDS);
-
         Instant now = Instant.now();
         String token = Jwts.builder()
                 .subject(request.userId().toString())
                 .claim(CLAIM_SESSION_KEY, request.sessionKey())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusSeconds(ttlSeconds)))
                 .signWith(signingKey())
                 .compact();
 
@@ -60,6 +57,9 @@ public class TokenUtility {
             String sessionKey = claims.get(CLAIM_SESSION_KEY, String.class);
 
             return new TokenParseResponseDTO(userId, sessionKey);
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            logger.warn("JWT token has expired: {}", e.getMessage());
+            throw new ConstraintException(ConstraintErrors.EXPIRED_SESSION);
         } catch (JwtException | IllegalArgumentException e) {
             logger.warn("Failed to parse JWT token: {}", e.getMessage());
             throw new ConstraintException(ConstraintErrors.INVALID_SESSION);
