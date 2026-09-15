@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS freelance.FL_AUDIT_LOG
     tenant_id         VARCHAR(255),
     http_method       VARCHAR(10)   NOT NULL,
     endpoint          VARCHAR(1024) NOT NULL,
+    request_data      TEXT,
     status_code       INTEGER       NOT NULL,
     duration_ms       BIGINT        NOT NULL,
     ip_address        VARCHAR(45),

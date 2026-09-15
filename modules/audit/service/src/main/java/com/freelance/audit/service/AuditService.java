@@ -12,6 +12,9 @@ import com.freelance.audit.repository.AuditLogRepository;
 
 import java.util.List;
 
+import com.freelance.ConfigurationEngine;
+import com.freelance.keys.audit.AuditConfigKeys;
+
 public class AuditService {
 
     private final AuditLogRepository auditLogRepository;
@@ -27,6 +30,10 @@ public class AuditService {
     }
 
     public AuditLogCreateResponseDTO createAuditLog(AuditLogCreateRequestDTO request) {
+        if (!ConfigurationEngine.getBoolean(AuditConfigKeys.AUDITING_ENABLED)) {
+            return null;
+        }
+
         new AuditValidation().validateRequest(request);
 
         AuditLog entity = auditLogAssembler.toEntity(request);

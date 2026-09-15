@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     implementation project(":Framework:appcore")
+    implementation project(":Common:config")
     implementation project(":Common:error")
     implementation project(":Common:enum")
     implementation project(":Framework:configuration")
@@ -24,6 +25,10 @@ dependencies {
     implementation project(":modules:authentication:authentication-dto")
     implementation project(":modules:audit:audit-service")
     implementation project(":modules:audit:audit-dto")
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {

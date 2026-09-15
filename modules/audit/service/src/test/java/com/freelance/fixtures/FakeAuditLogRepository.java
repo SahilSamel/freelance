@@ -10,6 +10,16 @@ public class FakeAuditLogRepository extends AuditLogRepository {
     public final List<AuditLog> storage = new ArrayList<>();
 
     @Override
+    public void persist(AuditLog entity) {
+        if (entity != null) {
+            if (entity.getId() == null) {
+                entity.setId(UUID.randomUUID());
+            }
+            storage.add(entity);
+        }
+    }
+
+    @Override
     public List<AuditLog> findAuditLogs(AuditLogListRequestDTO filter) {
         List<AuditLog> result = new ArrayList<>(storage);
         if (filter != null) {

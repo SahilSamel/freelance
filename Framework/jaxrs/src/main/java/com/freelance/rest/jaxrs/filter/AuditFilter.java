@@ -1,7 +1,9 @@
 package com.freelance.rest.jaxrs.filter;
 
+import com.freelance.ConfigurationEngine;
 import com.freelance.audit.dto.AuditLogCreateRequestDTO;
 import com.freelance.audit.service.AuditService;
+import com.freelance.keys.audit.AuditConfigKeys;
 import com.freelance.rest.app.endpoint.annotation.Anonymous;
 import com.freelance.rest.app.transaction.Transaction;
 import jakarta.annotation.Priority;
@@ -16,8 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Global audit filter intercepting all incoming HTTP requests and outgoing responses.
@@ -40,9 +46,23 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
     private static final String USER_AGENT_PROP = "audit.userAgent";
     private static final String AUTH_MECHANISM_PROP = "audit.authMechanism";
     private static final String USER_ID_PROP = "audit.userId";
+    private static final String REQUEST_DATA_PROP = "audit.requestData";
 
     private static final String TRACE_ID_MDC_KEY = "traceId";
     private static final String TRACE_ID_HEADER = "X-Trace-ID";
+    private static final int MAX_REQUEST_DATA_LENGTH = 10000;
+
+    private static final Pattern JSON_SENSITIVE_STRING_PATTERN = Pattern.compile(
+            "(?i)(\"(?:password|newpassword|confirmpassword|oldpassword|token|accesstoken|refreshtoken|clientsecret|secret|apikey|pin|cvv)\"\\s*:\\s*)\"(?:\\\\\"|[^\"])*\""
+    );
+
+    private static final Pattern JSON_SENSITIVE_PRIMITIVE_PATTERN = Pattern.compile(
+            "(?i)(\"(?:password|pin|cvv)\"\\s*:\\s*)([0-9]+)"
+    );
+
+    private static final Pattern QUERY_SENSITIVE_PATTERN = Pattern.compile(
+            "(?i)(password|token|secret|apikey|accesstoken|refreshtoken)=([^&]*)"
+    );
 
     @Context
     private ResourceInfo resourceInfo;
@@ -55,22 +75,28 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        long startTime = System.currentTimeMillis();
-        Instant timestamp = Instant.now();
-
         String traceId = resolveTraceId(requestContext);
         MDC.put(TRACE_ID_MDC_KEY, traceId);
+        requestContext.setProperty(TRACE_ID_PROP, traceId);
+
+        if (!ConfigurationEngine.getBoolean(AuditConfigKeys.AUDITING_ENABLED)) {
+            return;
+        }
+
+        long startTime = System.currentTimeMillis();
+        Instant timestamp = Instant.now();
 
         String ipAddress = extractClientIp(requestContext);
         String userAgent = requestContext.getHeaderString("User-Agent");
         String authMechanism = resolveAuthMechanism(requestContext);
+        String requestData = extractRequestData(requestContext);
 
         requestContext.setProperty(START_TIME_PROP, startTime);
         requestContext.setProperty(TIMESTAMP_PROP, timestamp);
-        requestContext.setProperty(TRACE_ID_PROP, traceId);
         requestContext.setProperty(IP_ADDRESS_PROP, ipAddress);
         requestContext.setProperty(USER_AGENT_PROP, userAgent);
         requestContext.setProperty(AUTH_MECHANISM_PROP, authMechanism);
+        requestContext.setProperty(REQUEST_DATA_PROP, requestData);
 
         logger.debug("[Audit] Request started: {} {} (traceId={})",
                 requestContext.getMethod(),
@@ -94,6 +120,12 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
         }
 
         MDC.put(TRACE_ID_MDC_KEY, traceId);
+        responseContext.getHeaders().putSingle(TRACE_ID_HEADER, traceId);
+
+        if (!ConfigurationEngine.getBoolean(AuditConfigKeys.AUDITING_ENABLED)) {
+            MDC.remove(TRACE_ID_MDC_KEY);
+            return;
+        }
 
         try {
             Long startTime = (Long) requestContext.getProperty(START_TIME_PROP);
@@ -119,6 +151,8 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
                 authMechanism = resolveAuthMechanism(requestContext);
             }
 
+            String requestData = (String) requestContext.getProperty(REQUEST_DATA_PROP);
+
             String httpMethod = requestContext.getMethod() != null ? requestContext.getMethod() : "UNKNOWN";
             String endpoint = requestContext.getUriInfo() != null ? "/" + requestContext.getUriInfo().getPath() : "/";
             int statusCode = responseContext.getStatus();
@@ -131,6 +165,7 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
                     userId,
                     httpMethod,
                     endpoint,
+                    requestData,
                     statusCode,
                     durationMs,
                     ipAddress,
@@ -142,14 +177,58 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
                 auditService.createAuditLog(auditDto);
             }
 
-            responseContext.getHeaders().putSingle(TRACE_ID_HEADER, traceId);
-
             logger.debug("[Audit] Request completed: {} {} -> status={} duration={}ms",
                     httpMethod, endpoint, statusCode, durationMs);
 
         } finally {
             MDC.remove(TRACE_ID_MDC_KEY);
         }
+    }
+
+    private String extractRequestData(ContainerRequestContext requestContext) {
+        String data = null;
+
+        if (requestContext.hasEntity()) {
+            try {
+                InputStream entityStream = requestContext.getEntityStream();
+                if (entityStream != null) {
+                    byte[] bytes = entityStream.readAllBytes();
+                    requestContext.setEntityStream(new ByteArrayInputStream(bytes));
+                    if (bytes.length > 0) {
+                        data = new String(bytes, StandardCharsets.UTF_8).trim();
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("[Audit] Failed to read request entity stream for audit logging", e);
+            }
+        }
+
+        if ((data == null || data.isBlank()) && requestContext.getUriInfo() != null && requestContext.getUriInfo().getRequestUri() != null) {
+            String rawQuery = requestContext.getUriInfo().getRequestUri().getRawQuery();
+            if (rawQuery != null && !rawQuery.isBlank()) {
+                data = "query: " + rawQuery.trim();
+            }
+        }
+
+        if (data == null || data.isBlank()) {
+            return null;
+        }
+
+        String sanitized = sanitizeRequestData(data);
+        if (sanitized.length() > MAX_REQUEST_DATA_LENGTH) {
+            return sanitized.substring(0, MAX_REQUEST_DATA_LENGTH) + "... [TRUNCATED]";
+        }
+        return sanitized;
+    }
+
+    String sanitizeRequestData(String data) {
+        if (data == null || data.isBlank()) {
+            return data;
+        }
+        String sanitized = JSON_SENSITIVE_STRING_PATTERN.matcher(data).replaceAll("$1\"******\"");
+        sanitized = JSON_SENSITIVE_PRIMITIVE_PATTERN.matcher(sanitized).replaceAll("$1\"******\"");
+        sanitized = QUERY_SENSITIVE_PATTERN.matcher(sanitized).replaceAll("$1=******");
+        return sanitized;
     }
 
     private String resolveTraceId(ContainerRequestContext requestContext) {

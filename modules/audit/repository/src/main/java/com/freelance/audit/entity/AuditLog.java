@@ -32,6 +32,9 @@ public class AuditLog extends AbstractAuditEntity {
     @Column(name = "endpoint", nullable = false, updatable = false, length = 1024)
     private String endpoint;
 
+    @Column(name = "request_data", updatable = false, columnDefinition = "TEXT")
+    private String requestData;
+
     @Column(name = "status_code", nullable = false, updatable = false)
     private int statusCode;
 
@@ -57,6 +60,7 @@ public class AuditLog extends AbstractAuditEntity {
             String tenantId,
             String httpMethod,
             String endpoint,
+            String requestData,
             int statusCode,
             long durationMs,
             String ipAddress,
@@ -69,11 +73,28 @@ public class AuditLog extends AbstractAuditEntity {
         this.tenantId = tenantId;
         this.httpMethod = httpMethod;
         this.endpoint = endpoint;
+        this.requestData = requestData;
         this.statusCode = statusCode;
         this.durationMs = durationMs;
         this.ipAddress = ipAddress;
         this.userAgent = userAgent;
         this.authMechanism = authMechanism;
+    }
+
+    public AuditLog(
+            Instant timestamp,
+            String traceId,
+            UUID userId,
+            String tenantId,
+            String httpMethod,
+            String endpoint,
+            int statusCode,
+            long durationMs,
+            String ipAddress,
+            String userAgent,
+            String authMechanism
+    ) {
+        this(timestamp, traceId, userId, tenantId, httpMethod, endpoint, null, statusCode, durationMs, ipAddress, userAgent, authMechanism);
     }
 
     /**
@@ -143,6 +164,14 @@ public class AuditLog extends AbstractAuditEntity {
 
     public void setEndpoint(String endpoint) {
         this.endpoint = endpoint;
+    }
+
+    public String getRequestData() {
+        return requestData;
+    }
+
+    public void setRequestData(String requestData) {
+        this.requestData = requestData;
     }
 
     public int getStatusCode() {

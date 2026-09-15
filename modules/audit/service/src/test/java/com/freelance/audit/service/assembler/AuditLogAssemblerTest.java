@@ -27,7 +27,7 @@ class AuditLogAssemblerTest {
 
         AuditLog log = new AuditLog(
                 now, "TRACE-123", userId, "TENANT-1", "POST", "/users/create",
-                201, 45L, "127.0.0.1", "Mozilla/5.0", "Bearer"
+                "{\"username\":\"john\"}", 201, 45L, "127.0.0.1", "Mozilla/5.0", "Bearer"
         );
         log.setId(id);
 
@@ -39,6 +39,7 @@ class AuditLogAssemblerTest {
         assertEquals(userId, dto.userId());
         assertEquals("POST", dto.httpMethod());
         assertEquals("/users/create", dto.endpoint());
+        assertEquals("{\"username\":\"john\"}", dto.requestData());
         assertEquals(201, dto.statusCode());
         assertEquals(45L, dto.durationMs());
         assertEquals("127.0.0.1", dto.ipAddress());
@@ -62,5 +63,30 @@ class AuditLogAssemblerTest {
         assertNotNull(populated);
         assertEquals(1, populated.totalCount());
         assertEquals("T1", populated.auditLogs().get(0).traceId());
+    }
+
+    @Test
+    @DisplayName("toEntity maps all request fields correctly including requestData")
+    void toEntity_mapsFields() {
+        Instant now = Instant.now();
+        UUID userId = UUID.randomUUID();
+        com.freelance.audit.dto.AuditLogCreateRequestDTO req = new com.freelance.audit.dto.AuditLogCreateRequestDTO(
+                now, "TRACE-999", userId, "POST", "/api/test", "{\"action\":\"submit\"}",
+                200, 30L, "192.168.1.1", "curl/7.68", "api_key"
+        );
+
+        AuditLog entity = assembler.toEntity(req);
+        assertNotNull(entity);
+        assertEquals(now, entity.getTimestamp());
+        assertEquals("TRACE-999", entity.getTraceId());
+        assertEquals(userId, entity.getUserId());
+        assertEquals("POST", entity.getHttpMethod());
+        assertEquals("/api/test", entity.getEndpoint());
+        assertEquals("{\"action\":\"submit\"}", entity.getRequestData());
+        assertEquals(200, entity.getStatusCode());
+        assertEquals(30L, entity.getDurationMs());
+        assertEquals("192.168.1.1", entity.getIpAddress());
+        assertEquals("curl/7.68", entity.getUserAgent());
+        assertEquals("api_key", entity.getAuthMechanism());
     }
 }

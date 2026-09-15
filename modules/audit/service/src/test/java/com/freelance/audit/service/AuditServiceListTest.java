@@ -61,4 +61,39 @@ class AuditServiceListTest {
         assertEquals(1, response.totalCount());
         assertEquals("T1", response.auditLogs().get(0).traceId());
     }
+
+    @Test
+    @DisplayName("createAuditLog persists log when auditing is enabled")
+    void createAuditLog_whenAuditingEnabled_persists() {
+        FakeAuditLogRepository repo = new FakeAuditLogRepository();
+        AuditService service = new AuditService(repo, new AuditLogAssembler());
+
+        com.freelance.audit.dto.AuditLogCreateRequestDTO req = new com.freelance.audit.dto.AuditLogCreateRequestDTO(
+                Instant.now(), "T100", UUID.randomUUID(), "POST", "/test", "{\"key\":\"val\"}",
+                200, 10L, "127.0.0.1", "agent", "Bearer"
+        );
+
+        var res = service.createAuditLog(req);
+        assertNotNull(res);
+        assertEquals(1, repo.storage.size());
+        assertEquals("T100", repo.storage.get(0).getTraceId());
+    }
+
+    @Test
+    @DisplayName("createAuditLog returns null and skips persisting when auditing is disabled")
+    void createAuditLog_whenAuditingDisabled_skips() {
+        com.freelance.manager.CacheManager.getInstance().put("cache_SystemConfig", "audit.enabled", "false");
+
+        FakeAuditLogRepository repo = new FakeAuditLogRepository();
+        AuditService service = new AuditService(repo, new AuditLogAssembler());
+
+        com.freelance.audit.dto.AuditLogCreateRequestDTO req = new com.freelance.audit.dto.AuditLogCreateRequestDTO(
+                Instant.now(), "T101", UUID.randomUUID(), "POST", "/test", null,
+                200, 10L, "127.0.0.1", "agent", "Bearer"
+        );
+
+        var res = service.createAuditLog(req);
+        assertNull(res);
+        assertTrue(repo.storage.isEmpty());
+    }
 }

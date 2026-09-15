@@ -42,4 +42,23 @@ class AuditListIntegrationTest extends BaseIntegrationTest {
                 .then()
                 .statusCode(400);
     }
+
+    @Test
+    @DisplayName("audit logs contain sanitized requestData with masked password")
+    void listAuditLogs_containsSanitizedRequestData() {
+        String token = loginAsSuperAdmin();
+
+        RestAssured
+                .given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(AuditLogListRequestDTO.empty())
+                .when()
+                .post("/audit/list")
+                .then()
+                .statusCode(200)
+                .body("auditLogs.find { it.endpoint == '/auth/login' }.requestData", containsString("\"password\": \"******\""))
+                .body("auditLogs.find { it.endpoint == '/auth/login' }.requestData", containsString("superadmin"))
+                .body("auditLogs.find { it.endpoint == '/auth/login' }.requestData", not(containsString("Welcome@1")));
+    }
 }
