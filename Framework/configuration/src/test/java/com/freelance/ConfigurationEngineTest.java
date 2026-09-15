@@ -20,11 +20,16 @@ class ConfigurationEngineTest {
 
     // ── Dummy test enum / records ─────────────────────────────────────────────
 
+    private enum SampleStatus {
+        ALPHA, BETA, GAMMA
+    }
+
     private enum TestConfigs implements IConfig {
         STR_CONFIG("test.str", "default_str", "Test string config"),
         INT_CONFIG("test.int", "10", "Test int config"),
         LONG_CONFIG("test.long", "3600", "Test long config"),
-        BOOL_CONFIG("test.bool", "true", "Test bool config");
+        BOOL_CONFIG("test.bool", "true", "Test bool config"),
+        ENUM_CONFIG("test.enum", "BETA", "Test enum config");
 
         private final String key;
         private final String defaultValue;
@@ -200,6 +205,41 @@ class ConfigurationEngineTest {
         @DisplayName("falls back to default boolean when cache is empty")
         void fallbackOnEmptyCache() {
             assertTrue(ConfigurationEngine.getBoolean(TestConfigs.BOOL_CONFIG));
+        }
+    }
+
+    // ── getEnum(IConfig, Class<E>) ───────────────────────────────────────────
+
+    @Nested
+    @DisplayName("getEnum(IConfig, Class<E>)")
+    class GetEnumTests {
+
+        @Test
+        @DisplayName("returns cached enum value when present in cache")
+        void returnsCachedEnum() {
+            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.ENUM_CONFIG.getKey(), "GAMMA");
+            assertEquals(SampleStatus.GAMMA, ConfigurationEngine.getEnum(TestConfigs.ENUM_CONFIG, SampleStatus.class));
+        }
+
+        @Test
+        @DisplayName("falls back to default enum when cache is empty")
+        void fallbackOnEmptyCache() {
+            assertEquals(SampleStatus.BETA, ConfigurationEngine.getEnum(TestConfigs.ENUM_CONFIG, SampleStatus.class));
+        }
+
+        @Test
+        @DisplayName("falls back to default enum when cached value is invalid")
+        void fallbackOnInvalidCachedValue() {
+            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.ENUM_CONFIG.getKey(), "INVALID_VAL");
+            assertEquals(SampleStatus.BETA, ConfigurationEngine.getEnum(TestConfigs.ENUM_CONFIG, SampleStatus.class));
+        }
+
+        @Test
+        @DisplayName("returns fallback or null when config is null or class is null")
+        void returnsFallbackOnNulls() {
+            assertNull(ConfigurationEngine.getEnum(null, SampleStatus.class));
+            assertNull(ConfigurationEngine.getEnum(TestConfigs.ENUM_CONFIG, null));
+            assertEquals(SampleStatus.ALPHA, ConfigurationEngine.getEnum(null, SampleStatus.class, SampleStatus.ALPHA));
         }
     }
 

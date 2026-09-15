@@ -1,0 +1,12 @@
+package com.freelance.alerts;
+
+public enum LogicalAlertAction {
+    RETRY_WITH_BACKOFF,
+    DISABLE_USER_CHANNEL,
+    MARK_USER_OPTED_OUT,
+    TRIGGER_HUMAN_INTERVENTION,
+    PAUSE_TEMPLATE,
+    PAUSE_DISPATCH_QUEUE,
+    MARK_FAILED_PERMANENT,
+    CRITICAL_ADMIN_ALERT
+}

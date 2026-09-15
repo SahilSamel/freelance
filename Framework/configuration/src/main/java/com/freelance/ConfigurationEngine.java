@@ -51,6 +51,29 @@ public final class ConfigurationEngine {
         return Boolean.parseBoolean(value.trim());
     }
 
+    public static <E extends Enum<E>> E getEnum(IConfig config, Class<E> enumClass) {
+        if (config == null || enumClass == null) return null;
+        String value = get(config);
+        if (value != null && !value.isBlank()) {
+            try {
+                return Enum.valueOf(enumClass, value.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        if (config.getDefaultValue() != null && !config.getDefaultValue().isBlank()) {
+            try {
+                return Enum.valueOf(enumClass, config.getDefaultValue().trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return null;
+    }
+
+    public static <E extends Enum<E>> E getEnum(IConfig config, Class<E> enumClass, E fallback) {
+        E result = getEnum(config, enumClass);
+        return result != null ? result : fallback;
+    }
+
     public static int getStatusCode(IError error) {
         if (error == null) return 500;
         try {

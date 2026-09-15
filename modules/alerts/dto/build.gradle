@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.freelance'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":Common:dto")
+    implementation project(":Common:enum")
+    implementation project(":Framework:event")
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.18.2'
+}
+
+test {
+    useJUnitPlatform()
+}

@@ -48,6 +48,9 @@ dependencies {
     implementation project(":modules:audit:audit-repository")
     implementation project(":modules:audit:audit-service")
     implementation project(":modules:audit:audit-endpoint")
+    implementation project(":modules:alerts:alerts-repository")
+    implementation project(":modules:alerts:alerts-service")
+    implementation project(":modules:alerts:alerts-endpoint")
 }
 
 test {

@@ -1,5 +1,6 @@
 package com.freelance.initialization;
 
+import com.freelance.template.seeder.AlertsBootstrap;
 import com.freelance.authorization.seeder.AuthorizationSeeder;
 import com.freelance.configuration.error.ErrorConfigurationService;
 import com.freelance.configuration.seeder.ConfigurationSeeder;
@@ -54,6 +55,8 @@ public class Init {
                 roleAuthorizationService.preloadRoleAuthorizationCacheEntries();
 
                 EventManagementEngine.getInstance().init();
+
+                AlertsBootstrap.init();
             }
         } catch (Exception e) {
             throw new IllegalStateException("FATAL: Critical failure during application startup in Init.startUp()! Server startup aborted.", e);

@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.freelance'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":Framework:appcore")
+    implementation project(":Common:dto")
+    implementation project(":Common:enum")
+    implementation project(":modules:alerts:alerts-dto")
+    runtimeOnly 'org.postgresql:postgresql:42.7.11'
+    implementation 'org.hibernate.orm:hibernate-core:6.6.0.Final'
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.2.0'
+}
+
+test {
+    useJUnitPlatform()
+}

@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":Framework:appcore")
+    implementation project(":Framework:jaxrs")
+    implementation project(":Framework:configuration")
+    implementation project(":Framework:event")
+    implementation project(":Common:config")
+    implementation project(":Common:enum")
+    implementation project(":modules:alerts:alerts-dto")
+    implementation project(":modules:alerts:alerts-service")
+    implementation("jakarta.ws.rs:jakarta.ws.rs-api:3.1.0")
+    implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
+    implementation 'ch.qos.logback:logback-classic:1.5.18'
+}
