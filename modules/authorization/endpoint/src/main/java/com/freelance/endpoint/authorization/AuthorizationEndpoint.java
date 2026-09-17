@@ -1,6 +1,5 @@
 package com.freelance.endpoint.authorization;
 
-import com.freelance.authorization.SystemRoles;
 import com.freelance.authorization.dto.list.AuthorizationListRequestDTO;
 import com.freelance.authorization.dto.list.AuthorizationListResponseDTO;
 import com.freelance.authorization.service.AuthorizationService;
@@ -24,8 +23,7 @@ public class AuthorizationEndpoint extends AbstractEndpoint {
             key = "AUTHORIZATION_LIST",
             name = "List Authorizations",
             description = "Retrieves all registered system authorizations and permissions",
-            group = "Authorization.Management",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Authorization.Management"
     )
     public Response listAuthorizations(AuthorizationListRequestDTO request) {
         AuthorizationService service = new AuthorizationService();

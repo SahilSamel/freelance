@@ -36,6 +36,7 @@ dependencies {
     implementation project(":Framework:configuration")
     implementation project(":Framework:event")
     implementation project(":modules:authentication:authentication-repository")
+    implementation project(":modules:authentication:authentication-service")
     implementation project(":modules:authentication:authentication-endpoint")
     implementation project(":modules:identityManagement:identity-repository")
     implementation project(":modules:identityManagement:identity-endpoint")

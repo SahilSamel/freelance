@@ -1,6 +1,5 @@
 package com.freelance.endpoint.configuration;
 
-import com.freelance.authorization.SystemRoles;
 import com.freelance.configuration.dto.error.list.ErrorConfigurationListRequestDTO;
 import com.freelance.configuration.dto.error.list.ErrorConfigurationListResponseDTO;
 import com.freelance.configuration.dto.error.update.ErrorConfigurationUpdateRequestDTO;
@@ -26,8 +25,7 @@ public class ErrorConfigurationEndpoint extends AbstractEndpoint {
             key = "ERROR_CONFIG_LIST",
             name = "List Error Configurations",
             description = "Retrieves all application error messages and status codes",
-            group = "Configuration.Error",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Configuration.Error"
     )
     public Response listErrorConfigurations(ErrorConfigurationListRequestDTO request) {
         ErrorConfigurationService service = new ErrorConfigurationService();
@@ -41,8 +39,7 @@ public class ErrorConfigurationEndpoint extends AbstractEndpoint {
             key = "ERROR_CONFIG_UPDATE",
             name = "Update Error Configuration",
             description = "Updates an application error message and status code",
-            group = "Configuration.Error",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Configuration.Error"
     )
     public Response updateErrorConfiguration(ErrorConfigurationUpdateRequestDTO request) {
         ErrorConfigurationService service = new ErrorConfigurationService();

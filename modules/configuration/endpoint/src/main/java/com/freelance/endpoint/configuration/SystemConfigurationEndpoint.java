@@ -1,6 +1,5 @@
 package com.freelance.endpoint.configuration;
 
-import com.freelance.authorization.SystemRoles;
 import com.freelance.configuration.dto.system.list.SystemConfigurationListRequestDTO;
 import com.freelance.configuration.dto.system.list.SystemConfigurationListResponseDTO;
 import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateRequestDTO;
@@ -26,8 +25,7 @@ public class SystemConfigurationEndpoint extends AbstractEndpoint {
             key = "SYSTEM_CONFIG_LIST",
             name = "List System Configurations",
             description = "Retrieves all application system configuration properties",
-            group = "Configuration.System",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Configuration.System"
     )
     public Response listConfigurations(SystemConfigurationListRequestDTO request) {
         SystemConfigurationService service = new SystemConfigurationService();
@@ -41,8 +39,7 @@ public class SystemConfigurationEndpoint extends AbstractEndpoint {
             key = "SYSTEM_CONFIG_UPDATE",
             name = "Update System Configuration",
             description = "Updates an application system configuration value",
-            group = "Configuration.System",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Configuration.System"
     )
     public Response updateConfiguration(SystemConfigurationUpdateRequestDTO request) {
         SystemConfigurationService service = new SystemConfigurationService();

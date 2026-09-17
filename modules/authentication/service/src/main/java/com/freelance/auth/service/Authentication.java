@@ -2,13 +2,16 @@ package com.freelance.auth.service;
 
 import com.freelance.auth.dto.*;
 import com.freelance.auth.service.constraint.LoginConstraint;
+import com.freelance.auth.service.constraint.VerifyAuthConstraint;
 import com.freelance.auth.service.validation.LoginValidation;
 import com.freelance.auth.service.validation.VerifyAuthValidation;
 import com.freelance.auth.session.Session;
 import com.freelance.auth.token.TokenUtility;
+import com.freelance.auth.vendor.VendorSupportKeyUtility;
 import com.freelance.keys.authentication.ConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.rest.app.transaction.Transaction;
+import com.freelance.system.SystemHardcoding;
 import com.freelance.user.read.User;
 import com.freelance.user.read.UserReadRequestDTO;
 import com.freelance.user.read.UserReadResponseDTO;
@@ -38,6 +41,14 @@ public class Authentication {
 
     public AuthVerifyResponseDTO verify(AuthVerifyRequestDTO request) {
         new VerifyAuthValidation().validateRequest(request);
+        new VerifyAuthConstraint().checkConstraints(request);
+
+        if (VendorSupportKeyUtility.isVendorToken(request.token())) {
+            return new AuthVerifyResponseDTO(
+                    SystemHardcoding.VENDOR_SUPPORT_USER_ID.asUuid(),
+                    SystemHardcoding.VENDOR_SUPPORT_SESSION_KEY.asString()
+            );
+        }
 
         TokenParseResponseDTO parsed = tokenUtility.parse(new TokenParseRequestDTO(request.token()));
         session.verifySession(new SessionVerifyRequestDTO(parsed.sessionKey(), parsed.userId()));

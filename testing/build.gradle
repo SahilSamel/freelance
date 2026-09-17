@@ -12,6 +12,7 @@ repositories {
 dependencies {
     // DTO types — so tests can build typed request bodies without raw maps
     testImplementation project(':modules:authentication:authentication-dto')
+    testImplementation project(':modules:authentication:authentication-service')
     testImplementation project(':modules:identityManagement:identity-dto')
     testImplementation project(':modules:authorization:authorization-dto')
     testImplementation project(':modules:audit:audit-dto')
@@ -22,6 +23,11 @@ dependencies {
 
     // Jackson integration — REST Assured auto-detects this and uses it for Java records/DTOs
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
+
+    // JJWT for vendor token generation in integration tests
+    testImplementation 'io.jsonwebtoken:jjwt-api:0.13.0'
+    testRuntimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+    testRuntimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
 
     // JUnit 5
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'

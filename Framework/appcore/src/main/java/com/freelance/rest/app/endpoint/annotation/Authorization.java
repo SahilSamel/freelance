@@ -1,7 +1,5 @@
 package com.freelance.rest.app.endpoint.annotation;
 
-import com.freelance.authorization.SystemRoles;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -47,11 +45,4 @@ public @interface Authorization {
      * @return permission description
      */
     String description();
-
-    /**
-     * Default system role assigned to this permission during initial database seeding.
-     *
-     * @return default {@link SystemRoles} assignment, defaulting to {@link SystemRoles#NONE}
-     */
-    SystemRoles role() default SystemRoles.NONE;
 }

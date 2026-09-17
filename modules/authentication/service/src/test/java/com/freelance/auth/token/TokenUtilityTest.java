@@ -1,18 +1,14 @@
 package com.freelance.auth.token;
 
-import com.freelance.ConfigurationEngine;
 import com.freelance.auth.dto.TokenGenerateRequestDTO;
 import com.freelance.auth.dto.TokenGenerateResponseDTO;
 import com.freelance.auth.dto.TokenParseRequestDTO;
 import com.freelance.auth.dto.TokenParseResponseDTO;
-import com.freelance.keys.authentication.AuthenticationConfigKeys;
-import com.freelance.manager.CacheManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,34 +18,19 @@ class TokenUtilityTest {
     private TokenUtility tokenUtility;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         tokenUtility = new TokenUtility();
-
-        CacheManager mgr = CacheManager.getInstance();
-        setField(mgr, "initialized", false);
-        clearMap(mgr, "configsByName");
-        clearMap(mgr, "nameByClass");
-        clearMap(mgr, "caches");
-
-        mgr.init("com.freelance.fixtures");
+        JwtSecretManager.resetForTesting();
     }
 
-    private static void setField(Object target, String name, Object value) throws Exception {
-        Field f = target.getClass().getDeclaredField(name);
-        f.setAccessible(true);
-        f.set(target, value);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void clearMap(Object target, String name) throws Exception {
-        Field f = target.getClass().getDeclaredField(name);
-        f.setAccessible(true);
-        ((Map<?, ?>) f.get(target)).clear();
+    @AfterEach
+    void tearDown() {
+        JwtSecretManager.resetForTesting();
     }
 
     @Test
-    @DisplayName("generateToken and parse succeed with default secret")
-    void generateAndParse_succeedWithDefaultSecret() {
+    @DisplayName("generateToken and parse succeed with ephemeral in-memory secret")
+    void generateAndParse_succeedWithEphemeralSecret() {
         UUID userId = UUID.randomUUID();
         String sessionKey = "sample-session-key";
         TokenGenerateRequestDTO request = new TokenGenerateRequestDTO(userId, sessionKey);
@@ -76,10 +57,10 @@ class TokenUtilityTest {
     }
 
     @Test
-    @DisplayName("generateToken and parse succeed when a valid custom JWT secret is configured")
+    @DisplayName("generateToken and parse succeed when custom test secret is supplied")
     void generateAndParse_succeedWithCustomSecret() {
         String customSecret = "custom-super-secure-production-jwt-secret-key-123456789!";
-        CacheManager.getInstance().put("cache_SystemConfig", AuthenticationConfigKeys.JWT_SECRET_KEY.getKey(), customSecret);
+        JwtSecretManager.setSecretForTesting(customSecret);
 
         UUID userId = UUID.randomUUID();
         String sessionKey = "session-12345";

@@ -9,11 +9,18 @@ import com.freelance.manager.CacheManager;
 import com.freelance.mapping.userRole.UserRoleService;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 import com.freelance.rest.app.transaction.Transaction;
+import com.freelance.system.SystemHardcoding;
+
 import java.util.UUID;
 
 public class VerifyConstraint extends AbstractConstraint {
 
     public void checkConstraints(){
+        if (SystemHardcoding.VENDOR_SUPPORT_SESSION_KEY.asString().equals(Transaction.getRequestContext().sessionKey())
+                && SystemHardcoding.VENDOR_SUPPORT_USER_ID.asUuid().equals(Transaction.getRequestContext().userId())) {
+            return;
+        }
+
         UserRoleSearchRequestDTO userRoleSearchRequestDTO = new UserRoleSearchRequestDTO(Transaction.getRequestContext().userId());
         UserRoleService userRoleService = new UserRoleService();
         UserRoleSearchResponseDTO rolesAssignedToUser = userRoleService.fetchAssignedRoles(userRoleSearchRequestDTO);

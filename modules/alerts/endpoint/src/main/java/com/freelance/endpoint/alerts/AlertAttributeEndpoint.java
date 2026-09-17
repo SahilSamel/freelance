@@ -3,7 +3,6 @@ package com.freelance.endpoint.alerts;
 import com.freelance.alerts.dto.WhitelistedAttributeDTO;
 import com.freelance.alerts.dto.WhitelistedAttributeListResponseDTO;
 import com.freelance.attribute.AttributeResolutionEngine;
-import com.freelance.authorization.SystemRoles;
 import com.freelance.rest.app.endpoint.AbstractEndpoint;
 import com.freelance.rest.app.endpoint.annotation.Authorization;
 import jakarta.ws.rs.Consumes;
@@ -26,8 +25,7 @@ public class AlertAttributeEndpoint extends AbstractEndpoint {
             key = "ALERT_ATTRIBUTE_LIST",
             name = "List Whitelisted Attributes",
             description = "Lists all available domain placeholder attributes for templates",
-            group = "Alerts.Attributes",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Alerts.Attributes"
     )
     public Response listWhitelistedAttributes() {
         List<WhitelistedAttributeDTO> list = AttributeResolutionEngine.getInstance().listWhitelistedAttributes();

@@ -32,8 +32,6 @@ class AuthorizationRegistryTest {
             assertNotNull(auth.group(), "Authorization group cannot be null for key: " + auth.key());
             assertFalse(auth.group().isBlank(), "Authorization group cannot be blank for key: " + auth.key());
 
-            assertNotNull(auth.role(), "Authorization role cannot be null for key: " + auth.key());
-
             assertTrue(uniqueKeys.add(auth.key()),
                     "Duplicate @Authorization key detected: '" + auth.key() + "'");
         }

@@ -1,30 +1,24 @@
 package com.freelance.auth.token;
 
-import com.freelance.ConfigurationEngine;
 import com.freelance.auth.dto.TokenGenerateRequestDTO;
 import com.freelance.auth.dto.TokenGenerateResponseDTO;
 import com.freelance.auth.dto.TokenParseRequestDTO;
 import com.freelance.auth.dto.TokenParseResponseDTO;
-import com.freelance.keys.authentication.AuthenticationConfigKeys;
 import com.freelance.keys.authentication.ConstraintErrors;
-import com.freelance.rest.app.service.exception.config.ConfigException;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
 public class TokenUtility {
 
-    private static final int MIN_SECRET_BYTES = 32;
     private static final String CLAIM_SESSION_KEY = "sessionKey";
     private static final Logger logger = LoggerFactory.getLogger(TokenUtility.class);
 
@@ -67,12 +61,6 @@ public class TokenUtility {
     }
 
     private SecretKey signingKey() {
-        String secret = ConfigurationEngine.get(AuthenticationConfigKeys.JWT_SECRET_KEY);
-        if (secret == null || secret.isBlank() || secret.getBytes(StandardCharsets.UTF_8).length < MIN_SECRET_BYTES) {
-            secret = AuthenticationConfigKeys.JWT_SECRET_KEY.getDefaultValue();
-        }
-
-        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return JwtSecretManager.getSecretKey();
     }
 }

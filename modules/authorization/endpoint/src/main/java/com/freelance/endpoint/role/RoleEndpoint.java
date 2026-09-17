@@ -1,6 +1,5 @@
 package com.freelance.endpoint.role;
 
-import com.freelance.authorization.SystemRoles;
 import com.freelance.authorization.dto.role.create.RoleCreateRequestDTO;
 import com.freelance.authorization.dto.role.create.RoleCreateResponseDTO;
 import com.freelance.authorization.dto.role.delete.RoleDeleteRequestDTO;
@@ -35,8 +34,7 @@ public class RoleEndpoint extends AbstractEndpoint {
             key = "ROLE_CREATE",
             name = "Create Role",
             description = "Creates a new custom role with assigned permissions",
-            group = "Authorization.RoleManagement",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Authorization.RoleManagement"
     )
     public Response createRole(RoleCreateRequestDTO request) {
         RoleCreateService service = new RoleCreateService();
@@ -50,8 +48,7 @@ public class RoleEndpoint extends AbstractEndpoint {
             key = "ROLE_READ",
             name = "Read Role",
             description = "Retrieves role details and permissions",
-            group = "Authorization.RoleManagement",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Authorization.RoleManagement"
     )
     public Response readRole(RoleReadRequestDTO request) {
         RoleReadService service = new RoleReadService();
@@ -65,8 +62,7 @@ public class RoleEndpoint extends AbstractEndpoint {
             key = "ROLE_LIST",
             name = "List Roles",
             description = "Lists all system and custom roles with their permissions",
-            group = "Authorization.RoleManagement",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Authorization.RoleManagement"
     )
     public Response listRoles(RoleListRequestDTO request) {
         RoleReadService service = new RoleReadService();
@@ -80,8 +76,7 @@ public class RoleEndpoint extends AbstractEndpoint {
             key = "ROLE_UPDATE",
             name = "Update Role",
             description = "Updates custom role details and permission mappings",
-            group = "Authorization.RoleManagement",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Authorization.RoleManagement"
     )
     public Response updateRole(RoleUpdateRequestDTO request) {
         RoleUpdateService service = new RoleUpdateService();
@@ -95,8 +90,7 @@ public class RoleEndpoint extends AbstractEndpoint {
             key = "ROLE_DELETE",
             name = "Delete Role",
             description = "Deletes a custom role",
-            group = "Authorization.RoleManagement",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Authorization.RoleManagement"
     )
     public Response deleteRole(RoleDeleteRequestDTO request) {
         RoleDeleteService service = new RoleDeleteService();

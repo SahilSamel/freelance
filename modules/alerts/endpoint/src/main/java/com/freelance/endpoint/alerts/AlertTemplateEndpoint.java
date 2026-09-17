@@ -1,7 +1,6 @@
 package com.freelance.endpoint.alerts;
 
 import com.freelance.alerts.dto.*;
-import com.freelance.authorization.SystemRoles;
 import com.freelance.template.TemplateService;
 import com.freelance.rest.app.endpoint.AbstractEndpoint;
 import com.freelance.rest.app.endpoint.annotation.Authorization;
@@ -24,8 +23,7 @@ public class AlertTemplateEndpoint extends AbstractEndpoint {
             key = "ALERT_TEMPLATE_CREATE",
             name = "Create Alert Template",
             description = "Creates a new custom alert template with buttons and required attributes",
-            group = "Alerts.Templates",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Alerts.Templates"
     )
     public Response createTemplate(TemplateCreateRequestDTO request) {
         TemplateService service = new TemplateService();
@@ -39,8 +37,7 @@ public class AlertTemplateEndpoint extends AbstractEndpoint {
             key = "ALERT_TEMPLATE_LIST",
             name = "List Alert Templates",
             description = "Lists all registered alert templates",
-            group = "Alerts.Templates",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Alerts.Templates"
     )
     public Response listTemplates(TemplateListRequestDTO request) {
         TemplateService service = new TemplateService();
@@ -54,8 +51,7 @@ public class AlertTemplateEndpoint extends AbstractEndpoint {
             key = "ALERT_TEMPLATE_READ",
             name = "Read Alert Template",
             description = "Retrieves an alert template by ID",
-            group = "Alerts.Templates",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Alerts.Templates"
     )
     public Response readTemplate(TemplateReadRequestDTO request) {
         TemplateService service = new TemplateService();
@@ -69,8 +65,7 @@ public class AlertTemplateEndpoint extends AbstractEndpoint {
             key = "ALERT_TEMPLATE_UPDATE",
             name = "Update Alert Template",
             description = "Updates an existing alert template with metadata, content, and buttons",
-            group = "Alerts.Templates",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Alerts.Templates"
     )
     public Response updateTemplate(TemplateUpdateRequestDTO request) {
         TemplateService service = new TemplateService();
@@ -84,8 +79,7 @@ public class AlertTemplateEndpoint extends AbstractEndpoint {
             key = "ALERT_TEMPLATE_CATEGORIES",
             name = "List Template Categories",
             description = "Lists all registered alert template categories",
-            group = "Alerts.Templates",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Alerts.Templates"
     )
     public Response listCategories() {
         TemplateService service = new TemplateService();

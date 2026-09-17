@@ -2,7 +2,6 @@ package com.freelance.endpoint.alerts;
 
 import com.freelance.alerts.dto.*;
 import com.freelance.alerts.AlertEmitService;
-import com.freelance.authorization.SystemRoles;
 import com.freelance.chat.ChatTimelineService;
 import com.freelance.rest.app.endpoint.AbstractEndpoint;
 import com.freelance.rest.app.endpoint.annotation.Authorization;
@@ -24,8 +23,7 @@ public class AlertEndpoint extends AbstractEndpoint {
             key = "ALERT_EMIT",
             name = "Emit Alert Batch",
             description = "Enqueues a broadcast alert notification for multiple target users",
-            group = "Alerts.Management",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Alerts.Management"
     )
     public Response emitAlerts(AlertEmitRequestDTO request) {
         AlertEmitService emitService = new AlertEmitService();
@@ -39,8 +37,7 @@ public class AlertEndpoint extends AbstractEndpoint {
             key = "ALERT_CHAT_READ",
             name = "Read Chat Timeline",
             description = "Retrieves user chat conversation history and human attention status",
-            group = "Alerts.Chat",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Alerts.Chat"
     )
     public Response getChatTimeline(ChatTimelineRequestDTO request) {
         ChatTimelineService timelineService = new ChatTimelineService();
@@ -54,8 +51,7 @@ public class AlertEndpoint extends AbstractEndpoint {
             key = "ALERT_CHAT_REPLY",
             name = "Staff Chat Reply",
             description = "Sends a human staff reply to a user chat, clearing the human attention flag",
-            group = "Alerts.Chat",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Alerts.Chat"
     )
     public Response sendChatReply(AdminChatReplyRequestDTO request) {
         ChatTimelineService timelineService = new ChatTimelineService();

@@ -41,6 +41,22 @@ public enum ConstraintErrors implements IError {
             "The session has expired. Please log in again.",
             "Session expiration occurred",
             401
+    ),
+
+    /** Error raised when vendor support attempts access while the client-side support window is closed. */
+    SUPPORT_ACCESS_DISABLED(
+            "FL_2105",
+            "Support access is currently disabled by the business owner.",
+            "Vendor support attempted access while client support window was inactive or expired",
+            403
+    ),
+
+    /** Error raised when a provided vendor support token has an invalid signature, malformed claims, or expired timestamp. */
+    INVALID_VENDOR_SUPPORT_TOKEN(
+            "FL_2106",
+            "The vendor support token is invalid or expired.",
+            "Cryptographic signature or timestamp verification failed for vendor support token",
+            401
     );
 
     private static final String CATEGORY = "authentication.constraint";

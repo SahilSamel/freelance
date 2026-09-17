@@ -2,7 +2,6 @@ package com.freelance.endpoint.auth;
 
 import com.freelance.auth.dto.*;
 import com.freelance.auth.service.Authentication;
-import com.freelance.authorization.SystemRoles;
 import com.freelance.rest.app.endpoint.annotation.Anonymous;
 import com.freelance.rest.app.endpoint.annotation.Authorization;
 import com.freelance.rest.app.endpoint.AbstractEndpoint;
@@ -34,8 +33,7 @@ public class AuthenticationEndpoint extends AbstractEndpoint {
             key = "AUTH_LOGOUT",
             name = "User Logout",
             description = "Lets the user logout",
-            group = "Authentication",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Authentication"
     )
     public Response logout() {
         Authentication authenticationService = new Authentication();
@@ -50,8 +48,7 @@ public class AuthenticationEndpoint extends AbstractEndpoint {
             key = "AUTH_REFRESH",
             name = "Refresh Session Token",
             description = "Lets the user stay logged in",
-            group = "Authentication",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Authentication"
     )
     public Response refresh() {
         Authentication authenticationService = new Authentication();

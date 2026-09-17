@@ -18,11 +18,10 @@ public enum AuthenticationConfigKeys implements IConfig {
             "^(true|false)$"
     ),
 
-    JWT_SECRET_KEY(
-            "authentication.jwt.secret",
-            "default-jwt-secret-key-that-is-at-least-32-bytes-long!",
-            "Secret key used to sign and verify JWT tokens",
-            "^.{32,}$"
+    VENDOR_SUPPORT_PUBLIC_KEY(
+            "authentication.vendor.support.publicKey",
+            "",
+            "Base64-encoded X.509 RSA public key used to verify vendor support tokens"
     );
 
     private final String key;

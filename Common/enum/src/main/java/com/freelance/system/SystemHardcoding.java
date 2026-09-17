@@ -12,7 +12,20 @@ public enum SystemHardcoding {
      */
     SYSTEM_USER_ID(UUID.fromString("00000000-0000-0000-0000-000000000000")),
 
-    ANONYMOUS_USER_ID(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+    /**
+     * Known UUID representing the anonymous unauthenticated caller.
+     */
+    ANONYMOUS_USER_ID(UUID.fromString("11111111-1111-1111-1111-111111111111")),
+
+    /**
+     * Known UUID representing vendor technical support actor.
+     */
+    VENDOR_SUPPORT_USER_ID(UUID.fromString("99999999-9999-9999-9999-999999999999")),
+
+    /**
+     * Well-known session key identifier for authenticated vendor technical support sessions.
+     */
+    VENDOR_SUPPORT_SESSION_KEY("VENDOR_SUPPORT_SESSION");
 
     private final Object value;
 

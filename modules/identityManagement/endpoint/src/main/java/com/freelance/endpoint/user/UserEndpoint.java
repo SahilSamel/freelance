@@ -1,6 +1,5 @@
 package com.freelance.endpoint.user;
 
-import com.freelance.authorization.SystemRoles;
 import com.freelance.rest.app.endpoint.AbstractEndpoint;
 import com.freelance.rest.app.endpoint.annotation.Authorization;
 import com.freelance.user.create.UserCreateRequestDTO;
@@ -33,8 +32,7 @@ public class UserEndpoint extends AbstractEndpoint {
             key = "USER_CREATE",
             name = "Create User",
             description = "Creates a new user account",
-            group = "IdentityManagement",
-            role = SystemRoles.SUPER_ADMIN
+            group = "IdentityManagement"
     )
     public Response createUser(UserCreateRequestDTO request) {
         UserCreateService createService = new UserCreateService();
@@ -48,8 +46,7 @@ public class UserEndpoint extends AbstractEndpoint {
             key = "USER_READ",
             name = "Read User",
             description = "Retrieves user account details",
-            group = "IdentityManagement",
-            role = SystemRoles.SUPER_ADMIN
+            group = "IdentityManagement"
     )
     public Response readUser(UserReadRequestDTO request) {
         User readService = new User();
@@ -63,8 +60,7 @@ public class UserEndpoint extends AbstractEndpoint {
             key = "USER_UPDATE",
             name = "Update User",
             description = "Updates an existing user account",
-            group = "IdentityManagement",
-            role = SystemRoles.SUPER_ADMIN
+            group = "IdentityManagement"
     )
     public Response updateUser(UserUpdateRequestDTO request) {
         UserUpdateService updateService = new UserUpdateService();
@@ -78,8 +74,7 @@ public class UserEndpoint extends AbstractEndpoint {
             key = "USER_DELETE",
             name = "Delete User",
             description = "Deletes an existing user account",
-            group = "IdentityManagement",
-            role = SystemRoles.SUPER_ADMIN
+            group = "IdentityManagement"
     )
     public Response deleteUser(UserDeleteRequestDTO request) {
         UserDeleteService deleteService = new UserDeleteService();

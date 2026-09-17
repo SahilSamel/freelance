@@ -3,7 +3,6 @@ package com.freelance.endpoint.audit;
 import com.freelance.audit.dto.list.AuditLogListRequestDTO;
 import com.freelance.audit.dto.list.AuditLogListResponseDTO;
 import com.freelance.audit.service.AuditService;
-import com.freelance.authorization.SystemRoles;
 import com.freelance.rest.app.endpoint.AbstractEndpoint;
 import com.freelance.rest.app.endpoint.annotation.Authorization;
 import jakarta.ws.rs.Consumes;
@@ -24,8 +23,7 @@ public class AuditEndpoint extends AbstractEndpoint {
             key = "AUDIT_LOG_LIST",
             name = "List Audit Logs",
             description = "Lists HTTP and system audit logs with optional filters",
-            group = "Audit.Management",
-            role = SystemRoles.SUPER_ADMIN
+            group = "Audit.Management"
     )
     public Response listAuditLogs(AuditLogListRequestDTO request) {
         AuditService auditService = new AuditService();

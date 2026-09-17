@@ -1,5 +1,6 @@
 package com.freelance.initialization;
 
+import com.freelance.auth.token.JwtSecretManager;
 import com.freelance.template.seeder.AlertsBootstrap;
 import com.freelance.authorization.seeder.AuthorizationSeeder;
 import com.freelance.configuration.error.ErrorConfigurationService;
@@ -36,6 +37,8 @@ public class Init {
 
                 //Setting the userId as System UUID so that all automatically seeded entries are marked as such
                 Transaction.getRequestContext().withUserId(SystemHardcoding.SYSTEM_USER_ID.asUuid());
+
+                JwtSecretManager.initialize();
 
                 ConfigurationSeeder configurationSeeder = new ConfigurationSeeder();
                 configurationSeeder.seed();
