@@ -3,7 +3,6 @@ package com.freelance.auth.service;
 import com.freelance.ConfigurationEngine;
 import com.freelance.auth.dto.AuthVerifyRequestDTO;
 import com.freelance.auth.dto.AuthVerifyResponseDTO;
-import com.freelance.auth.dto.SupportGrantRequestDTO;
 import com.freelance.auth.support.SupportAccessService;
 import com.freelance.fixtures.TestContextHelper;
 import com.freelance.fixtures.VendorSupportTestHelper;
@@ -65,7 +64,7 @@ class AuthenticationSupportTest {
     @DisplayName("verify succeeds and returns SYSTEM_USER_ID and VENDOR_SUPPORT_SESSION when window is active")
     void testVerify_supportWindowActive_succeeds() {
         // Grant support access
-        supportAccessService.grantAccess(new SupportGrantRequestDTO(2));
+        supportAccessService.grantAccess();
 
         String token = VendorSupportTestHelper.generateSupportToken(
                 vendorKeyPair.getPrivate(), "TICKET-101", "Debug DB lock", Duration.ofHours(1)
@@ -80,7 +79,7 @@ class AuthenticationSupportTest {
     @Test
     @DisplayName("verify throws INVALID_VENDOR_SUPPORT_TOKEN when token signature is invalid")
     void testVerify_invalidSignature_throwsConstraintException() {
-        supportAccessService.grantAccess(new SupportGrantRequestDTO(2));
+        supportAccessService.grantAccess();
 
         KeyPair anotherKeyPair = VendorSupportTestHelper.generateRsaKeyPair();
         String fakeToken = VendorSupportTestHelper.generateSupportToken(
@@ -96,7 +95,7 @@ class AuthenticationSupportTest {
     @Test
     @DisplayName("verify throws SUPPORT_ACCESS_DISABLED immediately after access is revoked")
     void testVerify_afterRevocation_throwsConstraintException() {
-        supportAccessService.grantAccess(new SupportGrantRequestDTO(2));
+        supportAccessService.grantAccess();
         String token = VendorSupportTestHelper.generateSupportToken(
                 vendorKeyPair.getPrivate(), "TICKET-101", "Debug DB lock", Duration.ofHours(1)
         );

@@ -48,9 +48,9 @@ public class SupportEndpoint extends AbstractEndpoint {
             description = "Grants time-boxed support access window to tech support",
             group = "Support.Management"
     )
-    public Response grantAccess(SupportGrantRequestDTO request) {
+    public Response grantAccess() {
         SupportAccessService service = new SupportAccessService();
-        SupportGrantResponseDTO response = service.grantAccess(request);
+        SupportGrantResponseDTO response = service.grantAccess();
         return buildResponse(response, 200);
     }
 

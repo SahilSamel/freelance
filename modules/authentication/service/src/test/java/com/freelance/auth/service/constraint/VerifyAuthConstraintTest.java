@@ -1,7 +1,6 @@
 package com.freelance.auth.service.constraint;
 
 import com.freelance.auth.dto.AuthVerifyRequestDTO;
-import com.freelance.auth.dto.SupportGrantRequestDTO;
 import com.freelance.auth.support.SupportAccessService;
 import com.freelance.fixtures.TestContextHelper;
 import com.freelance.fixtures.VendorSupportTestHelper;
@@ -99,7 +98,7 @@ class VerifyAuthConstraintTest {
     @Test
     @DisplayName("valid vendor token when support window is active passes constraints")
     void vendorToken_validAndActive_passes() {
-        supportAccessService.grantAccess(new SupportGrantRequestDTO(2));
+        supportAccessService.grantAccess();
 
         String token = VendorSupportTestHelper.generateSupportToken(
                 vendorKeyPair.getPrivate(), "TICKET-1", "Reason", Duration.ofHours(1)

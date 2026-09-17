@@ -22,6 +22,13 @@ public enum AuthenticationConfigKeys implements IConfig {
             "authentication.vendor.support.publicKey",
             "",
             "Base64-encoded X.509 RSA public key used to verify vendor support tokens"
+    ),
+
+    SUPPORT_ACCESS_DEFAULT_DURATION_HOURS(
+            "authentication.support.access.defaultDurationHours",
+            "2",
+            "Default duration in hours for granted vendor support access windows (1-6 hours)",
+            "^[1-6]$"
     );
 
     private final String key;

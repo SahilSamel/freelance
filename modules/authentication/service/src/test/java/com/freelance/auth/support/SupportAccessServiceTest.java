@@ -55,29 +55,39 @@ class SupportAccessServiceTest {
     }
 
     @Test
-    @DisplayName("grantAccess sets future expiration time in cache_SupportAccess and activates support window")
+    @DisplayName("grantAccess sets future expiration time based on configured default duration")
     void testGrantAccess() {
         assertFalse(supportAccessService.isSupportAccessActive());
 
-        SupportGrantResponseDTO grantResponse = supportAccessService.grantAccess(new SupportGrantRequestDTO(3));
+        SupportGrantResponseDTO grantResponse = supportAccessService.grantAccess();
         assertTrue(grantResponse.active());
         assertNotNull(grantResponse.expiresAt());
 
         assertTrue(supportAccessService.isSupportAccessActive());
-        assertTrue(grantResponse.expiresAt().isAfter(Instant.now().plus(2, ChronoUnit.HOURS)));
+        assertTrue(grantResponse.expiresAt().isAfter(Instant.now().plus(1, ChronoUnit.HOURS)));
 
         SupportStatusResponseDTO status = supportAccessService.getStatus();
         assertTrue(status.active());
         assertNotNull(status.expiresAt());
-        assertTrue(status.expiresAt().isAfter(Instant.now().plus(2, ChronoUnit.HOURS)));
+        assertTrue(status.expiresAt().isAfter(Instant.now().plus(1, ChronoUnit.HOURS)));
         assertNull(status.pendingReason());
         assertNull(status.pendingTicketId());
     }
 
     @Test
+    @DisplayName("grantAccess respects dynamically configured duration from SystemConfig cache")
+    void testGrantAccessDynamicConfig() {
+        CacheManager.getInstance().put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "4");
+
+        SupportGrantResponseDTO grantResponse = supportAccessService.grantAccess();
+        assertTrue(grantResponse.active());
+        assertTrue(grantResponse.expiresAt().isAfter(Instant.now().plus(3, ChronoUnit.HOURS)));
+    }
+
+    @Test
     @DisplayName("revokeAccess immediately clears cache_SupportAccess and terminates the support window")
     void testRevokeAccess() {
-        supportAccessService.grantAccess(new SupportGrantRequestDTO(1));
+        supportAccessService.grantAccess();
         assertTrue(supportAccessService.isSupportAccessActive());
 
         SupportRevokeResponseDTO revokeResponse = supportAccessService.revokeAccess();

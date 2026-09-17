@@ -1,6 +1,5 @@
 package com.freelance.tests.support;
 
-import com.freelance.auth.dto.SupportGrantRequestDTO;
 import com.freelance.auth.dto.SupportRequestDTO;
 import com.freelance.tests.BaseIntegrationTest;
 import io.restassured.RestAssured;
@@ -83,7 +82,6 @@ class SupportWorkflowIntegrationTest extends BaseIntegrationTest {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new SupportGrantRequestDTO(2))
                 .when()
                 .post("/support/grant-access")
                 .then()
