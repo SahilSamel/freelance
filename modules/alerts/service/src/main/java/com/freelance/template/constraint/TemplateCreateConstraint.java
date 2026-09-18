@@ -10,8 +10,8 @@ import com.freelance.alerts.template.entity.AlertTemplateEntity;
 import com.freelance.alerts.template.repository.AlertButtonRepository;
 import com.freelance.alerts.template.repository.AlertTemplateCategoryRepository;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
-import com.freelance.keys.alerts.AlertConfigKeys;
-import com.freelance.keys.alerts.ConstraintErrors;
+import com.freelance.keys.alerts.message.AlertEmitConfigKeys;
+import com.freelance.keys.alerts.template.TemplateConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 
 import java.util.*;
@@ -54,12 +54,12 @@ public class TemplateCreateConstraint extends AbstractConstraint {
 
         for (TemplateCreateRequestDTO tpl : request.allTemplates()) {
             if (tpl.templateKey() != null && isTemplateKeyInRepository(tpl.templateKey())) {
-                raiseConstraintError(ConstraintErrors.TEMPLATE_KEY_ALREADY_EXISTS);
+                raiseConstraintError(TemplateConstraintErrors.TEMPLATE_KEY_ALREADY_EXISTS);
             }
 
             if (tpl.category() != null && !tpl.category().isBlank()) {
                 if (!isCategoryInRepository(tpl.category())) {
-                    raiseConstraintError(ConstraintErrors.TEMPLATE_CATEGORY_NOT_FOUND);
+                    raiseConstraintError(TemplateConstraintErrors.TEMPLATE_CATEGORY_NOT_FOUND);
                 }
             }
 
@@ -67,7 +67,7 @@ public class TemplateCreateConstraint extends AbstractConstraint {
                 for (TemplateButtonDTO btn : tpl.buttons()) {
                     if (btn.type() == ButtonType.QUICK_REPLY && btn.payload() != null && !btn.payload().isBlank()) {
                         if (isButtonPayloadInRepository(btn.payload())) {
-                            raiseConstraintError(ConstraintErrors.BUTTON_PAYLOAD_ALREADY_EXISTS);
+                            raiseConstraintError(TemplateConstraintErrors.BUTTON_PAYLOAD_ALREADY_EXISTS);
                         }
                     }
                 }
@@ -77,7 +77,7 @@ public class TemplateCreateConstraint extends AbstractConstraint {
         for (TemplateCreateRequestDTO tpl : request.allTemplates()) {
             AlertChannel channel = tpl.channel() != null
                     ? tpl.channel()
-                    : ConfigurationEngine.getEnum(AlertConfigKeys.DEFAULT_ALERT_CHANNEL, AlertChannel.class, AlertChannel.WHATSAPP);
+                    : ConfigurationEngine.getEnum(AlertEmitConfigKeys.DEFAULT_ALERT_CHANNEL, AlertChannel.class, AlertChannel.WHATSAPP);
 
             if (channel == AlertChannel.WHATSAPP && tpl.buttons() != null && !tpl.buttons().isEmpty()) {
                 if (tpl.templateKey() != null && !tpl.templateKey().isBlank()) {
@@ -105,7 +105,7 @@ public class TemplateCreateConstraint extends AbstractConstraint {
 
             if (replyKey == null || replyKey.isBlank()) {
                 if (!isTerminalAction) {
-                    raiseConstraintError(ConstraintErrors.TEMPLATE_CHAIN_BROKEN);
+                    raiseConstraintError(TemplateConstraintErrors.TEMPLATE_CHAIN_BROKEN);
                 }
                 continue;
             }
@@ -123,7 +123,7 @@ public class TemplateCreateConstraint extends AbstractConstraint {
             } else {
                 Optional<AlertTemplateEntity> existingOpt = findTemplateInRepository(replyKey);
                 if (existingOpt.isEmpty()) {
-                    raiseConstraintError(ConstraintErrors.TEMPLATE_CHAIN_BROKEN);
+                    raiseConstraintError(TemplateConstraintErrors.TEMPLATE_CHAIN_BROKEN);
                 }
 
                 AlertTemplateEntity existing = existingOpt.get();

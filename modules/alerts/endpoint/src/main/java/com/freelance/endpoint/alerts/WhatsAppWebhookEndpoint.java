@@ -5,7 +5,7 @@ import com.freelance.alerts.AlertConsumer;
 import com.freelance.alerts.dto.webhook.WhatsAppWebhookPayloadDTO;
 import com.freelance.event.engine.EventManagementEngine;
 import com.freelance.event.model.EventPriority;
-import com.freelance.keys.alerts.AlertConfigKeys;
+import com.freelance.keys.alerts.webhook.WebhookConfigKeys;
 import com.freelance.rest.app.endpoint.AbstractEndpoint;
 import com.freelance.rest.app.endpoint.annotation.Anonymous;
 import jakarta.ws.rs.*;
@@ -27,7 +27,7 @@ public class WhatsAppWebhookEndpoint extends AbstractEndpoint {
             @QueryParam("hub.verify_token") String token,
             @QueryParam("hub.challenge") String challenge
     ) {
-        String expectedToken = ConfigurationEngine.get(AlertConfigKeys.WHATSAPP_WEBHOOK_VERIFY_TOKEN);
+        String expectedToken = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_WEBHOOK_VERIFY_TOKEN);
         if ("subscribe".equals(mode) && expectedToken != null && expectedToken.equals(token)) {
             logger.info("[WhatsAppWebhookEndpoint] Meta WhatsApp webhook successfully verified.");
             return Response.ok(challenge).build();

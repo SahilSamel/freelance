@@ -6,7 +6,7 @@ import com.freelance.auth.support.SupportAccessService;
 import com.freelance.auth.vendor.VendorSupportKeyUtility;
 import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateRequestDTO;
 import com.freelance.configuration.system.SystemConfigurationService;
-import com.freelance.keys.authentication.AuthenticationConfigKeys;
+import com.freelance.keys.authentication.support.SupportConfigKeys;
 import com.freelance.system.SystemHardcoding;
 import com.freelance.user.repository.UserRepository;
 import io.jsonwebtoken.Jwts;
@@ -43,7 +43,7 @@ public class SupportBootstrapService {
     }
 
     public Day0BootstrapResult bootstrapIfRequired() {
-        String configuredPublicKey = ConfigurationEngine.get(AuthenticationConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY);
+        String configuredPublicKey = ConfigurationEngine.get(SupportConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY);
         boolean hasPublicKey = configuredPublicKey != null && !configuredPublicKey.isBlank();
         long userCount = userRepository.countUsers();
 
@@ -71,7 +71,7 @@ public class SupportBootstrapService {
             String publicKeyBase64 = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
 
             systemConfigurationService.updateConfiguration(new SystemConfigurationUpdateRequestDTO(
-                    AuthenticationConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey(),
+                    SupportConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey(),
                     publicKeyBase64,
                     "RSA public key generated during Day-0 bootstrap"
             ));

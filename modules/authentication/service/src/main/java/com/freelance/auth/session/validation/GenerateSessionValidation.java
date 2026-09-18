@@ -1,14 +1,14 @@
 package com.freelance.auth.session.validation;
 
 import com.freelance.auth.dto.SessionGenerateRequestDTO;
-import com.freelance.keys.authentication.ValidationErrors;
+import com.freelance.keys.authentication.session.SessionValidationErrors;
 import com.freelance.rest.app.service.exception.validation.AbstractValidation;
 
 public class GenerateSessionValidation extends AbstractValidation {
 
     public void validateRequest(SessionGenerateRequestDTO request) {
         if (request == null || request.userId() == null) {
-            raiseValidationError(ValidationErrors.UNABLE_TO_CREATE_SESSION, "userId");
+            raiseValidationError(SessionValidationErrors.UNABLE_TO_CREATE_SESSION, "userId");
         }
         validate();
     }

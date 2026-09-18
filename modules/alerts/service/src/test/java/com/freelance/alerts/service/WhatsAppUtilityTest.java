@@ -221,12 +221,12 @@ class WhatsAppUtilityTest {
 
         com.freelance.manager.CacheManager.getInstance().put(
                 "cache_SystemConfig",
-                com.freelance.keys.alerts.AlertConfigKeys.WHATSAPP_OPT_OUT_KEYWORDS.getKey(),
+                com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_OPT_OUT_KEYWORDS.getKey(),
                 "HALT, CEASE, BLOCK_ME"
         );
         com.freelance.manager.CacheManager.getInstance().put(
                 "cache_SystemConfig",
-                com.freelance.keys.alerts.AlertConfigKeys.WHATSAPP_OPT_IN_KEYWORDS.getKey(),
+                com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_OPT_IN_KEYWORDS.getKey(),
                 "UNBLOCK, ALLOW_ME, GO"
         );
 
@@ -241,8 +241,8 @@ class WhatsAppUtilityTest {
             assertTrue(WhatsAppUtility.isOptInKeyword("GO!"));
             assertFalse(WhatsAppUtility.isOptInKeyword("START")); // Overridden by custom configuration
         } finally {
-            com.freelance.ConfigurationEngine.invalidateConfig(com.freelance.keys.alerts.AlertConfigKeys.WHATSAPP_OPT_OUT_KEYWORDS);
-            com.freelance.ConfigurationEngine.invalidateConfig(com.freelance.keys.alerts.AlertConfigKeys.WHATSAPP_OPT_IN_KEYWORDS);
+            com.freelance.ConfigurationEngine.invalidateConfig(com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_OPT_OUT_KEYWORDS);
+            com.freelance.ConfigurationEngine.invalidateConfig(com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_OPT_IN_KEYWORDS);
         }
 
         // Returns back to defaults after invalidation

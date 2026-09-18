@@ -3,7 +3,7 @@ package com.freelance.auth.session;
 import com.freelance.auth.dto.*;
 import com.freelance.cache.config.SessionCacheConfig;
 import com.freelance.cache.config.SessionCacheEntry;
-import com.freelance.keys.authentication.ConstraintErrors;
+import com.freelance.keys.authentication.session.SessionConstraintErrors;
 import com.freelance.manager.CacheManager;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import org.junit.jupiter.api.BeforeEach;
@@ -107,7 +107,7 @@ class SessionTest {
                 ConstraintException.class,
                 () -> session.verifySession(new SessionVerifyRequestDTO("unknown-key", userId))
         );
-        assertEquals(ConstraintErrors.INVALID_SESSION.getErrorKey(), ex.getError().getErrorKey());
+        assertEquals(SessionConstraintErrors.INVALID_SESSION.getErrorKey(), ex.getError().getErrorKey());
     }
 
     @Test
@@ -126,7 +126,7 @@ class SessionTest {
                 ConstraintException.class,
                 () -> session.verifySession(new SessionVerifyRequestDTO(sessionKey, userId))
         );
-        assertEquals(ConstraintErrors.EXPIRED_SESSION.getErrorKey(), ex.getError().getErrorKey());
+        assertEquals(SessionConstraintErrors.EXPIRED_SESSION.getErrorKey(), ex.getError().getErrorKey());
     }
 
     @Test

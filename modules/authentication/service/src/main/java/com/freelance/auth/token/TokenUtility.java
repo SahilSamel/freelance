@@ -4,7 +4,7 @@ import com.freelance.auth.dto.TokenGenerateRequestDTO;
 import com.freelance.auth.dto.TokenGenerateResponseDTO;
 import com.freelance.auth.dto.TokenParseRequestDTO;
 import com.freelance.auth.dto.TokenParseResponseDTO;
-import com.freelance.keys.authentication.ConstraintErrors;
+import com.freelance.keys.authentication.session.SessionConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -53,10 +53,10 @@ public class TokenUtility {
             return new TokenParseResponseDTO(userId, sessionKey);
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
             logger.warn("JWT token has expired: {}", e.getMessage());
-            throw new ConstraintException(ConstraintErrors.EXPIRED_SESSION);
+            throw new ConstraintException(SessionConstraintErrors.EXPIRED_SESSION);
         } catch (JwtException | IllegalArgumentException e) {
             logger.warn("Failed to parse JWT token: {}", e.getMessage());
-            throw new ConstraintException(ConstraintErrors.INVALID_SESSION);
+            throw new ConstraintException(SessionConstraintErrors.INVALID_SESSION);
         }
     }
 

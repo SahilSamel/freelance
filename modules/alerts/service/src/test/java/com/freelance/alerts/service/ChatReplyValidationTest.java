@@ -4,7 +4,8 @@ import com.freelance.alerts.AlertChannel;
 import com.freelance.alerts.dto.AdminChatReplyRequestDTO;
 import com.freelance.chat.validation.ChatReplyValidation;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.alerts.ValidationErrors;
+import com.freelance.keys.alerts.chat.ChatValidationErrors;
+import com.freelance.keys.alerts.message.AlertEmitValidationErrors;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import org.junit.jupiter.api.AfterEach;
@@ -39,7 +40,7 @@ public class ChatReplyValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
         assertTrue(context.getValidationErrors().containsKey("userId"));
-        assertTrue(context.getValidationErrors().get("userId").contains(ValidationErrors.INVALID_USER_IDS));
+        assertTrue(context.getValidationErrors().get("userId").contains(AlertEmitValidationErrors.INVALID_USER_IDS));
     }
 
     @Test
@@ -49,7 +50,7 @@ public class ChatReplyValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
         assertTrue(context.getValidationErrors().containsKey("channel"));
-        assertTrue(context.getValidationErrors().get("channel").contains(ValidationErrors.INVALID_CHANNEL));
+        assertTrue(context.getValidationErrors().get("channel").contains(AlertEmitValidationErrors.INVALID_CHANNEL));
     }
 
     @Test
@@ -59,7 +60,7 @@ public class ChatReplyValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
         assertTrue(context.getValidationErrors().containsKey("message"));
-        assertTrue(context.getValidationErrors().get("message").contains(ValidationErrors.INVALID_CHAT_REPLY));
+        assertTrue(context.getValidationErrors().get("message").contains(ChatValidationErrors.INVALID_CHAT_REPLY));
     }
 
     @Test

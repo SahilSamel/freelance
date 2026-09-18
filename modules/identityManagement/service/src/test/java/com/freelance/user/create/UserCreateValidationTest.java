@@ -1,7 +1,7 @@
 package com.freelance.user.create;
 
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.identityManagement.ValidationErrors;
+import com.freelance.keys.identityManagement.user.UserValidationErrors;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import com.freelance.user.create.validation.UserCreateValidation;
@@ -49,7 +49,7 @@ class UserCreateValidationTest {
     void blankUsername_raisesError() {
         UserCreateRequestDTO request = new UserCreateRequestDTO("", "ValidPassword123");
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("username").contains(ValidationErrors.INVALID_USERNAME));
+        assertTrue(context.getValidationErrors().get("username").contains(UserValidationErrors.INVALID_USERNAME));
     }
 
     @Test
@@ -57,7 +57,7 @@ class UserCreateValidationTest {
     void shortUsername_raisesError() {
         UserCreateRequestDTO request = new UserCreateRequestDTO("ab", "ValidPassword123");
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("username").contains(ValidationErrors.USERNAME_TOO_SHORT));
+        assertTrue(context.getValidationErrors().get("username").contains(UserValidationErrors.USERNAME_TOO_SHORT));
     }
 
     @Test
@@ -65,7 +65,7 @@ class UserCreateValidationTest {
     void invalidCharsUsername_raisesError() {
         UserCreateRequestDTO request = new UserCreateRequestDTO("user@name#", "ValidPassword123");
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("username").contains(ValidationErrors.USERNAME_HAS_INVALID_CHARS));
+        assertTrue(context.getValidationErrors().get("username").contains(UserValidationErrors.USERNAME_HAS_INVALID_CHARS));
     }
 
     @Test
@@ -73,7 +73,7 @@ class UserCreateValidationTest {
     void blankPassword_raisesError() {
         UserCreateRequestDTO request = new UserCreateRequestDTO("valid_user", "");
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("password").contains(ValidationErrors.INVALID_PASSWORD));
+        assertTrue(context.getValidationErrors().get("password").contains(UserValidationErrors.INVALID_PASSWORD));
     }
 
     @Test
@@ -81,6 +81,6 @@ class UserCreateValidationTest {
     void shortPassword_raisesError() {
         UserCreateRequestDTO request = new UserCreateRequestDTO("valid_user", "123");
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("password").contains(ValidationErrors.PASSWORD_TOO_SHORT));
+        assertTrue(context.getValidationErrors().get("password").contains(UserValidationErrors.PASSWORD_TOO_SHORT));
     }
 }

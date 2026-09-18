@@ -1,7 +1,7 @@
 package com.freelance.user.update.constraint;
 
 import com.freelance.user.entity.User;
-import com.freelance.keys.identityManagement.ConstraintErrors;
+import com.freelance.keys.identityManagement.user.UserConstraintErrors;
 import com.freelance.user.repository.UserRepository;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 import com.freelance.user.update.UserUpdateRequestDTO;
@@ -29,14 +29,14 @@ public class UserUpdateConstraint extends AbstractConstraint {
                 .orElse(null);
 
         if (existingUser == null) {
-            raiseConstraintError(ConstraintErrors.USER_TO_UPDATE_NOT_FOUND);
+            raiseConstraintError(UserConstraintErrors.USER_TO_UPDATE_NOT_FOUND);
         }
 
         if (request.username() != null && !request.username().isBlank()) {
             if (!request.username().equals(existingUser.getUsername())) {
                 Optional<User> byUsername = userRepository.findByUsername(request.username());
                 if (byUsername.isPresent() && !byUsername.get().getId().equals(request.id())) {
-                    raiseConstraintError(ConstraintErrors.USER_ALREADY_EXISTS);
+                    raiseConstraintError(UserConstraintErrors.USER_ALREADY_EXISTS);
                 }
             }
         }

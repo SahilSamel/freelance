@@ -7,7 +7,7 @@ import com.freelance.alerts.template.entity.AlertButtonReplyEntity;
 import com.freelance.alerts.template.entity.AlertTemplateEntity;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
 import com.freelance.ConfigurationEngine;
-import com.freelance.keys.alerts.AlertConfigKeys;
+import com.freelance.keys.alerts.message.AlertEmitConfigKeys;
 import com.freelance.alerts.template.ITemplate;
 import com.freelance.alerts.template.ITemplateButton;
 import com.freelance.system.SystemHardcoding;
@@ -41,7 +41,7 @@ public class TemplateSeeder {
             String attrs = tpl.getRequiredAttributes() != null ? String.join(",", tpl.getRequiredAttributes()) : null;
             AlertChannel channel = tpl.getChannel() != null
                     ? tpl.getChannel()
-                    : ConfigurationEngine.getEnum(AlertConfigKeys.DEFAULT_ALERT_CHANNEL, AlertChannel.class, AlertChannel.WHATSAPP);
+                    : ConfigurationEngine.getEnum(AlertEmitConfigKeys.DEFAULT_ALERT_CHANNEL, AlertChannel.class, AlertChannel.WHATSAPP);
 
             if (existingOpt.isEmpty()) {
                 UUID templateId = UUID.nameUUIDFromBytes(("tpl:" + tpl.getTemplateKey()).getBytes());

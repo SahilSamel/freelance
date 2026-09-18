@@ -12,7 +12,7 @@ import com.freelance.alerts.whatsapp.WhatsAppUtility;
 import com.freelance.consumer.alerts.outbound.whatsapp.WhatsAppErrorCode;
 import com.freelance.template.utils.TemplateRenderUtility;
 import com.freelance.event.model.EventPriority;
-import com.freelance.keys.alerts.AlertConfigKeys;
+import com.freelance.keys.alerts.webhook.WebhookConfigKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,9 +82,9 @@ public class WhatsAppDispatcherService implements IAlertDispatcher {
                 : TemplateRenderUtility.render(request.template(), request.resolvedAttributes());
 
         String recipientPhone = request.recipientContact();
-        String accessToken = ConfigurationEngine.get(AlertConfigKeys.WHATSAPP_ACCESS_TOKEN);
-        String phoneNumberId = ConfigurationEngine.get(AlertConfigKeys.WHATSAPP_PHONE_NUMBER_ID);
-        String baseUrl = ConfigurationEngine.get(AlertConfigKeys.WHATSAPP_API_BASE_URL);
+        String accessToken = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN);
+        String phoneNumberId = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_PHONE_NUMBER_ID);
+        String baseUrl = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_API_BASE_URL);
 
         if (accessToken == null || accessToken.contains("placeholder") || accessToken.contains("default")) {
             String mockWamid = "wamid.HBgL" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);

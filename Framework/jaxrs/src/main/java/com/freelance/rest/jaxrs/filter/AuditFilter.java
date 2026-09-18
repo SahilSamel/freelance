@@ -3,7 +3,7 @@ package com.freelance.rest.jaxrs.filter;
 import com.freelance.ConfigurationEngine;
 import com.freelance.audit.dto.AuditLogCreateRequestDTO;
 import com.freelance.audit.service.AuditService;
-import com.freelance.keys.audit.AuditConfigKeys;
+import com.freelance.keys.audit.http.HttpAuditConfigKeys;
 import com.freelance.rest.app.endpoint.annotation.Anonymous;
 import com.freelance.rest.app.transaction.Transaction;
 import jakarta.annotation.Priority;
@@ -79,7 +79,7 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
         MDC.put(TRACE_ID_MDC_KEY, traceId);
         requestContext.setProperty(TRACE_ID_PROP, traceId);
 
-        if (!ConfigurationEngine.getBoolean(AuditConfigKeys.AUDITING_ENABLED)) {
+        if (!ConfigurationEngine.getBoolean(HttpAuditConfigKeys.AUDITING_ENABLED)) {
             return;
         }
 
@@ -122,7 +122,7 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
         MDC.put(TRACE_ID_MDC_KEY, traceId);
         responseContext.getHeaders().putSingle(TRACE_ID_HEADER, traceId);
 
-        if (!ConfigurationEngine.getBoolean(AuditConfigKeys.AUDITING_ENABLED)) {
+        if (!ConfigurationEngine.getBoolean(HttpAuditConfigKeys.AUDITING_ENABLED)) {
             MDC.remove(TRACE_ID_MDC_KEY);
             return;
         }

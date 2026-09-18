@@ -7,8 +7,8 @@ import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateRe
 import com.freelance.configuration.system.entity.SystemConfiguration;
 import com.freelance.fixtures.FakeSystemConfigurationRepository;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.configuration.ConstraintErrors;
-import com.freelance.keys.configuration.ValidationErrors;
+import com.freelance.keys.configuration.system.SystemConfigConstraintErrors;
+import com.freelance.keys.configuration.system.SystemConfigValidationErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
@@ -80,7 +80,7 @@ class SystemConfigurationServiceTest {
         SystemConfigurationService service = new SystemConfigurationService(repo);
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> service.updateConfiguration(new SystemConfigurationUpdateRequestDTO("unknown.key", "val", "desc")));
-        assertEquals(ConstraintErrors.CONFIGURATION_NOT_FOUND, ex.getError());
+        assertEquals(SystemConfigConstraintErrors.CONFIGURATION_NOT_FOUND, ex.getError());
     }
 
     @Test
@@ -91,7 +91,7 @@ class SystemConfigurationServiceTest {
         SystemConfigurationService service = new SystemConfigurationService(repo);
         assertThrows(ValidationException.class,
                 () -> service.updateConfiguration(new SystemConfigurationUpdateRequestDTO("", "val", "desc")));
-        assertTrue(context.getValidationErrors().get("configId").contains(ValidationErrors.INVALID_CONFIG_ID));
+        assertTrue(context.getValidationErrors().get("configId").contains(SystemConfigValidationErrors.INVALID_CONFIG_ID));
     }
 
     @Test
@@ -130,7 +130,7 @@ class SystemConfigurationServiceTest {
                 () -> service.updateConfiguration(new SystemConfigurationUpdateRequestDTO("authentication.session.ttlSeconds", "invalid_negative_-5", "desc")));
 
         assertTrue(context.getValidationErrors().containsKey("configValue"));
-        assertTrue(context.getValidationErrors().get("configValue").contains(ValidationErrors.CONFIG_VALUE_VALIDATION_FAILED));
+        assertTrue(context.getValidationErrors().get("configValue").contains(SystemConfigValidationErrors.CONFIG_VALUE_VALIDATION_FAILED));
     }
 
     @Test

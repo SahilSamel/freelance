@@ -1,7 +1,7 @@
 package com.freelance.role.create;
 
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.authorization.ValidationErrors;
+import com.freelance.keys.authorization.role.RoleValidationErrors;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import com.freelance.role.create.validation.RoleCreateValidation;
@@ -43,7 +43,7 @@ class RoleCreateValidationTest {
     @DisplayName("null request raises INVALID_ROLE_NAME")
     void nullRequest_raisesError() {
         assertThrows(ValidationException.class, () -> validation.validateRequest(null));
-        assertTrue(context.getValidationErrors().get("name").contains(ValidationErrors.INVALID_ROLE_NAME));
+        assertTrue(context.getValidationErrors().get("name").contains(RoleValidationErrors.INVALID_ROLE_NAME));
     }
 
     @Test
@@ -51,7 +51,7 @@ class RoleCreateValidationTest {
     void blankName_raisesError() {
         RoleCreateRequestDTO request = new RoleCreateRequestDTO("  ", "Desc", Collections.emptyList());
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("name").contains(ValidationErrors.INVALID_ROLE_NAME));
+        assertTrue(context.getValidationErrors().get("name").contains(RoleValidationErrors.INVALID_ROLE_NAME));
     }
 
     @Test
@@ -59,6 +59,6 @@ class RoleCreateValidationTest {
     void shortName_raisesError() {
         RoleCreateRequestDTO request = new RoleCreateRequestDTO("ab", "Desc", Collections.emptyList());
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("name").contains(ValidationErrors.ROLE_NAME_TOO_SHORT));
+        assertTrue(context.getValidationErrors().get("name").contains(RoleValidationErrors.ROLE_NAME_TOO_SHORT));
     }
 }

@@ -7,8 +7,8 @@ import com.freelance.configuration.dto.error.update.ErrorConfigurationUpdateResp
 import com.freelance.configuration.error.entity.ErrorConfiguration;
 import com.freelance.fixtures.FakeErrorConfigurationRepository;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.configuration.ConstraintErrors;
-import com.freelance.keys.configuration.ValidationErrors;
+import com.freelance.keys.configuration.error.ErrorConfigConstraintErrors;
+import com.freelance.keys.configuration.error.ErrorConfigValidationErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
@@ -80,7 +80,7 @@ class ErrorConfigurationServiceTest {
         ErrorConfigurationService service = new ErrorConfigurationService(repo);
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> service.updateErrorConfiguration(new ErrorConfigurationUpdateRequestDTO("unknown.error", 400, "msg", "desc")));
-        assertEquals(ConstraintErrors.ERROR_CONFIGURATION_NOT_FOUND, ex.getError());
+        assertEquals(ErrorConfigConstraintErrors.ERROR_CONFIGURATION_NOT_FOUND, ex.getError());
     }
 
     @Test
@@ -91,6 +91,6 @@ class ErrorConfigurationServiceTest {
         ErrorConfigurationService service = new ErrorConfigurationService(repo);
         assertThrows(ValidationException.class,
                 () -> service.updateErrorConfiguration(new ErrorConfigurationUpdateRequestDTO("some.error", 999, "msg", "desc")));
-        assertTrue(context.getValidationErrors().get("statusCode").contains(ValidationErrors.INVALID_STATUS_CODE));
+        assertTrue(context.getValidationErrors().get("statusCode").contains(ErrorConfigValidationErrors.INVALID_STATUS_CODE));
     }
 }

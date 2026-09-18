@@ -3,7 +3,7 @@ package com.freelance.user.delete;
 import com.freelance.user.entity.User;
 import com.freelance.fixtures.FakeUserRepository;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.identityManagement.ConstraintErrors;
+import com.freelance.keys.identityManagement.user.UserConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.user.delete.constraint.UserDeleteConstraint;
 import org.junit.jupiter.api.AfterEach;
@@ -54,7 +54,7 @@ class UserDeleteConstraintTest {
         UserDeleteConstraint constraint = new UserDeleteConstraint(repo);
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> constraint.checkConstraints(new UserDeleteRequestDTO(targetId)));
-        assertEquals(ConstraintErrors.USER_TO_DELETE_NOT_FOUND, ex.getError());
+        assertEquals(UserConstraintErrors.USER_TO_DELETE_NOT_FOUND, ex.getError());
     }
 
     @Test
@@ -67,6 +67,6 @@ class UserDeleteConstraintTest {
         UserDeleteConstraint constraint = new UserDeleteConstraint(repo);
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> constraint.checkConstraints(new UserDeleteRequestDTO(callerId)));
-        assertEquals(ConstraintErrors.CANNOT_DELETE_SELF, ex.getError());
+        assertEquals(UserConstraintErrors.CANNOT_DELETE_SELF, ex.getError());
     }
 }

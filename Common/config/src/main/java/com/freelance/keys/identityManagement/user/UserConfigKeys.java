@@ -1,8 +1,8 @@
-package com.freelance.keys.identityManagement;
+package com.freelance.keys.identityManagement.user;
 
 import com.freelance.config.IConfig;
 
-public enum IdentityManagementKeys implements IConfig {
+public enum UserConfigKeys implements IConfig {
 
     USERNAME_MINIMUM_LENGTH(
             "identityManagement.username.minimumLength",
@@ -36,11 +36,11 @@ public enum IdentityManagementKeys implements IConfig {
     private final String description;
     private final String validation;
 
-    IdentityManagementKeys(String key, String defaultValue, String description) {
+    UserConfigKeys(String key, String defaultValue, String description) {
         this(key, defaultValue, description, null);
     }
 
-    IdentityManagementKeys(String key, String defaultValue, String description, String validation) {
+    UserConfigKeys(String key, String defaultValue, String description, String validation) {
         this.key = key;
         this.defaultValue = defaultValue;
         this.description = description;

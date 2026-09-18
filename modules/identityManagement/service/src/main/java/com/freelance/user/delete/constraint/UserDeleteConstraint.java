@@ -1,7 +1,7 @@
 package com.freelance.user.delete.constraint;
 
 import com.freelance.user.entity.User;
-import com.freelance.keys.identityManagement.ConstraintErrors;
+import com.freelance.keys.identityManagement.user.UserConstraintErrors;
 import com.freelance.user.repository.UserRepository;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 import com.freelance.rest.app.transaction.Transaction;
@@ -30,7 +30,7 @@ public class UserDeleteConstraint extends AbstractConstraint {
                 .orElse(null);
 
         if (existingUser == null) {
-            raiseConstraintError(ConstraintErrors.USER_TO_DELETE_NOT_FOUND);
+            raiseConstraintError(UserConstraintErrors.USER_TO_DELETE_NOT_FOUND);
         }
 
         UUID callerUserId = null;
@@ -41,7 +41,7 @@ public class UserDeleteConstraint extends AbstractConstraint {
         }
 
         if (callerUserId != null && callerUserId.equals(request.id())) {
-            raiseConstraintError(ConstraintErrors.CANNOT_DELETE_SELF);
+            raiseConstraintError(UserConstraintErrors.CANNOT_DELETE_SELF);
         }
 
         return existingUser;

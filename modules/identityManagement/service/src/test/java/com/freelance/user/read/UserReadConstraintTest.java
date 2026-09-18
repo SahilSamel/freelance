@@ -1,7 +1,7 @@
 package com.freelance.user.read;
 
 import com.freelance.user.entity.User;
-import com.freelance.keys.identityManagement.ConstraintErrors;
+import com.freelance.keys.identityManagement.user.UserConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.user.read.constraint.UserReadConstraint;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +24,6 @@ class UserReadConstraintTest {
     void nullUser_raisesError() {
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> new UserReadConstraint().checkUserExists(null));
-        assertEquals(ConstraintErrors.USER_NOT_FOUND, ex.getError());
+        assertEquals(UserConstraintErrors.USER_NOT_FOUND, ex.getError());
     }
 }

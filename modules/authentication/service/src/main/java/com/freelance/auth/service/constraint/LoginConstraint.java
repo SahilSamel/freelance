@@ -1,7 +1,7 @@
 package com.freelance.auth.service.constraint;
 
 import com.freelance.auth.dto.AuthLoginRequestDTO;
-import com.freelance.keys.authentication.ConstraintErrors;
+import com.freelance.keys.authentication.auth.AuthConstraintErrors;
 import com.freelance.utility.password.HashUtility;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 import com.freelance.user.read.User;
@@ -16,11 +16,11 @@ public class LoginConstraint extends AbstractConstraint {
         UserReadResponseDTO userReadResponseDTO = userReadService.findByUsername(userReadRequestDTO);
 
         if (userReadResponseDTO == null) {
-            raiseConstraintError(ConstraintErrors.INVALID_CREDENTIALS);
+            raiseConstraintError(AuthConstraintErrors.INVALID_CREDENTIALS);
         }
 
         if (!HashUtility.verify(request.password(), userReadResponseDTO.userDTO().password())) {
-            raiseConstraintError(ConstraintErrors.INVALID_CREDENTIALS);
+            raiseConstraintError(AuthConstraintErrors.INVALID_CREDENTIALS);
         }
 
     }

@@ -13,7 +13,7 @@ import com.freelance.audit.repository.AuditLogRepository;
 import java.util.List;
 
 import com.freelance.ConfigurationEngine;
-import com.freelance.keys.audit.AuditConfigKeys;
+import com.freelance.keys.audit.http.HttpAuditConfigKeys;
 
 public class AuditService {
 
@@ -30,7 +30,7 @@ public class AuditService {
     }
 
     public AuditLogCreateResponseDTO createAuditLog(AuditLogCreateRequestDTO request) {
-        if (!ConfigurationEngine.getBoolean(AuditConfigKeys.AUDITING_ENABLED)) {
+        if (!ConfigurationEngine.getBoolean(HttpAuditConfigKeys.AUDITING_ENABLED)) {
             return null;
         }
 

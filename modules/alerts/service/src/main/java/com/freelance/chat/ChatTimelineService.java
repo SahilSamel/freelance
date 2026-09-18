@@ -16,7 +16,7 @@ import com.freelance.alerts.AlertConsumer;
 import com.freelance.alerts.dto.AlertEventPayloadDTO;
 import com.freelance.event.engine.EventManagementEngine;
 import com.freelance.event.model.EventPriority;
-import com.freelance.keys.alerts.AlertConfigKeys;
+import com.freelance.keys.alerts.message.AlertEmitConfigKeys;
 import com.freelance.dispatcher.impl.whatsapp.WhatsAppDispatcherService;
 import com.freelance.alerts.dto.TemplateButtonDTO;
 import com.freelance.alerts.template.entity.AlertButtonEntity;
@@ -107,7 +107,7 @@ public class ChatTimelineService {
         UUID userId = request.userId();
         AlertChannel channel = request.channel() != null
                 ? request.channel()
-                : ConfigurationEngine.getEnum(AlertConfigKeys.DEFAULT_ALERT_CHANNEL, AlertChannel.class, AlertChannel.WHATSAPP);
+                : ConfigurationEngine.getEnum(AlertEmitConfigKeys.DEFAULT_ALERT_CHANNEL, AlertChannel.class, AlertChannel.WHATSAPP);
 
         // Clear active human support session on contact since staff has replied
         contactRepository.findByUserAndChannel(userId, channel).ifPresent(contact -> {

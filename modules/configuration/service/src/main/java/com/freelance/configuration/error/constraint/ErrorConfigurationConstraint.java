@@ -3,7 +3,7 @@ package com.freelance.configuration.error.constraint;
 import com.freelance.configuration.dto.error.update.ErrorConfigurationUpdateRequestDTO;
 import com.freelance.configuration.error.entity.ErrorConfiguration;
 import com.freelance.configuration.error.repository.ErrorConfigurationRepository;
-import com.freelance.keys.configuration.ConstraintErrors;
+import com.freelance.keys.configuration.error.ErrorConfigConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 
 public class ErrorConfigurationConstraint extends AbstractConstraint {
@@ -25,7 +25,7 @@ public class ErrorConfigurationConstraint extends AbstractConstraint {
 
         ErrorConfiguration existing = repository.get(request.errorId());
         if (existing == null) {
-            raiseConstraintError(ConstraintErrors.ERROR_CONFIGURATION_NOT_FOUND);
+            raiseConstraintError(ErrorConfigConstraintErrors.ERROR_CONFIGURATION_NOT_FOUND);
         }
 
         return existing;

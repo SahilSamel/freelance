@@ -1,22 +1,8 @@
-package com.freelance.keys.authentication;
+package com.freelance.keys.authentication.support;
 
 import com.freelance.config.IConfig;
 
-public enum AuthenticationConfigKeys implements IConfig {
-
-    SESSION_TTL_SECONDS(
-            "authentication.session.ttlSeconds",
-            "600",
-            "Session time-to-live in seconds",
-            "^[1-9][0-9]*$"
-    ),
-
-    CONCURRENT_LOGIN_ALLOWED(
-            "authentication.concurrentLoginAllowed",
-            "true",
-            "Whether multiple concurrent logins are allowed for the same user",
-            "^(true|false)$"
-    ),
+public enum SupportConfigKeys implements IConfig {
 
     VENDOR_SUPPORT_PUBLIC_KEY(
             "authentication.vendor.support.publicKey",
@@ -36,11 +22,11 @@ public enum AuthenticationConfigKeys implements IConfig {
     private final String description;
     private final String validation;
 
-    AuthenticationConfigKeys(String key, String defaultValue, String description) {
+    SupportConfigKeys(String key, String defaultValue, String description) {
         this(key, defaultValue, description, null);
     }
 
-    AuthenticationConfigKeys(String key, String defaultValue, String description, String validation) {
+    SupportConfigKeys(String key, String defaultValue, String description, String validation) {
         this.key = key;
         this.defaultValue = defaultValue;
         this.description = description;

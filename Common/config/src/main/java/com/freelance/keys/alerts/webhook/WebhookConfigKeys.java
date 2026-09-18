@@ -1,8 +1,8 @@
-package com.freelance.keys.alerts;
+package com.freelance.keys.alerts.webhook;
 
 import com.freelance.config.IConfig;
 
-public enum AlertConfigKeys implements IConfig {
+public enum WebhookConfigKeys implements IConfig {
 
     WHATSAPP_API_BASE_URL(
             "alerts.whatsapp.apiBaseUrl",
@@ -46,27 +46,6 @@ public enum AlertConfigKeys implements IConfig {
             "^.+$"
     ),
 
-    ALERT_HUMAN_DELAY_HOURS(
-            "alerts.humanDelayHours",
-            "24",
-            "Duration in hours to hold automated bot alerts while human staff is chatting with user",
-            "^[1-9][0-9]*$"
-    ),
-
-    ALERT_OUTBOUND_RATE_LIMIT(
-            "alerts.outboundRateLimit",
-            "50.0",
-            "Maximum outbound WhatsApp messages per second to prevent API throttling",
-            "^[0-9]+(\\.[0-9]+)?$"
-    ),
-
-    DEFAULT_ALERT_CHANNEL(
-            "alerts.defaultChannel",
-            "WHATSAPP",
-            "Default communication channel used for alert templates, messages, and staff replies when unspecified",
-            "^WHATSAPP$"
-    ),
-
     WHATSAPP_OPT_OUT_KEYWORDS(
             "alerts.whatsapp.optOutKeywords",
             "STOP, STOPALL, UNSUBSCRIBE, CANCEL, END, QUIT, OPTOUT, OPT OUT, OPT-OUT, REVOKE, OFF",
@@ -86,11 +65,11 @@ public enum AlertConfigKeys implements IConfig {
     private final String description;
     private final String validation;
 
-    AlertConfigKeys(String key, String defaultValue, String description) {
+    WebhookConfigKeys(String key, String defaultValue, String description) {
         this(key, defaultValue, description, null);
     }
 
-    AlertConfigKeys(String key, String defaultValue, String description, String validation) {
+    WebhookConfigKeys(String key, String defaultValue, String description, String validation) {
         this.key = key;
         this.defaultValue = defaultValue;
         this.description = description;

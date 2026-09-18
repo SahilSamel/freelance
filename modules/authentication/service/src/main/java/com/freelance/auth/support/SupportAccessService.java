@@ -5,7 +5,7 @@ import com.freelance.auth.dto.*;
 import com.freelance.auth.support.validation.SupportRequestValidation;
 import com.freelance.cache.config.SupportAccessCacheConfig;
 import com.freelance.cache.config.SupportAccessCacheEntry;
-import com.freelance.keys.authentication.AuthenticationConfigKeys;
+import com.freelance.keys.authentication.support.SupportConfigKeys;
 import com.freelance.manager.CacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +85,7 @@ public class SupportAccessService {
     public SupportGrantResponseDTO grantAccess() {
         int durationHours;
         try {
-            durationHours = ConfigurationEngine.getInt(AuthenticationConfigKeys.SUPPORT_ACCESS_DEFAULT_DURATION_HOURS);
+            durationHours = ConfigurationEngine.getInt(SupportConfigKeys.SUPPORT_ACCESS_DEFAULT_DURATION_HOURS);
             if (durationHours <= 0 || durationHours > 6) {
                 durationHours = 2;
             }

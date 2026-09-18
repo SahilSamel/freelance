@@ -1,12 +1,11 @@
-package com.freelance.keys.identityManagement;
+package com.freelance.keys.identityManagement.user;
 
 import com.freelance.config.IError;
 
 /**
- * Enumerates client-facing field validation errors for the identity
- * management domain (e.g. malformed input, password rules, mismatches).
+ * Enumerates client-facing field validation errors for the user subdomain in identity management.
  */
-public enum ValidationErrors implements IError {
+public enum UserValidationErrors implements IError {
 
     INVALID_USER_ID(
             "FL_3001",
@@ -51,14 +50,14 @@ public enum ValidationErrors implements IError {
             400
     );
 
-    private static final String CATEGORY = "identity.validation";
+    private static final String CATEGORY = "identity.user.validation";
 
     private final String indirectionCode;
     private final String defaultMessage;
     private final String description;
     private final int defaultStatusCode;
 
-    ValidationErrors(String indirectionCode, String defaultMessage, String description, int defaultStatusCode) {
+    UserValidationErrors(String indirectionCode, String defaultMessage, String description, int defaultStatusCode) {
         this.indirectionCode = indirectionCode;
         this.defaultMessage = defaultMessage;
         this.description = description;

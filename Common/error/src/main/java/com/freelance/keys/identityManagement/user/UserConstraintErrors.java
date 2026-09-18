@@ -1,12 +1,11 @@
-package com.freelance.keys.identityManagement;
+package com.freelance.keys.identityManagement.user;
 
 import com.freelance.config.IError;
 
 /**
- * Enumerates client-facing constraint violation errors for the identity
- * management domain (e.g. duplicate users, weak passwords).
+ * Enumerates client-facing constraint violation errors for the user subdomain in identity management.
  */
-public enum ConstraintErrors implements IError {
+public enum UserConstraintErrors implements IError {
 
     USER_ALREADY_EXISTS(
             "FL_3101",
@@ -39,14 +38,14 @@ public enum ConstraintErrors implements IError {
             404
     );
 
-    private static final String CATEGORY = "identity.constraint";
+    private static final String CATEGORY = "identity.user.constraint";
 
     private final String indirectionCode;
     private final String defaultMessage;
     private final String description;
     private final int defaultStatusCode;
 
-    ConstraintErrors(String indirectionCode, String defaultMessage, String description, int defaultStatusCode) {
+    UserConstraintErrors(String indirectionCode, String defaultMessage, String description, int defaultStatusCode) {
         this.indirectionCode = indirectionCode;
         this.defaultMessage = defaultMessage;
         this.description = description;

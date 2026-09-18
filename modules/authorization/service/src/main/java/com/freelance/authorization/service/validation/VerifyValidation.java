@@ -1,6 +1,6 @@
 package com.freelance.authorization.service.validation;
 
-import com.freelance.keys.authorization.ValidationErrors;
+import com.freelance.keys.authorization.permission.PermissionValidationErrors;
 import com.freelance.rest.app.service.exception.validation.AbstractValidation;
 import com.freelance.rest.app.transaction.Transaction;
 
@@ -9,7 +9,7 @@ public class VerifyValidation extends AbstractValidation {
     public void validateRequest(){
         String authKey = Transaction.getRequestContext().authorizationKey();
         if (authKey == null || authKey.isEmpty()) {
-            raiseValidationError(ValidationErrors.UNAUTHORIZED, "security");
+            raiseValidationError(PermissionValidationErrors.UNAUTHORIZED, "security");
         }
         validate();
     }

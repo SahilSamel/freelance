@@ -1,7 +1,7 @@
 package com.freelance.user.read;
 
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.identityManagement.ValidationErrors;
+import com.freelance.keys.identityManagement.user.UserValidationErrors;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import com.freelance.user.read.validation.UserReadValidation;
@@ -50,6 +50,6 @@ class UserReadValidationTest {
     void emptyRequest_raisesError() {
         UserReadRequestDTO request = new UserReadRequestDTO(null, "");
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("id").contains(ValidationErrors.INVALID_USER_ID));
+        assertTrue(context.getValidationErrors().get("id").contains(UserValidationErrors.INVALID_USER_ID));
     }
 }

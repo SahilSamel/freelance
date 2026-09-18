@@ -2,7 +2,7 @@ package com.freelance.auth.support.validation;
 
 import com.freelance.auth.dto.SupportRequestDTO;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.authentication.ValidationErrors;
+import com.freelance.keys.authentication.support.SupportValidationErrors;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +40,7 @@ class SupportRequestValidationTest {
     @DisplayName("null request raises INVALID_SUPPORT_REQUEST")
     void nullRequest_raisesError() {
         assertThrows(ValidationException.class, () -> validation.validateRequest(null));
-        assertTrue(context.getValidationErrors().get("request").contains(ValidationErrors.INVALID_SUPPORT_REQUEST));
+        assertTrue(context.getValidationErrors().get("request").contains(SupportValidationErrors.INVALID_SUPPORT_REQUEST));
     }
 
     @Test
@@ -48,14 +48,14 @@ class SupportRequestValidationTest {
     void blankReason_raisesError() {
         SupportRequestDTO requestNullReason = new SupportRequestDTO(null, "TICKET-101");
         assertThrows(ValidationException.class, () -> validation.validateRequest(requestNullReason));
-        assertTrue(context.getValidationErrors().get("reason").contains(ValidationErrors.INVALID_SUPPORT_REASON));
+        assertTrue(context.getValidationErrors().get("reason").contains(SupportValidationErrors.INVALID_SUPPORT_REASON));
 
         TestContextHelper.tearDown();
         context = TestContextHelper.setUp();
 
         SupportRequestDTO requestBlankReason = new SupportRequestDTO("   ", "TICKET-101");
         assertThrows(ValidationException.class, () -> validation.validateRequest(requestBlankReason));
-        assertTrue(context.getValidationErrors().get("reason").contains(ValidationErrors.INVALID_SUPPORT_REASON));
+        assertTrue(context.getValidationErrors().get("reason").contains(SupportValidationErrors.INVALID_SUPPORT_REASON));
     }
 
     @Test
@@ -63,14 +63,14 @@ class SupportRequestValidationTest {
     void blankTicketId_raisesError() {
         SupportRequestDTO requestNullTicket = new SupportRequestDTO("Investigate memory leak", null);
         assertThrows(ValidationException.class, () -> validation.validateRequest(requestNullTicket));
-        assertTrue(context.getValidationErrors().get("ticketId").contains(ValidationErrors.INVALID_SUPPORT_TICKET));
+        assertTrue(context.getValidationErrors().get("ticketId").contains(SupportValidationErrors.INVALID_SUPPORT_TICKET));
 
         TestContextHelper.tearDown();
         context = TestContextHelper.setUp();
 
         SupportRequestDTO requestBlankTicket = new SupportRequestDTO("Investigate memory leak", "   ");
         assertThrows(ValidationException.class, () -> validation.validateRequest(requestBlankTicket));
-        assertTrue(context.getValidationErrors().get("ticketId").contains(ValidationErrors.INVALID_SUPPORT_TICKET));
+        assertTrue(context.getValidationErrors().get("ticketId").contains(SupportValidationErrors.INVALID_SUPPORT_TICKET));
     }
 
     @Test
@@ -78,7 +78,7 @@ class SupportRequestValidationTest {
     void bothBlank_recordsBothErrors() {
         SupportRequestDTO request = new SupportRequestDTO("", "  ");
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("reason").contains(ValidationErrors.INVALID_SUPPORT_REASON));
-        assertTrue(context.getValidationErrors().get("ticketId").contains(ValidationErrors.INVALID_SUPPORT_TICKET));
+        assertTrue(context.getValidationErrors().get("reason").contains(SupportValidationErrors.INVALID_SUPPORT_REASON));
+        assertTrue(context.getValidationErrors().get("ticketId").contains(SupportValidationErrors.INVALID_SUPPORT_TICKET));
     }
 }

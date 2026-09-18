@@ -9,7 +9,7 @@ import com.freelance.alerts.ButtonType;
 import com.freelance.alerts.TemplateStatus;
 import com.freelance.alerts.dto.TemplateButtonDTO;
 import com.freelance.alerts.template.entity.AlertTemplateEntity;
-import com.freelance.keys.alerts.AlertConfigKeys;
+import com.freelance.keys.alerts.webhook.WebhookConfigKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,9 +91,9 @@ public class WhatsAppTemplateService {
             return TemplateSubmissionResult.success(listMetaId, TemplateStatus.APPROVED);
         }
 
-        String accessToken = ConfigurationEngine.get(AlertConfigKeys.WHATSAPP_ACCESS_TOKEN);
-        String businessAccountId = ConfigurationEngine.get(AlertConfigKeys.WHATSAPP_BUSINESS_ACCOUNT_ID);
-        String baseUrl = ConfigurationEngine.get(AlertConfigKeys.WHATSAPP_API_BASE_URL);
+        String accessToken = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN);
+        String businessAccountId = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_BUSINESS_ACCOUNT_ID);
+        String baseUrl = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_API_BASE_URL);
 
         if (isMockMode(accessToken, businessAccountId)) {
             String mockMetaId = "meta_tpl_" + UUID.randomUUID().toString().replace("-", "").substring(0, 15);

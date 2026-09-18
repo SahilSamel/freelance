@@ -4,8 +4,8 @@ import com.freelance.auth.dto.AuthVerifyRequestDTO;
 import com.freelance.auth.support.SupportAccessService;
 import com.freelance.fixtures.TestContextHelper;
 import com.freelance.fixtures.VendorSupportTestHelper;
-import com.freelance.keys.authentication.AuthenticationConfigKeys;
-import com.freelance.keys.authentication.ConstraintErrors;
+import com.freelance.keys.authentication.support.SupportConfigKeys;
+import com.freelance.keys.authentication.support.SupportConstraintErrors;
 import com.freelance.manager.CacheManager;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import org.junit.jupiter.api.AfterEach;
@@ -36,7 +36,7 @@ class VerifyAuthConstraintTest {
         // Configure vendor public key into cache
         String pubKeyBase64 = VendorSupportTestHelper.encodeKeyToBase64(vendorKeyPair.getPublic());
         CacheManager.getInstance().put("cache_SystemConfig",
-                AuthenticationConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey(),
+                SupportConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey(),
                 pubKeyBase64);
     }
 
@@ -56,7 +56,7 @@ class VerifyAuthConstraintTest {
     @Test
     @DisplayName("vendor token when public key is not configured raises INVALID_VENDOR_SUPPORT_TOKEN")
     void vendorToken_missingPublicKey_raisesError() {
-        CacheManager.getInstance().invalidate("cache_SystemConfig", AuthenticationConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey());
+        CacheManager.getInstance().invalidate("cache_SystemConfig", SupportConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey());
 
         String token = VendorSupportTestHelper.generateSupportToken(
                 vendorKeyPair.getPrivate(), Duration.ofHours(1)
@@ -65,7 +65,7 @@ class VerifyAuthConstraintTest {
         ConstraintException ex = assertThrows(ConstraintException.class, () ->
                 constraint.checkConstraints(new AuthVerifyRequestDTO(token))
         );
-        assertEquals(ConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN.getIndirectionCode(), ex.getError().getIndirectionCode());
+        assertEquals(SupportConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN.getIndirectionCode(), ex.getError().getIndirectionCode());
     }
 
     @Test
@@ -79,7 +79,7 @@ class VerifyAuthConstraintTest {
         ConstraintException ex = assertThrows(ConstraintException.class, () ->
                 constraint.checkConstraints(new AuthVerifyRequestDTO(fakeToken))
         );
-        assertEquals(ConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN.getIndirectionCode(), ex.getError().getIndirectionCode());
+        assertEquals(SupportConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN.getIndirectionCode(), ex.getError().getIndirectionCode());
     }
 
     @Test
@@ -92,7 +92,7 @@ class VerifyAuthConstraintTest {
         ConstraintException ex = assertThrows(ConstraintException.class, () ->
                 constraint.checkConstraints(new AuthVerifyRequestDTO(token))
         );
-        assertEquals(ConstraintErrors.SUPPORT_ACCESS_DISABLED.getIndirectionCode(), ex.getError().getIndirectionCode());
+        assertEquals(SupportConstraintErrors.SUPPORT_ACCESS_DISABLED.getIndirectionCode(), ex.getError().getIndirectionCode());
     }
 
     @Test

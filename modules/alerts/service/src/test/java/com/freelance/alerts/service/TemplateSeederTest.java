@@ -7,7 +7,6 @@ import com.freelance.alerts.template.repository.AlertTemplateRepository;
 import com.freelance.template.seeder.TemplateSeeder;
 import com.freelance.alerts.template.ITemplate;
 import com.freelance.alerts.template.ITemplateButton;
-import com.freelance.keys.alerts.AlertConfigKeys;
 import com.freelance.manager.CacheManager;
 import com.freelance.system.SystemHardcoding;
 import org.junit.jupiter.api.DisplayName;

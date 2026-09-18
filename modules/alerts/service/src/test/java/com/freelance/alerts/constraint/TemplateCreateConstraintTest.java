@@ -11,7 +11,7 @@ import com.freelance.alerts.template.repository.AlertButtonRepository;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
 import com.freelance.template.constraint.TemplateCreateConstraint;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.alerts.ConstraintErrors;
+import com.freelance.keys.alerts.template.TemplateConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import org.junit.jupiter.api.AfterEach;
@@ -101,7 +101,7 @@ class TemplateCreateConstraintTest {
         );
 
         ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(req));
-        assertEquals(ConstraintErrors.TEMPLATE_KEY_ALREADY_EXISTS, ex.getError());
+        assertEquals(TemplateConstraintErrors.TEMPLATE_KEY_ALREADY_EXISTS, ex.getError());
     }
 
     @Test
@@ -117,7 +117,7 @@ class TemplateCreateConstraintTest {
         );
 
         ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(req));
-        assertEquals(ConstraintErrors.BUTTON_PAYLOAD_ALREADY_EXISTS, ex.getError());
+        assertEquals(TemplateConstraintErrors.BUTTON_PAYLOAD_ALREADY_EXISTS, ex.getError());
     }
 
     @Test
@@ -183,7 +183,7 @@ class TemplateCreateConstraintTest {
         );
 
         ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(root));
-        assertEquals(ConstraintErrors.BUTTON_PAYLOAD_ALREADY_EXISTS, ex.getError());
+        assertEquals(TemplateConstraintErrors.BUTTON_PAYLOAD_ALREADY_EXISTS, ex.getError());
     }
 
     @Test
@@ -211,7 +211,7 @@ class TemplateCreateConstraintTest {
         );
 
         ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(req));
-        assertEquals(ConstraintErrors.TEMPLATE_CATEGORY_NOT_FOUND, ex.getError());
+        assertEquals(TemplateConstraintErrors.TEMPLATE_CATEGORY_NOT_FOUND, ex.getError());
     }
 
     @Test
@@ -355,7 +355,7 @@ class TemplateCreateConstraintTest {
         );
 
         ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(root));
-        assertEquals(ConstraintErrors.TEMPLATE_CHAIN_BROKEN, ex.getError());
+        assertEquals(TemplateConstraintErrors.TEMPLATE_CHAIN_BROKEN, ex.getError());
     }
 
     @Test
@@ -374,6 +374,6 @@ class TemplateCreateConstraintTest {
         );
 
         ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(root));
-        assertEquals(ConstraintErrors.TEMPLATE_CHAIN_BROKEN, ex.getError());
+        assertEquals(TemplateConstraintErrors.TEMPLATE_CHAIN_BROKEN, ex.getError());
     }
 }

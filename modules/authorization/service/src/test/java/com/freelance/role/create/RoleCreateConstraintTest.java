@@ -5,7 +5,8 @@ import com.freelance.authorization.entity.Authorization;
 import com.freelance.role.entity.Role;
 import com.freelance.fixtures.FakeAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleRepository;
-import com.freelance.keys.authorization.ConstraintErrors;
+import com.freelance.keys.authorization.permission.PermissionConstraintErrors;
+import com.freelance.keys.authorization.role.RoleConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.role.create.constraint.RoleCreateConstraint;
 import org.junit.jupiter.api.DisplayName;
@@ -46,7 +47,7 @@ class RoleCreateConstraintTest {
 
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> constraint.checkConstraints(new RoleCreateRequestDTO("EXISTING_ROLE", "Desc", null)));
-        assertEquals(ConstraintErrors.ROLE_ALREADY_EXISTS, ex.getError());
+        assertEquals(RoleConstraintErrors.ROLE_ALREADY_EXISTS, ex.getError());
     }
 
     @Test
@@ -59,6 +60,6 @@ class RoleCreateConstraintTest {
         RoleCreateConstraint constraint = new RoleCreateConstraint(roleRepo, authRepo);
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> constraint.checkConstraints(new RoleCreateRequestDTO("VALID_ROLE", "Desc", List.of(nonExistentAuthId))));
-        assertEquals(ConstraintErrors.AUTHORIZATION_NOT_FOUND, ex.getError());
+        assertEquals(PermissionConstraintErrors.AUTHORIZATION_NOT_FOUND, ex.getError());
     }
 }

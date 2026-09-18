@@ -2,7 +2,7 @@ package com.freelance.user.update;
 
 import com.freelance.user.entity.User;
 import com.freelance.fixtures.FakeUserRepository;
-import com.freelance.keys.identityManagement.ConstraintErrors;
+import com.freelance.keys.identityManagement.user.UserConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.user.update.constraint.UserUpdateConstraint;
 import org.junit.jupiter.api.DisplayName;
@@ -38,7 +38,7 @@ class UserUpdateConstraintTest {
         UserUpdateConstraint constraint = new UserUpdateConstraint(repo);
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> constraint.checkConstraints(new UserUpdateRequestDTO(userId, "new_name", null)));
-        assertEquals(ConstraintErrors.USER_TO_UPDATE_NOT_FOUND, ex.getError());
+        assertEquals(UserConstraintErrors.USER_TO_UPDATE_NOT_FOUND, ex.getError());
     }
 
     @Test
@@ -55,6 +55,6 @@ class UserUpdateConstraintTest {
         UserUpdateConstraint constraint = new UserUpdateConstraint(repo);
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> constraint.checkConstraints(new UserUpdateRequestDTO(userId, "taken_name", null)));
-        assertEquals(ConstraintErrors.USER_ALREADY_EXISTS, ex.getError());
+        assertEquals(UserConstraintErrors.USER_ALREADY_EXISTS, ex.getError());
     }
 }

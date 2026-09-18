@@ -1,6 +1,6 @@
 package com.freelance.user.create.constraint;
 
-import com.freelance.keys.identityManagement.ConstraintErrors;
+import com.freelance.keys.identityManagement.user.UserConstraintErrors;
 import com.freelance.user.repository.UserRepository;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 import com.freelance.user.create.UserCreateRequestDTO;
@@ -23,7 +23,7 @@ public class UserCreateConstraint extends AbstractConstraint {
         }
 
         if (userRepository.existsByUsername(request.username())) {
-            raiseConstraintError(ConstraintErrors.USER_ALREADY_EXISTS);
+            raiseConstraintError(UserConstraintErrors.USER_ALREADY_EXISTS);
         }
     }
 }

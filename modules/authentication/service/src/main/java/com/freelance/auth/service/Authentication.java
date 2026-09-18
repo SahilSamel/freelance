@@ -8,7 +8,7 @@ import com.freelance.auth.service.validation.VerifyAuthValidation;
 import com.freelance.auth.session.Session;
 import com.freelance.auth.token.TokenUtility;
 import com.freelance.auth.vendor.VendorSupportKeyUtility;
-import com.freelance.keys.authentication.ConstraintErrors;
+import com.freelance.keys.authentication.session.SessionConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.rest.app.transaction.Transaction;
 import com.freelance.system.SystemHardcoding;
@@ -63,7 +63,7 @@ public class Authentication {
         SessionRefreshResponseDTO refreshed = session.refreshSession(new SessionRefreshRequestDTO(oldSessionKey, userId));
 
         if (refreshed.newSessionKey() == null) {
-            throw new ConstraintException(ConstraintErrors.INVALID_SESSION);
+            throw new ConstraintException(SessionConstraintErrors.INVALID_SESSION);
         }
 
         TokenGenerateResponseDTO token = tokenUtility.generateToken(new TokenGenerateRequestDTO(userId, refreshed.newSessionKey()));

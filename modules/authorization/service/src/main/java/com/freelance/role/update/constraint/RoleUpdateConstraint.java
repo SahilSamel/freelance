@@ -3,7 +3,8 @@ package com.freelance.role.update.constraint;
 import com.freelance.authorization.dto.role.update.RoleUpdateRequestDTO;
 import com.freelance.authorization.entity.Authorization;
 import com.freelance.role.entity.Role;
-import com.freelance.keys.authorization.ConstraintErrors;
+import com.freelance.keys.authorization.permission.PermissionConstraintErrors;
+import com.freelance.keys.authorization.role.RoleConstraintErrors;
 import com.freelance.authorization.repository.AuthorizationRepository;
 import com.freelance.role.repository.RoleRepository;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
@@ -34,18 +35,18 @@ public class RoleUpdateConstraint extends AbstractConstraint {
 
         Role existingRole = roleRepository.findById(request.id()).orElse(null);
         if (existingRole == null) {
-            raiseConstraintError(ConstraintErrors.ROLE_TO_UPDATE_NOT_FOUND);
+            raiseConstraintError(RoleConstraintErrors.ROLE_TO_UPDATE_NOT_FOUND);
         }
 
         if (existingRole.isSystem()) {
-            raiseConstraintError(ConstraintErrors.SYSTEM_ROLE_CANNOT_BE_MANAGED);
+            raiseConstraintError(RoleConstraintErrors.SYSTEM_ROLE_CANNOT_BE_MANAGED);
         }
 
         if (request.name() != null && !request.name().isBlank()) {
             if (!request.name().equals(existingRole.getName())) {
                 Role otherRole = roleRepository.findByName(request.name());
                 if (otherRole != null && !otherRole.getId().equals(request.id())) {
-                    raiseConstraintError(ConstraintErrors.ROLE_ALREADY_EXISTS);
+                    raiseConstraintError(RoleConstraintErrors.ROLE_ALREADY_EXISTS);
                 }
             }
         }
@@ -56,7 +57,7 @@ public class RoleUpdateConstraint extends AbstractConstraint {
 
             for (UUID authId : request.authorizationIds()) {
                 if (authId == null || !authMap.containsKey(authId)) {
-                    raiseConstraintError(ConstraintErrors.AUTHORIZATION_NOT_FOUND);
+                    raiseConstraintError(PermissionConstraintErrors.AUTHORIZATION_NOT_FOUND);
                 }
                 outAuthorizations.add(authMap.get(authId));
             }

@@ -9,7 +9,7 @@ import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateRe
 import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateResponseDTO;
 import com.freelance.configuration.system.SystemConfigurationService;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.authentication.AuthenticationConfigKeys;
+import com.freelance.keys.authentication.support.SupportConfigKeys;
 import com.freelance.manager.CacheManager;
 import com.freelance.user.repository.UserRepository;
 import io.jsonwebtoken.Claims;
@@ -102,7 +102,7 @@ class SupportBootstrapServiceTest {
         try {
             CacheManager.getInstance().put(
                     SystemConfigurationCache.NAME,
-                    AuthenticationConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey(),
+                    SupportConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey(),
                     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."
             );
         } catch (Exception ignored) {}

@@ -8,7 +8,7 @@ import com.freelance.fixtures.FakeAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleRepository;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.authorization.ConstraintErrors;
+import com.freelance.keys.authorization.role.RoleConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.role.assembler.RoleAssembler;
 import org.junit.jupiter.api.AfterEach;
@@ -47,7 +47,7 @@ class RoleUpdateServiceTest {
         RoleUpdateService service = new RoleUpdateService(roleRepo, roleAuthRepo, authRepo, new RoleAssembler());
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> service.updateRole(new RoleUpdateRequestDTO(systemRoleId, "MODIFIED_NAME", "desc", null)));
-        assertEquals(ConstraintErrors.SYSTEM_ROLE_CANNOT_BE_MANAGED, ex.getError());
+        assertEquals(RoleConstraintErrors.SYSTEM_ROLE_CANNOT_BE_MANAGED, ex.getError());
     }
 
     @Test

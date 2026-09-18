@@ -1,7 +1,7 @@
 package com.freelance.user.delete;
 
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.identityManagement.ValidationErrors;
+import com.freelance.keys.identityManagement.user.UserValidationErrors;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import com.freelance.user.delete.validation.UserDeleteValidation;
@@ -42,7 +42,7 @@ class UserDeleteValidationTest {
     @DisplayName("null request raises INVALID_USER_ID")
     void nullRequest_raisesError() {
         assertThrows(ValidationException.class, () -> validation.validateRequest(null));
-        assertTrue(context.getValidationErrors().get("id").contains(ValidationErrors.INVALID_USER_ID));
+        assertTrue(context.getValidationErrors().get("id").contains(UserValidationErrors.INVALID_USER_ID));
     }
 
     @Test
@@ -50,6 +50,6 @@ class UserDeleteValidationTest {
     void nullId_raisesError() {
         UserDeleteRequestDTO request = new UserDeleteRequestDTO(null);
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("id").contains(ValidationErrors.INVALID_USER_ID));
+        assertTrue(context.getValidationErrors().get("id").contains(UserValidationErrors.INVALID_USER_ID));
     }
 }

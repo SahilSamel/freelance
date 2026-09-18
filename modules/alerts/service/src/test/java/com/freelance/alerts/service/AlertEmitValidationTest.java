@@ -3,7 +3,8 @@ package com.freelance.alerts.service;
 import com.freelance.alerts.dto.AlertEmitRequestDTO;
 import com.freelance.alerts.validation.AlertEmitValidation;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.alerts.ValidationErrors;
+import com.freelance.keys.alerts.message.AlertEmitValidationErrors;
+import com.freelance.keys.alerts.template.TemplateValidationErrors;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +41,7 @@ public class AlertEmitValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
         assertTrue(context.getValidationErrors().containsKey("templateId"));
-        assertTrue(context.getValidationErrors().get("templateId").contains(ValidationErrors.INVALID_TEMPLATE_ID));
+        assertTrue(context.getValidationErrors().get("templateId").contains(TemplateValidationErrors.INVALID_TEMPLATE_ID));
     }
 
     @Test
@@ -50,7 +51,7 @@ public class AlertEmitValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
         assertTrue(context.getValidationErrors().containsKey("userIds"));
-        assertTrue(context.getValidationErrors().get("userIds").contains(ValidationErrors.INVALID_USER_IDS));
+        assertTrue(context.getValidationErrors().get("userIds").contains(AlertEmitValidationErrors.INVALID_USER_IDS));
     }
 
     @Test

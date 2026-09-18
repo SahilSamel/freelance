@@ -9,7 +9,7 @@ import com.freelance.alerts.template.repository.AlertButtonRepository;
 import com.freelance.alerts.template.repository.AlertTemplateCategoryRepository;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
 import com.freelance.alerts.templates.InboundWelcomeTemplate;
-import com.freelance.keys.alerts.ConstraintErrors;
+import com.freelance.keys.alerts.template.TemplateConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 
 import java.util.Optional;
@@ -51,13 +51,13 @@ public class TemplateUpdateConstraint extends AbstractConstraint {
         }
 
         if (target == null) {
-            raiseConstraintError(ConstraintErrors.TEMPLATE_NOT_FOUND);
+            raiseConstraintError(TemplateConstraintErrors.TEMPLATE_NOT_FOUND);
             return null;
         }
 
         if (request.category() != null && !request.category().isBlank()) {
             if (!isCategoryInRepository(request.category().trim())) {
-                raiseConstraintError(ConstraintErrors.TEMPLATE_CATEGORY_NOT_FOUND);
+                raiseConstraintError(TemplateConstraintErrors.TEMPLATE_CATEGORY_NOT_FOUND);
             }
         }
 
@@ -68,7 +68,7 @@ public class TemplateUpdateConstraint extends AbstractConstraint {
             if (isWelcomeMenu) {
                 boolean hasHuman = request.buttons().stream().anyMatch(b -> Boolean.TRUE.equals(b.requiresHuman()));
                 if (!hasHuman) {
-                    raiseConstraintError(ConstraintErrors.HUMAN_ESCALATION_BUTTON_REQUIRED);
+                    raiseConstraintError(TemplateConstraintErrors.HUMAN_ESCALATION_BUTTON_REQUIRED);
                 }
             }
 
@@ -78,7 +78,7 @@ public class TemplateUpdateConstraint extends AbstractConstraint {
                     if (existingBtn.isPresent()) {
                         AlertButtonEntity existing = existingBtn.get();
                         if (existing.getTemplate() != null && !target.getId().equals(existing.getTemplate().getId())) {
-                            raiseConstraintError(ConstraintErrors.BUTTON_PAYLOAD_ALREADY_EXISTS);
+                            raiseConstraintError(TemplateConstraintErrors.BUTTON_PAYLOAD_ALREADY_EXISTS);
                         }
                     }
                 }
@@ -89,7 +89,7 @@ public class TemplateUpdateConstraint extends AbstractConstraint {
 
                 if (!isTerminal && btn.replyTemplateKey() != null && !btn.replyTemplateKey().isBlank()) {
                     if (templateRepository.findByKey(btn.replyTemplateKey().trim()).isEmpty()) {
-                        raiseConstraintError(ConstraintErrors.TEMPLATE_CHAIN_BROKEN);
+                        raiseConstraintError(TemplateConstraintErrors.TEMPLATE_CHAIN_BROKEN);
                     }
                 }
             }

@@ -2,7 +2,7 @@ package com.freelance.audit.service.validation;
 
 import com.freelance.audit.dto.list.AuditLogListRequestDTO;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.audit.ValidationErrors;
+import com.freelance.keys.audit.http.HttpAuditValidationErrors;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import org.junit.jupiter.api.AfterEach;
@@ -49,7 +49,7 @@ class AuditLogListValidationTest {
                 null, null, null, null, null, null, null, 0, 0
         );
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("limit").contains(ValidationErrors.INVALID_LIMIT));
+        assertTrue(context.getValidationErrors().get("limit").contains(HttpAuditValidationErrors.INVALID_LIMIT));
     }
 
     @Test
@@ -59,7 +59,7 @@ class AuditLogListValidationTest {
                 null, null, null, null, null, null, null, 10, -5
         );
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("offset").contains(ValidationErrors.INVALID_OFFSET));
+        assertTrue(context.getValidationErrors().get("offset").contains(HttpAuditValidationErrors.INVALID_OFFSET));
     }
 
     @Test
@@ -70,6 +70,6 @@ class AuditLogListValidationTest {
                 null, null, null, null, null, now, now.minus(1, ChronoUnit.HOURS), 10, 0
         );
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("fromTimestamp").contains(ValidationErrors.INVALID_DATE_RANGE));
+        assertTrue(context.getValidationErrors().get("fromTimestamp").contains(HttpAuditValidationErrors.INVALID_DATE_RANGE));
     }
 }

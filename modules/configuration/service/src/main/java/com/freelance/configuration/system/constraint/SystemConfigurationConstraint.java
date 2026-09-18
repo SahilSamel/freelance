@@ -3,7 +3,7 @@ package com.freelance.configuration.system.constraint;
 import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateRequestDTO;
 import com.freelance.configuration.system.entity.SystemConfiguration;
 import com.freelance.configuration.system.repository.SystemConfigurationRepository;
-import com.freelance.keys.configuration.ConstraintErrors;
+import com.freelance.keys.configuration.system.SystemConfigConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 
 public class SystemConfigurationConstraint extends AbstractConstraint {
@@ -25,7 +25,7 @@ public class SystemConfigurationConstraint extends AbstractConstraint {
 
         SystemConfiguration existing = repository.get(request.configId());
         if (existing == null) {
-            raiseConstraintError(ConstraintErrors.CONFIGURATION_NOT_FOUND);
+            raiseConstraintError(SystemConfigConstraintErrors.CONFIGURATION_NOT_FOUND);
         }
 
         return existing;

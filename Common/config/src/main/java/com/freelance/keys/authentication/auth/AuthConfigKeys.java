@@ -1,13 +1,13 @@
-package com.freelance.keys.audit;
+package com.freelance.keys.authentication.auth;
 
 import com.freelance.config.IConfig;
 
-public enum AuditConfigKeys implements IConfig {
+public enum AuthConfigKeys implements IConfig {
 
-    AUDITING_ENABLED(
-            "audit.enabled",
+    CONCURRENT_LOGIN_ALLOWED(
+            "authentication.concurrentLoginAllowed",
             "true",
-            "Controls whether HTTP and system API audit logging is enabled",
+            "Whether multiple concurrent logins are allowed for the same user",
             "^(true|false)$"
     );
 
@@ -16,11 +16,11 @@ public enum AuditConfigKeys implements IConfig {
     private final String description;
     private final String validation;
 
-    AuditConfigKeys(String key, String defaultValue, String description) {
+    AuthConfigKeys(String key, String defaultValue, String description) {
         this(key, defaultValue, description, null);
     }
 
-    AuditConfigKeys(String key, String defaultValue, String description, String validation) {
+    AuthConfigKeys(String key, String defaultValue, String description, String validation) {
         this.key = key;
         this.defaultValue = defaultValue;
         this.description = description;

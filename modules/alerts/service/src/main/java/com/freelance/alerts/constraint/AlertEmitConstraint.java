@@ -4,7 +4,7 @@ import com.freelance.alerts.TemplateStatus;
 import com.freelance.alerts.dto.AlertEmitRequestDTO;
 import com.freelance.alerts.template.entity.AlertTemplateEntity;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
-import com.freelance.keys.alerts.ConstraintErrors;
+import com.freelance.keys.alerts.template.TemplateConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 
 public class AlertEmitConstraint extends AbstractConstraint {
@@ -18,11 +18,11 @@ public class AlertEmitConstraint extends AbstractConstraint {
     public AlertTemplateEntity checkConstraints(AlertEmitRequestDTO request) {
         AlertTemplateEntity template = templateRepository.get(request.templateId());
         if (template == null) {
-            raiseConstraintError(ConstraintErrors.TEMPLATE_NOT_FOUND);
+            raiseConstraintError(TemplateConstraintErrors.TEMPLATE_NOT_FOUND);
         }
 
         if (template.getStatus() != TemplateStatus.APPROVED) {
-            raiseConstraintError(ConstraintErrors.TEMPLATE_NOT_APPROVED);
+            raiseConstraintError(TemplateConstraintErrors.TEMPLATE_NOT_APPROVED);
         }
 
         return template;

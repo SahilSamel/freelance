@@ -6,7 +6,7 @@ import com.freelance.role.entity.Role;
 import com.freelance.fixtures.FakeRoleAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleRepository;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.authorization.ConstraintErrors;
+import com.freelance.keys.authorization.role.RoleConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +42,7 @@ class RoleDeleteServiceTest {
         RoleDeleteService service = new RoleDeleteService(roleRepo, roleAuthRepo);
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> service.deleteRole(new RoleDeleteRequestDTO(systemRoleId)));
-        assertEquals(ConstraintErrors.SYSTEM_ROLE_CANNOT_BE_MANAGED, ex.getError());
+        assertEquals(RoleConstraintErrors.SYSTEM_ROLE_CANNOT_BE_MANAGED, ex.getError());
     }
 
     @Test

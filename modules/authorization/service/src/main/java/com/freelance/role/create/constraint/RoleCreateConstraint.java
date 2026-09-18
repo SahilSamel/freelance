@@ -2,7 +2,8 @@ package com.freelance.role.create.constraint;
 
 import com.freelance.authorization.dto.role.create.RoleCreateRequestDTO;
 import com.freelance.authorization.entity.Authorization;
-import com.freelance.keys.authorization.ConstraintErrors;
+import com.freelance.keys.authorization.permission.PermissionConstraintErrors;
+import com.freelance.keys.authorization.role.RoleConstraintErrors;
 import com.freelance.authorization.repository.AuthorizationRepository;
 import com.freelance.role.repository.RoleRepository;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
@@ -34,7 +35,7 @@ public class RoleCreateConstraint extends AbstractConstraint {
         }
 
         if (roleRepository.existsByName(request.name())) {
-            raiseConstraintError(ConstraintErrors.ROLE_ALREADY_EXISTS);
+            raiseConstraintError(RoleConstraintErrors.ROLE_ALREADY_EXISTS);
         }
 
         List<Authorization> authEntities = new ArrayList<>();
@@ -44,7 +45,7 @@ public class RoleCreateConstraint extends AbstractConstraint {
 
             for (UUID authId : request.authorizationIds()) {
                 if (authId == null || !authMap.containsKey(authId)) {
-                    raiseConstraintError(ConstraintErrors.AUTHORIZATION_NOT_FOUND);
+                    raiseConstraintError(PermissionConstraintErrors.AUTHORIZATION_NOT_FOUND);
                 }
                 authEntities.add(authMap.get(authId));
             }

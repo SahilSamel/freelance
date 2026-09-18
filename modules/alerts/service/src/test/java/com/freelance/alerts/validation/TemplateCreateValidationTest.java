@@ -6,7 +6,7 @@ import com.freelance.alerts.dto.TemplateButtonDTO;
 import com.freelance.alerts.dto.TemplateCreateRequestDTO;
 import com.freelance.template.validation.TemplateCreateValidation;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.alerts.ValidationErrors;
+import com.freelance.keys.alerts.template.TemplateValidationErrors;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import org.junit.jupiter.api.AfterEach;
@@ -39,9 +39,9 @@ class TemplateCreateValidationTest {
     void testNullRequest() {
         assertThrows(ValidationException.class, () -> validation.validateRequest(null));
         assertTrue(context.getValidationErrors().containsKey("templateKey"));
-        assertTrue(context.getValidationErrors().get("templateKey").contains(ValidationErrors.INVALID_TEMPLATE_KEY));
+        assertTrue(context.getValidationErrors().get("templateKey").contains(TemplateValidationErrors.INVALID_TEMPLATE_KEY));
         assertTrue(context.getValidationErrors().containsKey("content"));
-        assertTrue(context.getValidationErrors().get("content").contains(ValidationErrors.INVALID_TEMPLATE_CONTENT));
+        assertTrue(context.getValidationErrors().get("content").contains(TemplateValidationErrors.INVALID_TEMPLATE_CONTENT));
     }
 
     @Test
@@ -81,7 +81,7 @@ class TemplateCreateValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(root));
         assertTrue(context.getValidationErrors().containsKey("content"));
-        assertTrue(context.getValidationErrors().get("content").contains(ValidationErrors.INVALID_TEMPLATE_CONTENT));
+        assertTrue(context.getValidationErrors().get("content").contains(TemplateValidationErrors.INVALID_TEMPLATE_CONTENT));
     }
 
     @Test
@@ -97,7 +97,7 @@ class TemplateCreateValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(root));
         assertTrue(context.getValidationErrors().containsKey("templateKey"));
-        assertTrue(context.getValidationErrors().get("templateKey").contains(ValidationErrors.DUPLICATE_TEMPLATE_KEY));
+        assertTrue(context.getValidationErrors().get("templateKey").contains(TemplateValidationErrors.DUPLICATE_TEMPLATE_KEY));
     }
 
     @Test
@@ -110,7 +110,7 @@ class TemplateCreateValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(root));
         assertTrue(context.getValidationErrors().containsKey("buttons.replyTemplateKey"));
-        assertTrue(context.getValidationErrors().get("buttons.replyTemplateKey").contains(ValidationErrors.INVALID_TEMPLATE_BUTTON));
+        assertTrue(context.getValidationErrors().get("buttons.replyTemplateKey").contains(TemplateValidationErrors.INVALID_TEMPLATE_BUTTON));
     }
 
 
@@ -212,7 +212,7 @@ class TemplateCreateValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(req));
         assertTrue(context.getValidationErrors().containsKey("buttons"));
-        assertTrue(context.getValidationErrors().get("buttons").contains(ValidationErrors.TOO_MANY_BUTTONS));
+        assertTrue(context.getValidationErrors().get("buttons").contains(TemplateValidationErrors.TOO_MANY_BUTTONS));
     }
 
     @Test
@@ -228,7 +228,7 @@ class TemplateCreateValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(req));
         assertTrue(context.getValidationErrors().containsKey("buttons.text"));
-        assertTrue(context.getValidationErrors().get("buttons.text").contains(ValidationErrors.DUPLICATE_BUTTON_TEXT));
+        assertTrue(context.getValidationErrors().get("buttons.text").contains(TemplateValidationErrors.DUPLICATE_BUTTON_TEXT));
     }
 
     @Test
@@ -244,7 +244,7 @@ class TemplateCreateValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(req));
         assertTrue(context.getValidationErrors().containsKey("buttons.sequenceOrder"));
-        assertTrue(context.getValidationErrors().get("buttons.sequenceOrder").contains(ValidationErrors.DUPLICATE_BUTTON_SEQUENCE));
+        assertTrue(context.getValidationErrors().get("buttons.sequenceOrder").contains(TemplateValidationErrors.DUPLICATE_BUTTON_SEQUENCE));
     }
 
     @Test
@@ -260,7 +260,7 @@ class TemplateCreateValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(req));
         assertTrue(context.getValidationErrors().containsKey("buttons.payload"));
-        assertTrue(context.getValidationErrors().get("buttons.payload").contains(ValidationErrors.DUPLICATE_BUTTON_PAYLOAD));
+        assertTrue(context.getValidationErrors().get("buttons.payload").contains(TemplateValidationErrors.DUPLICATE_BUTTON_PAYLOAD));
     }
 
     @Test
@@ -329,7 +329,7 @@ class TemplateCreateValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(req));
         assertTrue(context.getValidationErrors().containsKey("buttons"));
-        assertTrue(context.getValidationErrors().get("buttons").contains(ValidationErrors.TOO_MANY_BUTTONS));
+        assertTrue(context.getValidationErrors().get("buttons").contains(TemplateValidationErrors.TOO_MANY_BUTTONS));
     }
 
     @Test
@@ -375,6 +375,6 @@ class TemplateCreateValidationTest {
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(req));
         assertTrue(context.getValidationErrors().containsKey("priority"));
-        assertTrue(context.getValidationErrors().get("priority").contains(ValidationErrors.INVALID_TEMPLATE_PRIORITY));
+        assertTrue(context.getValidationErrors().get("priority").contains(TemplateValidationErrors.INVALID_TEMPLATE_PRIORITY));
     }
 }

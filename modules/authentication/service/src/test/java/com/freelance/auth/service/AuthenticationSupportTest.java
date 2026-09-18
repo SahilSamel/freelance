@@ -6,8 +6,8 @@ import com.freelance.auth.dto.AuthVerifyResponseDTO;
 import com.freelance.auth.support.SupportAccessService;
 import com.freelance.fixtures.TestContextHelper;
 import com.freelance.fixtures.VendorSupportTestHelper;
-import com.freelance.keys.authentication.AuthenticationConfigKeys;
-import com.freelance.keys.authentication.ConstraintErrors;
+import com.freelance.keys.authentication.support.SupportConfigKeys;
+import com.freelance.keys.authentication.support.SupportConstraintErrors;
 import com.freelance.manager.CacheManager;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.system.SystemHardcoding;
@@ -38,7 +38,7 @@ class AuthenticationSupportTest {
         // Configure vendor public key into cache
         String pubKeyBase64 = VendorSupportTestHelper.encodeKeyToBase64(vendorKeyPair.getPublic());
         CacheManager.getInstance().put("cache_SystemConfig",
-                AuthenticationConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey(),
+                SupportConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey(),
                 pubKeyBase64);
     }
 
@@ -57,7 +57,7 @@ class AuthenticationSupportTest {
         ConstraintException ex = assertThrows(ConstraintException.class, () ->
                 authentication.verify(new AuthVerifyRequestDTO(token))
         );
-        assertEquals(ConstraintErrors.SUPPORT_ACCESS_DISABLED.getIndirectionCode(), ex.getError().getIndirectionCode());
+        assertEquals(SupportConstraintErrors.SUPPORT_ACCESS_DISABLED.getIndirectionCode(), ex.getError().getIndirectionCode());
     }
 
     @Test
@@ -89,7 +89,7 @@ class AuthenticationSupportTest {
         ConstraintException ex = assertThrows(ConstraintException.class, () ->
                 authentication.verify(new AuthVerifyRequestDTO(fakeToken))
         );
-        assertEquals(ConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN.getIndirectionCode(), ex.getError().getIndirectionCode());
+        assertEquals(SupportConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN.getIndirectionCode(), ex.getError().getIndirectionCode());
     }
 
     @Test
@@ -110,6 +110,6 @@ class AuthenticationSupportTest {
         ConstraintException ex = assertThrows(ConstraintException.class, () ->
                 authentication.verify(new AuthVerifyRequestDTO(token))
         );
-        assertEquals(ConstraintErrors.SUPPORT_ACCESS_DISABLED.getIndirectionCode(), ex.getError().getIndirectionCode());
+        assertEquals(SupportConstraintErrors.SUPPORT_ACCESS_DISABLED.getIndirectionCode(), ex.getError().getIndirectionCode());
     }
 }

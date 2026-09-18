@@ -1,7 +1,7 @@
 package com.freelance.user.update;
 
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.identityManagement.ValidationErrors;
+import com.freelance.keys.identityManagement.user.UserValidationErrors;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import com.freelance.user.update.validation.UserUpdateValidation;
@@ -42,7 +42,7 @@ class UserUpdateValidationTest {
     @DisplayName("null request raises INVALID_USER_ID")
     void nullRequest_raisesError() {
         assertThrows(ValidationException.class, () -> validation.validateRequest(null));
-        assertTrue(context.getValidationErrors().get("id").contains(ValidationErrors.INVALID_USER_ID));
+        assertTrue(context.getValidationErrors().get("id").contains(UserValidationErrors.INVALID_USER_ID));
     }
 
     @Test
@@ -50,7 +50,7 @@ class UserUpdateValidationTest {
     void nullId_raisesError() {
         UserUpdateRequestDTO request = new UserUpdateRequestDTO(null, "updated_user", "NewPassword123");
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("id").contains(ValidationErrors.INVALID_USER_ID));
+        assertTrue(context.getValidationErrors().get("id").contains(UserValidationErrors.INVALID_USER_ID));
     }
 
     @Test
@@ -58,7 +58,7 @@ class UserUpdateValidationTest {
     void invalidUsername_raisesError() {
         UserUpdateRequestDTO request = new UserUpdateRequestDTO(UUID.randomUUID(), "ab", null);
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("username").contains(ValidationErrors.USERNAME_TOO_SHORT));
+        assertTrue(context.getValidationErrors().get("username").contains(UserValidationErrors.USERNAME_TOO_SHORT));
     }
 
     @Test
@@ -66,6 +66,6 @@ class UserUpdateValidationTest {
     void shortPassword_raisesError() {
         UserUpdateRequestDTO request = new UserUpdateRequestDTO(UUID.randomUUID(), null, "123");
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
-        assertTrue(context.getValidationErrors().get("password").contains(ValidationErrors.PASSWORD_TOO_SHORT));
+        assertTrue(context.getValidationErrors().get("password").contains(UserValidationErrors.PASSWORD_TOO_SHORT));
     }
 }

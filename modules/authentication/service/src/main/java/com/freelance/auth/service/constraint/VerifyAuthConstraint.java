@@ -4,8 +4,8 @@ import com.freelance.ConfigurationEngine;
 import com.freelance.auth.dto.AuthVerifyRequestDTO;
 import com.freelance.auth.support.SupportAccessService;
 import com.freelance.auth.vendor.VendorSupportKeyUtility;
-import com.freelance.keys.authentication.AuthenticationConfigKeys;
-import com.freelance.keys.authentication.ConstraintErrors;
+import com.freelance.keys.authentication.support.SupportConfigKeys;
+import com.freelance.keys.authentication.support.SupportConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 
 import java.security.PublicKey;
@@ -28,20 +28,20 @@ public class VerifyAuthConstraint extends AbstractConstraint {
         }
 
         if (VendorSupportKeyUtility.isVendorToken(request.token())) {
-            String pubKeyStr = ConfigurationEngine.get(AuthenticationConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY);
+            String pubKeyStr = ConfigurationEngine.get(SupportConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY);
             if (pubKeyStr == null || pubKeyStr.isBlank()) {
-                raiseConstraintError(ConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN);
+                raiseConstraintError(SupportConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN);
             }
 
             try {
                 PublicKey pubKey = VendorSupportKeyUtility.parsePublicKey(pubKeyStr);
                 VendorSupportKeyUtility.verifyAndParseSupportToken(request.token(), pubKey);
             } catch (Exception e) {
-                raiseConstraintError(ConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN);
+                raiseConstraintError(SupportConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN);
             }
 
             if (!supportAccessService.isSupportAccessActive()) {
-                raiseConstraintError(ConstraintErrors.SUPPORT_ACCESS_DISABLED);
+                raiseConstraintError(SupportConstraintErrors.SUPPORT_ACCESS_DISABLED);
             }
         }
     }

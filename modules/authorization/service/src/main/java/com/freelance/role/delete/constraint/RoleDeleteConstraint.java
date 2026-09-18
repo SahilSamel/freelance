@@ -2,7 +2,7 @@ package com.freelance.role.delete.constraint;
 
 import com.freelance.authorization.dto.role.delete.RoleDeleteRequestDTO;
 import com.freelance.role.entity.Role;
-import com.freelance.keys.authorization.ConstraintErrors;
+import com.freelance.keys.authorization.role.RoleConstraintErrors;
 import com.freelance.role.repository.RoleRepository;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 
@@ -25,11 +25,11 @@ public class RoleDeleteConstraint extends AbstractConstraint {
 
         Role existingRole = roleRepository.findById(request.id()).orElse(null);
         if (existingRole == null) {
-            raiseConstraintError(ConstraintErrors.ROLE_TO_DELETE_NOT_FOUND);
+            raiseConstraintError(RoleConstraintErrors.ROLE_TO_DELETE_NOT_FOUND);
         }
 
         if (existingRole.isSystem()) {
-            raiseConstraintError(ConstraintErrors.SYSTEM_ROLE_CANNOT_BE_MANAGED);
+            raiseConstraintError(RoleConstraintErrors.SYSTEM_ROLE_CANNOT_BE_MANAGED);
         }
 
         return existingRole;

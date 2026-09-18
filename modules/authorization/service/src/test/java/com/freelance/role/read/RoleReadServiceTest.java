@@ -10,7 +10,7 @@ import com.freelance.role.entity.Role;
 import com.freelance.fixtures.FakeRoleAuthorizationRepository;
 import com.freelance.fixtures.FakeRoleRepository;
 import com.freelance.fixtures.TestContextHelper;
-import com.freelance.keys.authorization.ConstraintErrors;
+import com.freelance.keys.authorization.role.RoleConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.role.assembler.RoleAssembler;
 import org.junit.jupiter.api.AfterEach;
@@ -70,7 +70,7 @@ class RoleReadServiceTest {
         RoleReadService service = new RoleReadService(roleRepo, roleAuthRepo, new RoleAssembler());
         ConstraintException ex = assertThrows(ConstraintException.class,
                 () -> service.readRole(new RoleReadRequestDTO(UUID.randomUUID(), null)));
-        assertEquals(ConstraintErrors.ROLE_NOT_FOUND, ex.getError());
+        assertEquals(RoleConstraintErrors.ROLE_NOT_FOUND, ex.getError());
     }
 
     @Test

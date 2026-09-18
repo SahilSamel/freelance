@@ -3,7 +3,7 @@ package com.freelance.dispatcher;
 import com.freelance.ConfigurationEngine;
 import com.freelance.alerts.AlertChannel;
 import com.freelance.dispatcher.impl.whatsapp.WhatsAppDispatcherService;
-import com.freelance.keys.alerts.AlertConfigKeys;
+import com.freelance.keys.alerts.message.AlertEmitConfigKeys;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 import org.reflections.util.ConfigurationBuilder;
@@ -139,7 +139,7 @@ public class AlertDispatcherFactory {
 
         // Fallback to configured default channel
         AlertChannel defaultChannel = ConfigurationEngine.getEnum(
-                AlertConfigKeys.DEFAULT_ALERT_CHANNEL,
+                AlertEmitConfigKeys.DEFAULT_ALERT_CHANNEL,
                 AlertChannel.class,
                 AlertChannel.WHATSAPP
         );

@@ -2,7 +2,7 @@ package com.freelance.authorization.service.constraint;
 
 import com.freelance.cache.config.RoleAuthorizationKeyCacheConfig;
 import com.freelance.cache.config.RoleAuthorizationKeyCacheEntry;
-import com.freelance.keys.authorization.ConstraintErrors;
+import com.freelance.keys.authorization.permission.PermissionConstraintErrors;
 import com.freelance.identityManagement.mapping.userRole.UserRoleSearchRequestDTO;
 import com.freelance.identityManagement.mapping.userRole.UserRoleSearchResponseDTO;
 import com.freelance.manager.CacheManager;
@@ -25,7 +25,7 @@ public class VerifyConstraint extends AbstractConstraint {
         UserRoleService userRoleService = new UserRoleService();
         UserRoleSearchResponseDTO rolesAssignedToUser = userRoleService.fetchAssignedRoles(userRoleSearchRequestDTO);
         if (rolesAssignedToUser == null || rolesAssignedToUser.roleIds() == null) {
-            raiseConstraintError(ConstraintErrors.UNAUTHORIZED);
+            raiseConstraintError(PermissionConstraintErrors.UNAUTHORIZED);
             return;
         }
 
@@ -36,6 +36,6 @@ public class VerifyConstraint extends AbstractConstraint {
                 return;
             }
         }
-        raiseConstraintError(ConstraintErrors.UNAUTHORIZED);
+        raiseConstraintError(PermissionConstraintErrors.UNAUTHORIZED);
     }
 }

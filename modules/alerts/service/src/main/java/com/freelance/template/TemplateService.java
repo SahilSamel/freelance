@@ -16,7 +16,7 @@ import com.freelance.alerts.template.entity.AlertTemplateEntity;
 import com.freelance.alerts.template.repository.AlertButtonRepository;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
 import com.freelance.ConfigurationEngine;
-import com.freelance.keys.alerts.AlertConfigKeys;
+import com.freelance.keys.alerts.message.AlertEmitConfigKeys;
 import com.freelance.template.assembler.TemplateAssembler;
 import com.freelance.template.constraint.TemplateCreateConstraint;
 import com.freelance.template.constraint.TemplateUpdateConstraint;
@@ -27,7 +27,7 @@ import com.freelance.alerts.template.entity.AlertTemplateCategoryEntity;
 import com.freelance.alerts.template.repository.AlertTemplateCategoryRepository;
 import com.freelance.dispatcher.impl.whatsapp.WhatsAppTemplateService;
 import com.freelance.dispatcher.impl.whatsapp.WhatsAppTemplateService.TemplateSubmissionResult;
-import com.freelance.keys.alerts.ConstraintErrors;
+import com.freelance.keys.alerts.template.TemplateConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 
 import java.util.*;
@@ -80,7 +80,7 @@ public class TemplateService {
 
             AlertChannel channel = tplReq.channel() != null
                     ? tplReq.channel()
-                    : ConfigurationEngine.getEnum(AlertConfigKeys.DEFAULT_ALERT_CHANNEL, AlertChannel.class, AlertChannel.WHATSAPP);
+                    : ConfigurationEngine.getEnum(AlertEmitConfigKeys.DEFAULT_ALERT_CHANNEL, AlertChannel.class, AlertChannel.WHATSAPP);
             TemplateStatus initialStatus = TemplateStatus.SUBMITTED;
             String priority = tplReq.priority() != null && !tplReq.priority().isBlank()
                     ? tplReq.priority().trim().toUpperCase()
@@ -145,7 +145,7 @@ public class TemplateService {
             if (entity.getChannel() == AlertChannel.WHATSAPP) {
                 TemplateSubmissionResult result = whatsAppTemplateService.submitTemplate(entity, tplReq.buttons());
                 if (!result.successful()) {
-                    throw new ConstraintException(ConstraintErrors.META_TEMPLATE_SUBMISSION_FAILED);
+                    throw new ConstraintException(TemplateConstraintErrors.META_TEMPLATE_SUBMISSION_FAILED);
                 }
                 entity.setMetaTemplateId(result.metaTemplateId());
                 entity.setStatus(result.status());
@@ -255,7 +255,7 @@ public class TemplateService {
             }
             TemplateSubmissionResult result = whatsAppTemplateService.submitTemplate(entity, btnDtos);
             if (!result.successful()) {
-                throw new ConstraintException(ConstraintErrors.META_TEMPLATE_SUBMISSION_FAILED);
+                throw new ConstraintException(TemplateConstraintErrors.META_TEMPLATE_SUBMISSION_FAILED);
             }
             entity.setMetaTemplateId(result.metaTemplateId());
             entity.setStatus(result.status());

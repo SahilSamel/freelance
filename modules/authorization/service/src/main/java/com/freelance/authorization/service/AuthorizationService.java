@@ -8,7 +8,7 @@ import com.freelance.authorization.service.list.assembler.AuthorizationListAssem
 import com.freelance.authorization.service.validation.VerifyValidation;
 import com.freelance.authorization.entity.Authorization;
 import com.freelance.authorization.repository.AuthorizationRepository;
-import com.freelance.keys.authorization.AuthorizationConfigKeys;
+import com.freelance.keys.authorization.permission.PermissionConfigKeys;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ public class AuthorizationService {
     }
 
     public void isAuthorized() {
-        if (!ConfigurationEngine.getBoolean(AuthorizationConfigKeys.AUTHORIZATION_ENABLED)) {
+        if (!ConfigurationEngine.getBoolean(PermissionConfigKeys.AUTHORIZATION_ENABLED)) {
             return;
         }
         new VerifyValidation().validateRequest();

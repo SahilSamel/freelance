@@ -15,7 +15,7 @@ import com.freelance.alerts.template.repository.AlertTemplateRepository;
 import com.freelance.ConfigurationEngine;
 import com.freelance.consumer.alerts.outbound.whatsapp.WhatsAppErrorCode;
 import com.freelance.event.model.EventPriority;
-import com.freelance.keys.alerts.AlertConfigKeys;
+import com.freelance.keys.alerts.webhook.WebhookConfigKeys;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.user.read.UserReadRequestDTO;
@@ -215,7 +215,7 @@ public final class WhatsAppUtility {
     }
 
     public static Set<String> getOptOutKeywords() {
-        String raw = ConfigurationEngine.get(AlertConfigKeys.WHATSAPP_OPT_OUT_KEYWORDS);
+        String raw = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_OPT_OUT_KEYWORDS);
         if (raw == null || raw.isBlank()) {
             return DEFAULT_OPT_OUT_KEYWORDS;
         }
@@ -226,7 +226,7 @@ public final class WhatsAppUtility {
     }
 
     public static Set<String> getOptInKeywords() {
-        String raw = ConfigurationEngine.get(AlertConfigKeys.WHATSAPP_OPT_IN_KEYWORDS);
+        String raw = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_OPT_IN_KEYWORDS);
         if (raw == null || raw.isBlank()) {
             return DEFAULT_OPT_IN_KEYWORDS;
         }

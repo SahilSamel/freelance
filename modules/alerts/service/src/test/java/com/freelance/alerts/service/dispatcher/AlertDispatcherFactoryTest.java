@@ -53,7 +53,7 @@ class AlertDispatcherFactoryTest {
     void testFallbackToDefaultChannel() {
         AlertDispatcherFactory factory = new AlertDispatcherFactory();
 
-        // When passing null, it falls back to AlertConfigKeys.DEFAULT_ALERT_CHANNEL (WHATSAPP)
+        // When passing null, it falls back to AlertEmitConfigKeys.DEFAULT_ALERT_CHANNEL (WHATSAPP)
         Optional<IAlertDispatcher> dispatcherOpt = factory.getDispatcher(null);
         assertTrue(dispatcherOpt.isPresent(), "Should fall back to default channel");
         assertEquals(AlertChannel.WHATSAPP, dispatcherOpt.get().getChannel());

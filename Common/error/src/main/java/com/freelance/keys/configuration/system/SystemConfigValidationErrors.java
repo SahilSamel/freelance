@@ -1,11 +1,11 @@
-package com.freelance.keys.configuration;
+package com.freelance.keys.configuration.system;
 
 import com.freelance.config.IError;
 
 /**
- * Enumerates client-facing validation errors for the configuration domain.
+ * Enumerates client-facing validation errors for system configuration management.
  */
-public enum ValidationErrors implements IError {
+public enum SystemConfigValidationErrors implements IError {
 
     INVALID_CONFIG_ID(
             "FL_6001",
@@ -13,35 +13,12 @@ public enum ValidationErrors implements IError {
             "Configuration ID is missing or blank",
             400
     ),
-
     INVALID_CONFIG_VALUE(
             "FL_6002",
             "Configuration value is required.",
             "Configuration value is null",
             400
     ),
-
-    INVALID_ERROR_ID(
-            "FL_6003",
-            "Error ID is required.",
-            "Error ID is missing or blank",
-            400
-    ),
-
-    INVALID_STATUS_CODE(
-            "FL_6004",
-            "Status code must be a valid HTTP status code between 100 and 599.",
-            "Status code out of valid HTTP range",
-            400
-    ),
-
-    INVALID_ERROR_MESSAGE(
-            "FL_6005",
-            "Error message cannot be blank.",
-            "Error message is blank",
-            400
-    ),
-
     CONFIG_VALUE_VALIDATION_FAILED(
             "FL_6006",
             "Configuration value does not match the required pattern.",
@@ -49,14 +26,14 @@ public enum ValidationErrors implements IError {
             400
     );
 
-    private static final String CATEGORY = "configuration.validation";
+    private static final String CATEGORY = "configuration.system.validation";
 
     private final String indirectionCode;
     private final String defaultMessage;
     private final String description;
     private final int defaultStatusCode;
 
-    ValidationErrors(String indirectionCode, String defaultMessage, String description, int defaultStatusCode) {
+    SystemConfigValidationErrors(String indirectionCode, String defaultMessage, String description, int defaultStatusCode) {
         this.indirectionCode = indirectionCode;
         this.defaultMessage = defaultMessage;
         this.description = description;
