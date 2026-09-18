@@ -16,8 +16,6 @@ public final class VendorSupportKeyUtility {
 
     private static final Logger logger = LoggerFactory.getLogger(VendorSupportKeyUtility.class);
     public static final String VENDOR_ISSUER = "vendor-support";
-    public static final String CLAIM_TICKET_ID = "ticketId";
-    public static final String CLAIM_REASON = "reason";
 
     private VendorSupportKeyUtility() {
     }

@@ -29,4 +29,9 @@ public class UserRepository extends AbstractRepository<User, UUID> {
         }
         return findByUsername(username).isPresent();
     }
+
+    public long countUsers() {
+        Long count = em().createNamedQuery(User.QUERY_COUNT_ALL, Long.class).getSingleResult();
+        return count != null ? count : 0L;
+    }
 }

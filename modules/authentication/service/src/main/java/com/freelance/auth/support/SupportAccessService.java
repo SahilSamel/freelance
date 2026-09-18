@@ -105,6 +105,15 @@ public class SupportAccessService {
         return new SupportGrantResponseDTO(true, expiresAt);
     }
 
+    public void grantDay0Access(Instant expiresAt) {
+        SupportAccessCacheEntry entry = getEntry();
+        entry.setExpiresAt(expiresAt);
+        entry.setPendingReason(null);
+        entry.setPendingTicket(null);
+        saveEntry(entry);
+        logger.info("[SupportAccessService] Day-0 Support access granted until {}", expiresAt);
+    }
+
     public SupportRevokeResponseDTO revokeAccess() {
         SupportAccessCacheEntry entry = getEntry();
         entry.clear();

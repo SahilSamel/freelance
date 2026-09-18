@@ -59,7 +59,7 @@ class VerifyAuthConstraintTest {
         CacheManager.getInstance().invalidate("cache_SystemConfig", AuthenticationConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey());
 
         String token = VendorSupportTestHelper.generateSupportToken(
-                vendorKeyPair.getPrivate(), "TICKET-1", "Reason", Duration.ofHours(1)
+                vendorKeyPair.getPrivate(), Duration.ofHours(1)
         );
 
         ConstraintException ex = assertThrows(ConstraintException.class, () ->
@@ -73,7 +73,7 @@ class VerifyAuthConstraintTest {
     void vendorToken_invalidSignature_raisesError() {
         KeyPair anotherKeyPair = VendorSupportTestHelper.generateRsaKeyPair();
         String fakeToken = VendorSupportTestHelper.generateSupportToken(
-                anotherKeyPair.getPrivate(), "TICKET-FAKE", "Malicious", Duration.ofHours(1)
+                anotherKeyPair.getPrivate(), Duration.ofHours(1)
         );
 
         ConstraintException ex = assertThrows(ConstraintException.class, () ->
@@ -86,7 +86,7 @@ class VerifyAuthConstraintTest {
     @DisplayName("vendor token when support access window is inactive raises SUPPORT_ACCESS_DISABLED")
     void vendorToken_windowInactive_raisesError() {
         String token = VendorSupportTestHelper.generateSupportToken(
-                vendorKeyPair.getPrivate(), "TICKET-1", "Reason", Duration.ofHours(1)
+                vendorKeyPair.getPrivate(), Duration.ofHours(1)
         );
 
         ConstraintException ex = assertThrows(ConstraintException.class, () ->
@@ -101,7 +101,7 @@ class VerifyAuthConstraintTest {
         supportAccessService.grantAccess();
 
         String token = VendorSupportTestHelper.generateSupportToken(
-                vendorKeyPair.getPrivate(), "TICKET-1", "Reason", Duration.ofHours(1)
+                vendorKeyPair.getPrivate(), Duration.ofHours(1)
         );
 
         assertDoesNotThrow(() ->

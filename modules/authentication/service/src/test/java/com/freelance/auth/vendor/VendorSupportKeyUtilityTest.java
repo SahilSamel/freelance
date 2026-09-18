@@ -19,7 +19,7 @@ class VendorSupportKeyUtilityTest {
     void testIsVendorToken() {
         KeyPair keyPair = VendorSupportTestHelper.generateRsaKeyPair();
         String token = VendorSupportTestHelper.generateSupportToken(
-                keyPair.getPrivate(), "TICKET-1234", "Fixing production bug", Duration.ofHours(2)
+                keyPair.getPrivate(), Duration.ofHours(2)
         );
 
         assertTrue(VendorSupportKeyUtility.isVendorToken(token));
@@ -43,14 +43,13 @@ class VendorSupportKeyUtilityTest {
     void testVerifyAndParseSupportToken() {
         KeyPair keyPair = VendorSupportTestHelper.generateRsaKeyPair();
         String token = VendorSupportTestHelper.generateSupportToken(
-                keyPair.getPrivate(), "TICKET-1234", "Fixing production bug", Duration.ofHours(2)
+                keyPair.getPrivate(), Duration.ofHours(2)
         );
 
         Claims claims = VendorSupportKeyUtility.verifyAndParseSupportToken(token, keyPair.getPublic());
         assertEquals("vendor-support", claims.getIssuer());
-        assertEquals("vendor-tech-support", claims.getSubject());
-        assertEquals("TICKET-1234", claims.get("ticketId"));
-        assertEquals("Fixing production bug", claims.get("reason"));
+        assertEquals(com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_USER_ID.asString(), claims.getSubject());
+        assertEquals(com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_SESSION_KEY.asString(), claims.get("sessionKey"));
     }
 
     @Test
@@ -60,7 +59,7 @@ class VendorSupportKeyUtilityTest {
         KeyPair keyPair2 = VendorSupportTestHelper.generateRsaKeyPair();
 
         String token = VendorSupportTestHelper.generateSupportToken(
-                keyPair1.getPrivate(), "TICKET-999", "Emergency audit", Duration.ofHours(1)
+                keyPair1.getPrivate(), Duration.ofHours(1)
         );
 
         assertThrows(JwtException.class, () ->

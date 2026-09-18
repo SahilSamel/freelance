@@ -17,6 +17,7 @@ dependencies {
     testImplementation project(':modules:authorization:authorization-dto')
     testImplementation project(':modules:audit:audit-dto')
     testImplementation project(':modules:configuration:configuration-dto')
+    testImplementation project(':Common:enum')
 
     // REST Assured — fluent HTTP test DSL
     testImplementation 'io.rest-assured:rest-assured:5.5.0'

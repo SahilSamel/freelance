@@ -63,8 +63,9 @@ public class TestContextHelper {
             caches.setAccessible(true);
             ((Map<?, ?>) caches.get(mgr)).clear();
 
-            mgr.init("com.freelance");
-        } catch (Exception ignored) {
+            mgr.init("com.freelance.fixtures");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

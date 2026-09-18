@@ -51,7 +51,7 @@ class AuthenticationSupportTest {
     @DisplayName("verify throws SUPPORT_ACCESS_DISABLED when support window is inactive")
     void testVerify_supportWindowClosed_throwsConstraintException() {
         String token = VendorSupportTestHelper.generateSupportToken(
-                vendorKeyPair.getPrivate(), "TICKET-101", "Debug DB lock", Duration.ofHours(1)
+                vendorKeyPair.getPrivate(), Duration.ofHours(1)
         );
 
         ConstraintException ex = assertThrows(ConstraintException.class, () ->
@@ -67,7 +67,7 @@ class AuthenticationSupportTest {
         supportAccessService.grantAccess();
 
         String token = VendorSupportTestHelper.generateSupportToken(
-                vendorKeyPair.getPrivate(), "TICKET-101", "Debug DB lock", Duration.ofHours(1)
+                vendorKeyPair.getPrivate(), Duration.ofHours(1)
         );
 
         AuthVerifyResponseDTO response = authentication.verify(new AuthVerifyRequestDTO(token));
@@ -83,7 +83,7 @@ class AuthenticationSupportTest {
 
         KeyPair anotherKeyPair = VendorSupportTestHelper.generateRsaKeyPair();
         String fakeToken = VendorSupportTestHelper.generateSupportToken(
-                anotherKeyPair.getPrivate(), "TICKET-FAKE", "Malicious attempt", Duration.ofHours(1)
+                anotherKeyPair.getPrivate(), Duration.ofHours(1)
         );
 
         ConstraintException ex = assertThrows(ConstraintException.class, () ->
@@ -97,7 +97,7 @@ class AuthenticationSupportTest {
     void testVerify_afterRevocation_throwsConstraintException() {
         supportAccessService.grantAccess();
         String token = VendorSupportTestHelper.generateSupportToken(
-                vendorKeyPair.getPrivate(), "TICKET-101", "Debug DB lock", Duration.ofHours(1)
+                vendorKeyPair.getPrivate(), Duration.ofHours(1)
         );
 
         // Verify succeeds while active

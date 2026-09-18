@@ -1,5 +1,7 @@
 package com.freelance.initialization;
 
+import com.freelance.auth.bootstrap.SupportBootstrapService;
+import com.freelance.auth.support.SupportAccessService;
 import com.freelance.auth.token.JwtSecretManager;
 import com.freelance.template.seeder.AlertsBootstrap;
 import com.freelance.authorization.seeder.AuthorizationSeeder;
@@ -11,6 +13,7 @@ import com.freelance.manager.CacheManager;
 import com.freelance.mapping.roleAuthorization.RoleAuthorizationService;
 import com.freelance.rest.app.transaction.Transaction;
 import com.freelance.system.SystemHardcoding;
+import com.freelance.user.repository.UserRepository;
 import jakarta.persistence.EntityManagerFactory;
 
 public class Init {
@@ -60,6 +63,13 @@ public class Init {
                 EventManagementEngine.getInstance().init();
 
                 AlertsBootstrap.init();
+
+                SupportBootstrapService supportBootstrapService = new SupportBootstrapService(
+                        new com.freelance.user.repository.UserRepository(),
+                        systemConfigurationService,
+                        new com.freelance.auth.support.SupportAccessService()
+                );
+                supportBootstrapService.bootstrapIfRequired();
             }
         } catch (Exception e) {
             throw new IllegalStateException("FATAL: Critical failure during application startup in Init.startUp()! Server startup aborted.", e);

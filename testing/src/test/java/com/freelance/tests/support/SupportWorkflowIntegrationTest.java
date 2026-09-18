@@ -36,8 +36,6 @@ class SupportWorkflowIntegrationTest extends BaseIntegrationTest {
     private static String getVendorSupportToken() {
         return VendorSupportTestHelper.generateSupportToken(
                 vendorKeyPair.getPrivate(),
-                "TICKET-INTEGRATION-001",
-                "Integration test vendor support session",
                 Duration.ofHours(2)
         );
     }

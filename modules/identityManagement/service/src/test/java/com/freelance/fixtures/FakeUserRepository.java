@@ -39,6 +39,11 @@ public class FakeUserRepository extends UserRepository {
     }
 
     @Override
+    public long countUsers() {
+        return storage.size();
+    }
+
+    @Override
     public void persist(User entity) {
         persistCalls++;
         if (entity != null) {

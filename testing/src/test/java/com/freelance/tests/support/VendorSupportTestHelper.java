@@ -26,7 +26,7 @@ public final class VendorSupportTestHelper {
         }
     }
 
-    public static String generateSupportToken(PrivateKey privateKey, String ticketId, String reason, Duration duration) {
+    public static String generateSupportToken(PrivateKey privateKey, Duration duration) {
         if (privateKey == null) {
             throw new IllegalArgumentException("PrivateKey is required to generate vendor support token");
         }
@@ -35,9 +35,8 @@ public final class VendorSupportTestHelper {
 
         return Jwts.builder()
                 .issuer(VendorSupportKeyUtility.VENDOR_ISSUER)
-                .subject("vendor-tech-support")
-                .claim(VendorSupportKeyUtility.CLAIM_TICKET_ID, ticketId != null ? ticketId : "N/A")
-                .claim(VendorSupportKeyUtility.CLAIM_REASON, reason != null ? reason : "Vendor Diagnostic Support")
+                .subject(com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_USER_ID.asString())
+                .claim("sessionKey", com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_SESSION_KEY.asString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(privateKey, Jwts.SIG.RS256)

@@ -9,7 +9,8 @@ import java.util.UUID;
 @NamedQueries({
         @NamedQuery(name = User.QUERY_FIND_BY_USERNAME, query = "SELECT u FROM User u WHERE u.username = :username"),
         @NamedQuery(name = User.QUERY_FIND_BY_ID, query = "SELECT u FROM User u WHERE u.id = :id"),
-        @NamedQuery(name = User.QUERY_COUNT_BY_USERNAME, query = "SELECT COUNT(u) FROM User u WHERE u.username = :username")
+        @NamedQuery(name = User.QUERY_COUNT_BY_USERNAME, query = "SELECT COUNT(u) FROM User u WHERE u.username = :username"),
+        @NamedQuery(name = User.QUERY_COUNT_ALL, query = "SELECT COUNT(u) FROM User u")
 })
 @Table(name = "FL_USERS", schema = "freelance")
 public class User extends AbstractAuditEntity {
@@ -17,6 +18,7 @@ public class User extends AbstractAuditEntity {
     public static final String QUERY_FIND_BY_USERNAME = "User.findByUsername";
     public static final String QUERY_FIND_BY_ID = "User.findById";
     public static final String QUERY_COUNT_BY_USERNAME = "User.countByUsername";
+    public static final String QUERY_COUNT_ALL = "User.countAll";
 
     @Id
     @Column(name = "id", updatable = false, nullable = false)
