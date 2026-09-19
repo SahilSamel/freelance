@@ -18,16 +18,6 @@ import jakarta.persistence.EntityManagerFactory;
 
 public class Init {
 
-    /**
-     * Executes the bootstrap sequence for the application.
-     * <p>
-     * Initializes the {@link Transaction} manager, seeds default system/error configurations and authorization roles
-     * into the database, initializes {@link CacheManager}, and preloads system config, error message, and role authorization caches.
-     * </p>
-     *
-     * @param entityManagerFactory the open JPA entity manager factory; must not be null
-     * @throws IllegalStateException if {@code entityManagerFactory} is null/closed or if startup initialization fails
-     */
     public static void startUp(EntityManagerFactory entityManagerFactory) {
         if (entityManagerFactory == null || !entityManagerFactory.isOpen()) {
             throw new IllegalStateException("FATAL: EntityManagerFactory is null or closed. Cannot initialize application startup!");
@@ -57,19 +47,19 @@ public class Init {
                 ErrorConfigurationService errorConfigurationService = new ErrorConfigurationService();
                 errorConfigurationService.preloadErrorCacheEntries();
 
+                SupportBootstrapService supportBootstrapService = new SupportBootstrapService(
+                        new UserRepository(),
+                        systemConfigurationService,
+                        new SupportAccessService()
+                );
+                supportBootstrapService.bootstrapIfRequired();
+
                 RoleAuthorizationService roleAuthorizationService = new RoleAuthorizationService();
                 roleAuthorizationService.preloadRoleAuthorizationCacheEntries();
 
                 EventManagementEngine.getInstance().init();
 
                 AlertsBootstrap.init();
-
-                SupportBootstrapService supportBootstrapService = new SupportBootstrapService(
-                        new com.freelance.user.repository.UserRepository(),
-                        systemConfigurationService,
-                        new com.freelance.auth.support.SupportAccessService()
-                );
-                supportBootstrapService.bootstrapIfRequired();
             }
         } catch (Exception e) {
             throw new IllegalStateException("FATAL: Critical failure during application startup in Init.startUp()! Server startup aborted.", e);

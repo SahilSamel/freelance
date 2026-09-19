@@ -131,4 +131,25 @@ class SupportBootstrapServiceTest {
         assertNull(savedConfigValue.get());
         assertFalse(supportAccessService.isSupportAccessActive());
     }
+
+    @Test
+    @DisplayName("Throws IllegalStateException when bootstrap ceremony encounters fatal failure")
+    void testBootstrapExceptionHandling() {
+        SystemConfigurationService failingConfigService = new SystemConfigurationService() {
+            @Override
+            public SystemConfigurationUpdateResponseDTO updateConfiguration(SystemConfigurationUpdateRequestDTO request) {
+                throw new RuntimeException("DB down");
+            }
+        };
+
+        SupportBootstrapService failingService = new SupportBootstrapService(userRepository, failingConfigService, supportAccessService);
+        assertThrows(IllegalStateException.class, failingService::bootstrapIfRequired);
+    }
+
+    @Test
+    @DisplayName("Default 0-arg constructor instantiates successfully")
+    void testDefaultConstructor() {
+        SupportBootstrapService service = new SupportBootstrapService();
+        assertNotNull(service);
+    }
 }

@@ -88,4 +88,44 @@ class RoleReadServiceTest {
         assertNotNull(response);
         assertEquals(2, response.roles().size());
     }
+
+    @Test
+    @DisplayName("readRole by name succeeds when id is null")
+    void readRole_byName_success() {
+        FakeRoleRepository roleRepo = new FakeRoleRepository();
+        FakeRoleAuthorizationRepository roleAuthRepo = new FakeRoleAuthorizationRepository();
+
+        UUID roleId = UUID.randomUUID();
+        roleRepo.persist(new Role(roleId, "ADMIN_BY_NAME", "desc", false));
+
+        RoleReadService service = new RoleReadService(roleRepo, roleAuthRepo, new RoleAssembler());
+        RoleReadResponseDTO response = service.readRole(new RoleReadRequestDTO(null, "ADMIN_BY_NAME"));
+
+        assertNotNull(response);
+        assertEquals("ADMIN_BY_NAME", response.roleDTO().name());
+    }
+
+    @Test
+    @DisplayName("listRoles filters by systemOnly = true")
+    void listRoles_systemOnlyFilter() {
+        FakeRoleRepository roleRepo = new FakeRoleRepository();
+        FakeRoleAuthorizationRepository roleAuthRepo = new FakeRoleAuthorizationRepository();
+
+        roleRepo.persist(new Role(UUID.randomUUID(), "SUPER_ADMIN", "System role", true));
+        roleRepo.persist(new Role(UUID.randomUUID(), "CUSTOM_ROLE", "Custom role", false));
+
+        RoleReadService service = new RoleReadService(roleRepo, roleAuthRepo, new RoleAssembler());
+        RoleListResponseDTO response = service.listRoles(new RoleListRequestDTO(true));
+
+        assertNotNull(response);
+        assertEquals(1, response.roles().size());
+        assertTrue(response.roles().get(0).isSystem());
+    }
+
+    @Test
+    @DisplayName("Default 0-arg constructor instantiates successfully")
+    void testDefaultConstructor() {
+        RoleReadService service = new RoleReadService();
+        assertNotNull(service);
+    }
 }

@@ -148,4 +148,31 @@ class SystemConfigurationServiceTest {
         assertEquals("1200", res.configValue());
         assertEquals("Updated TTL", res.description());
     }
+
+    @Test
+    @DisplayName("Should test all constructors, null check, and loadConfigValue in SystemConfigurationService")
+    void testConstructorsAndLoadConfig() {
+        assertNotNull(new SystemConfigurationService());
+        FakeSystemConfigurationRepository repo = new FakeSystemConfigurationRepository();
+        repo.storage.put("sys.key", new SystemConfiguration("sys.key", "val", "desc"));
+
+        SystemConfigurationService service = new SystemConfigurationService(repo, new com.freelance.configuration.system.assembler.SystemConfigurationAssembler());
+        assertNotNull(service.loadConfigValue("sys.key"));
+        assertNull(service.loadConfigValue("unknown.key"));
+
+        // SystemConfigurationConstraint tests
+        com.freelance.configuration.system.constraint.SystemConfigurationConstraint c0 = new com.freelance.configuration.system.constraint.SystemConfigurationConstraint();
+        assertNotNull(c0);
+        assertNull(c0.checkConstraints(null));
+        assertNull(c0.checkConstraints(new SystemConfigurationUpdateRequestDTO(null, "val", "desc")));
+    }
+
+    @Test
+    @DisplayName("Direct test of SystemConfigurationValidation")
+    void testSystemConfigValidation() {
+        var val = new com.freelance.configuration.system.validation.SystemConfigurationValidation();
+        assertThrows(ValidationException.class, () -> val.validateUpdateRequest(null));
+        assertThrows(ValidationException.class, () -> val.validateUpdateRequest(new SystemConfigurationUpdateRequestDTO("   ", "val", "desc")));
+        assertThrows(ValidationException.class, () -> val.validateUpdateRequest(new SystemConfigurationUpdateRequestDTO("key", null, "desc")));
+    }
 }

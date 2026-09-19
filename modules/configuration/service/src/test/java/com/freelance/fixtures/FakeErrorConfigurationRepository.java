@@ -15,6 +15,20 @@ public class FakeErrorConfigurationRepository extends ErrorConfigurationReposito
     }
 
     @Override
+    public Map<String, com.freelance.configuration.dto.ErrorConfigEntry> getAllErrorEntries() {
+        Map<String, com.freelance.configuration.dto.ErrorConfigEntry> map = new HashMap<>();
+        for (ErrorConfiguration cfg : storage.values()) {
+            map.put(cfg.getErrorId(), new com.freelance.configuration.dto.ErrorConfigEntry(cfg.getStatusCode(), cfg.getErrorMessage()));
+        }
+        return map;
+    }
+
+    @Override
+    public Map<String, ErrorConfiguration> findAllEntitiesAsMap() {
+        return new HashMap<>(storage);
+    }
+
+    @Override
     public List<ErrorConfiguration> findAllEntities() {
         return new ArrayList<>(storage.values());
     }

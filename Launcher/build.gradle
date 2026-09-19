@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'application'
+    id 'jacoco'
 }
 
 group = 'launcher'
@@ -40,10 +41,12 @@ dependencies {
     implementation project(":modules:authentication:authentication-endpoint")
     implementation project(":modules:authentication:authentication-dto")
     implementation project(":modules:identityManagement:identity-repository")
+    implementation project(":modules:identityManagement:identity-service")
     implementation project(":modules:identityManagement:identity-endpoint")
     
-    implementation project(":modules:authorization:authorization-endpoint")
+    implementation project(":modules:authorization:authorization-repository")
     implementation project(":modules:authorization:authorization-service")
+    implementation project(":modules:authorization:authorization-endpoint")
 
     implementation project(":modules:configuration:configuration-service")
     implementation project(":modules:configuration:configuration-endpoint")
@@ -53,6 +56,10 @@ dependencies {
     implementation project(":modules:alerts:alerts-repository")
     implementation project(":modules:alerts:alerts-service")
     implementation project(":modules:alerts:alerts-endpoint")
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.assertj:assertj-core:3.25.3'
 }
 
 test {
@@ -62,3 +69,17 @@ test {
 application {
     mainClass = 'com.freelance.launcher.Main'
 }
+
+jacoco.applyTo(run)
+
+run {
+    // When running the application server, attach the JaCoCo Java Agent.
+    // Wipes old server-it.exec before starting.
+    doFirst {
+        delete file("${project.rootDir}/testing/build/jacoco/server-it.exec")
+    }
+    jacoco {
+        destinationFile = file("${project.rootDir}/testing/build/jacoco/server-it.exec")
+        includes = ['com.freelance.*']
+    }
+}

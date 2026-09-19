@@ -68,4 +68,37 @@ class UserUpdateValidationTest {
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
         assertTrue(context.getValidationErrors().get("password").contains(UserValidationErrors.PASSWORD_TOO_SHORT));
     }
+
+    @Test
+    @DisplayName("blank username raises INVALID_USERNAME")
+    void blankUsername_raisesError() {
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(UUID.randomUUID(), "   ", null);
+        assertThrows(ValidationException.class, () -> validation.validateRequest(request));
+        assertTrue(context.getValidationErrors().get("username").contains(UserValidationErrors.INVALID_USERNAME));
+    }
+
+    @Test
+    @DisplayName("too long username raises USERNAME_TOO_LONG")
+    void longUsername_raisesError() {
+        String longUsername = "u".repeat(55);
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(UUID.randomUUID(), longUsername, null);
+        assertThrows(ValidationException.class, () -> validation.validateRequest(request));
+        assertTrue(context.getValidationErrors().get("username").contains(UserValidationErrors.USERNAME_TOO_LONG));
+    }
+
+    @Test
+    @DisplayName("invalid pattern username raises USERNAME_HAS_INVALID_CHARS")
+    void invalidPatternUsername_raisesError() {
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(UUID.randomUUID(), "user!@#$%", null);
+        assertThrows(ValidationException.class, () -> validation.validateRequest(request));
+        assertTrue(context.getValidationErrors().get("username").contains(UserValidationErrors.USERNAME_HAS_INVALID_CHARS));
+    }
+
+    @Test
+    @DisplayName("blank password raises INVALID_PASSWORD")
+    void blankPassword_raisesError() {
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(UUID.randomUUID(), null, "   ");
+        assertThrows(ValidationException.class, () -> validation.validateRequest(request));
+        assertTrue(context.getValidationErrors().get("password").contains(UserValidationErrors.INVALID_PASSWORD));
+    }
 }

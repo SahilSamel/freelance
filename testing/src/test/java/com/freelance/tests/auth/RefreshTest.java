@@ -23,7 +23,7 @@ class RefreshTest extends BaseIntegrationTest {
     @Test
     @DisplayName("valid token → 200 with a new non-blank token")
     void refresh_validToken_returns200WithNewToken() {
-        String token = loginAsSuperAdmin();
+        String token = getSuperAdminToken();
 
         RestAssured
                 .given()
@@ -39,7 +39,7 @@ class RefreshTest extends BaseIntegrationTest {
     @Test
     @DisplayName("refreshed token differs from the original token")
     void refresh_newTokenDiffersFromOldToken() {
-        String oldToken = loginAsSuperAdmin();
+        String oldToken = getSuperAdminToken();
 
         String newToken = RestAssured
                 .given()
@@ -60,7 +60,7 @@ class RefreshTest extends BaseIntegrationTest {
     @Test
     @DisplayName("[REGRESSION] old token is rejected after refresh (session key was rotated)")
     void refresh_oldTokenRejectedAfterRefresh() {
-        String oldToken = loginAsSuperAdmin();
+        String oldToken = getSuperAdminToken();
 
         // Perform refresh — server rotates the session key
         RestAssured
@@ -85,7 +85,7 @@ class RefreshTest extends BaseIntegrationTest {
     @Test
     @DisplayName("[REGRESSION] new token works after refresh")
     void refresh_newTokenIsUsableAfterRefresh() {
-        String oldToken = loginAsSuperAdmin();
+        String oldToken = getSuperAdminToken();
 
         String newToken = RestAssured
                 .given()
@@ -133,3 +133,4 @@ class RefreshTest extends BaseIntegrationTest {
                 .statusCode(400);
     }
 }
+

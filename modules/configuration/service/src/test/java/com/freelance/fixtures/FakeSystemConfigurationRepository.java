@@ -15,6 +15,20 @@ public class FakeSystemConfigurationRepository extends SystemConfigurationReposi
     }
 
     @Override
+    public Map<String, String> getAll() {
+        Map<String, String> map = new HashMap<>();
+        for (SystemConfiguration cfg : storage.values()) {
+            map.put(cfg.getConfigId(), cfg.getConfigValue());
+        }
+        return map;
+    }
+
+    @Override
+    public Set<String> findAllIds() {
+        return new HashSet<>(storage.keySet());
+    }
+
+    @Override
     public List<SystemConfiguration> findAllEntities() {
         return new ArrayList<>(storage.values());
     }
@@ -26,5 +40,10 @@ public class FakeSystemConfigurationRepository extends SystemConfigurationReposi
             storage.put(entity.getConfigId(), entity);
         }
         return entity;
+    }
+
+    @Override
+    public Map<String, SystemConfiguration> findAllEntitiesAsMap() {
+        return new HashMap<>(storage);
     }
 }

@@ -453,4 +453,81 @@ class WhatsAppTemplateServiceTest {
         assertTrue(result.metaTemplateId().startsWith("local_list_"));
         assertEquals(TemplateStatus.APPROVED, result.status());
     }
+
+    @Test
+    @DisplayName("Should test all constructors of WhatsAppTemplateService")
+    void testConstructors() {
+        FakeHttpClient client = new FakeHttpClient(200, "{}");
+        assertNotNull(new WhatsAppTemplateService(client));
+        assertNotNull(new WhatsAppTemplateService(client, TemplateStatus.APPROVED));
+        assertNotNull(new WhatsAppTemplateService(client, new ObjectMapper(), TemplateStatus.DRAFT));
+    }
+
+    @Test
+    @DisplayName("submitTemplate returns failure when entity is null")
+    void testSubmitTemplateNullEntity() {
+        WhatsAppTemplateService service = new WhatsAppTemplateService();
+        TemplateSubmissionResult result = service.submitTemplate(null, null);
+        assertFalse(result.successful());
+        assertEquals("Template entity cannot be null", result.errorMessage());
+    }
+
+    @Test
+    @DisplayName("formatMetaTemplateName handles null and empty keys")
+    void testFormatMetaTemplateName() {
+        WhatsAppTemplateService service = new WhatsAppTemplateService();
+        assertTrue(service.formatMetaTemplateName(null).startsWith("template_"));
+        assertTrue(service.formatMetaTemplateName("").startsWith("template_"));
+        assertEquals("my_template_name", service.formatMetaTemplateName("MY-TEMPLATE.NAME"));
+    }
+
+    @Test
+    @DisplayName("formatBodyTextAndExamples handles null and blank inputs")
+    void testFormatBodyTextAndExamplesNullOrBlank() {
+        WhatsAppTemplateService service = new WhatsAppTemplateService();
+        WhatsAppTemplateService.BodyFormatResult res1 = service.formatBodyTextAndExamples(null);
+        assertEquals("", res1.formattedText());
+        assertTrue(res1.exampleValues().isEmpty());
+
+        WhatsAppTemplateService.BodyFormatResult res2 = service.formatBodyTextAndExamples("   ");
+        assertEquals("", res2.formattedText());
+        assertTrue(res2.exampleValues().isEmpty());
+
+        // Body with digits placeholder
+        WhatsAppTemplateService.BodyFormatResult res3 = service.formatBodyTextAndExamples("Code: {{123}}");
+        assertEquals("Code: {{1}}", res3.formattedText());
+        assertEquals("sample_123", res3.exampleValues().get(0));
+    }
+
+    @Test
+    @DisplayName("buildPayload handles AUTH category and 4-arg constructor")
+    void testAuthCategoryAndFourArgConstructor() {
+        FakeHttpClient client = new FakeHttpClient(200, "{}");
+        WhatsAppTemplateService service = new WhatsAppTemplateService(client, new ObjectMapper(), TemplateStatus.APPROVED, false);
+        assertNotNull(service);
+
+        AlertTemplateEntity entity = new AlertTemplateEntity(
+                UUID.randomUUID(), "TPL_AUTH", "Auth Tpl", "AUTHENTICATION", "en_US", "OTP: {{code}}",
+                null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED, false, null, null
+        );
+        String json = service.buildPayload(entity, null);
+        assertTrue(json.contains("\"AUTHENTICATION\""));
+    }
+
+    @Test
+    @DisplayName("submitTemplate handles non-JSON error response from Meta API")
+    void testNonJsonErrorResponse() {
+        FakeHttpClient fakeClient = new FakeHttpClient(502, "Bad Gateway Plain Text");
+        WhatsAppTemplateService service = new WhatsAppTemplateService(fakeClient, true);
+
+        AlertTemplateEntity entity = new AlertTemplateEntity(
+                UUID.randomUUID(), "TPL_GATEWAY_ERR", "Title", "UTILITY", "en_US", "Body",
+                null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED, false, null, null
+        );
+
+        TemplateSubmissionResult result = service.submitTemplate(entity, null);
+        assertFalse(result.successful());
+        assertEquals("Bad Gateway Plain Text", result.errorMessage());
+    }
 }
+

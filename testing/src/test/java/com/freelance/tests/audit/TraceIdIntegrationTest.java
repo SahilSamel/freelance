@@ -20,7 +20,7 @@ class TraceIdIntegrationTest extends BaseIntegrationTest {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("superadmin", "Welcome@1"))
+                .body(new AuthLoginRequestDTO(SUPER_ADMIN_USERNAME, SUPER_ADMIN_PASSWORD))
                 .when()
                 .post("/auth/login")
                 .then()
@@ -38,7 +38,7 @@ class TraceIdIntegrationTest extends BaseIntegrationTest {
                 .given()
                 .header("X-Trace-ID", customTraceId)
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("superadmin", "Welcome@1"))
+                .body(new AuthLoginRequestDTO(SUPER_ADMIN_USERNAME, SUPER_ADMIN_PASSWORD))
                 .when()
                 .post("/auth/login")
                 .then()
@@ -55,7 +55,7 @@ class TraceIdIntegrationTest extends BaseIntegrationTest {
                 .given()
                 .header("X-Trace-ID", customTraceId)
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("superadmin", "WrongPass"))
+                .body(new AuthLoginRequestDTO(SUPER_ADMIN_USERNAME, "WrongPass"))
                 .when()
                 .post("/auth/login")
                 .then()
@@ -63,3 +63,4 @@ class TraceIdIntegrationTest extends BaseIntegrationTest {
                 .header("X-Trace-ID", equalTo(customTraceId));
     }
 }
+

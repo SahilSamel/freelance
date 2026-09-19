@@ -47,6 +47,28 @@ public class FakeRoleAuthorizationRepository extends RoleAuthorizationRepository
     }
 
     @Override
+    public void persist(RoleAuthorization entity) {
+        if (entity != null) {
+            storage.put(entity.getId(), entity);
+        }
+    }
+
+    @Override
+    public RoleAuthorization merge(RoleAuthorization entity) {
+        if (entity != null) {
+            storage.put(entity.getId(), entity);
+        }
+        return entity;
+    }
+
+    @Override
+    public void remove(RoleAuthorization entity) {
+        if (entity != null) {
+            storage.remove(entity.getId());
+        }
+    }
+
+    @Override
     public void removeByRoleId(UUID roleId) {
         if (roleId == null) return;
         List<RoleAuthorization> toRemove = getRoleAuthorizationsByRoleId(roleId);

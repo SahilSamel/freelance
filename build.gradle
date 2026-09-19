@@ -1,7 +1,30 @@
 plugins {
     id 'java'
+    id 'jacoco'
 }
 
-tasks.withType(JavaCompile) {
-    options.compilerArgs += ["-Xlint:processing"]
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = "0.8.12"
+    }
+
+    test {
+        jacoco {
+            includes = ['com.freelance.*']
+        }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.release = 21
+        options.compilerArgs += ["-Xlint:processing"]
+    }
 }

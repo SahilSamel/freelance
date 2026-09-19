@@ -57,4 +57,43 @@ class UserUpdateConstraintTest {
                 () -> constraint.checkConstraints(new UserUpdateRequestDTO(userId, "taken_name", null)));
         assertEquals(UserConstraintErrors.USER_ALREADY_EXISTS, ex.getError());
     }
+
+    @Test
+    @DisplayName("null request or null id returns null gracefully")
+    void nullRequest_returnsNull() {
+        FakeUserRepository repo = new FakeUserRepository();
+        UserUpdateConstraint constraint = new UserUpdateConstraint(repo);
+        assertNull(constraint.checkConstraints(null));
+        assertNull(constraint.checkConstraints(new UserUpdateRequestDTO(null, "name", null)));
+    }
+
+    @Test
+    @DisplayName("null or blank username or same username skips duplicate check and passes")
+    void sameOrBlankUsername_passes() {
+        FakeUserRepository repo = new FakeUserRepository();
+        UUID userId = UUID.randomUUID();
+        User existing = new User(userId, "same_name", "hashedPass");
+        repo.persist(existing);
+
+        UserUpdateConstraint constraint = new UserUpdateConstraint(repo);
+
+        // Same username
+        User res1 = constraint.checkConstraints(new UserUpdateRequestDTO(userId, "same_name", "newPass"));
+        assertNotNull(res1);
+
+        // Null username
+        User res2 = constraint.checkConstraints(new UserUpdateRequestDTO(userId, null, "newPass"));
+        assertNotNull(res2);
+
+        // Blank username
+        User res3 = constraint.checkConstraints(new UserUpdateRequestDTO(userId, "   ", "newPass"));
+        assertNotNull(res3);
+    }
+
+    @Test
+    @DisplayName("default 0-arg constructor instantiates successfully")
+    void defaultConstructor() {
+        UserUpdateConstraint c = new UserUpdateConstraint();
+        assertNotNull(c);
+    }
 }

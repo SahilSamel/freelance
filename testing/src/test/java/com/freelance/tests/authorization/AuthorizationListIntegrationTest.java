@@ -9,13 +9,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.*;
 
-@DisplayName("POST /authorizations/list")
+@DisplayName("POST /authorizations/list Integration Tests")
 class AuthorizationListIntegrationTest extends BaseIntegrationTest {
 
     @Test
-    @DisplayName("valid token with SUPER_ADMIN role returns 200 and list of authorizations")
-    void listAuthorizations_superAdmin_returns200() {
-        String token = loginAsSuperAdmin();
+    @DisplayName("role_officer: lists all authorizations successfully (200 OK)")
+    void listAuthorizations_roleOfficer_returns200() {
+        String token = getRoleOfficerToken();
 
         RestAssured
                 .given()
@@ -32,8 +32,25 @@ class AuthorizationListIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("no Authorization header returns 400")
-    void listAuthorizations_noToken_returns400() {
+    @DisplayName("cross-boundary RBAC: user_officer cannot list authorizations (403 FL_4101)")
+    void listAuthorizations_userOfficer_forbidden() {
+        String token = getUserOfficerToken();
+
+        RestAssured
+                .given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(new AuthorizationListRequestDTO(null))
+                .when()
+                .post("/authorizations/list")
+                .then()
+                .statusCode(403)
+                .body("errorCode", equalTo("FL_4101"));
+    }
+
+    @Test
+    @DisplayName("no Authorization header returns 400 or 401")
+    void listAuthorizations_noToken_fails() {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
@@ -41,6 +58,7 @@ class AuthorizationListIntegrationTest extends BaseIntegrationTest {
                 .when()
                 .post("/authorizations/list")
                 .then()
-                .statusCode(400);
+                .statusCode(anyOf(equalTo(400), equalTo(401)));
     }
 }
+

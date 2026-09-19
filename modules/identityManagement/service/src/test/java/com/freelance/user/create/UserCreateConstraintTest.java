@@ -32,4 +32,14 @@ class UserCreateConstraintTest {
                 () -> constraint.checkConstraints(new UserCreateRequestDTO("existing_user", "Pass1234")));
         assertEquals(UserConstraintErrors.USER_ALREADY_EXISTS, ex.getError());
     }
+
+    @Test
+    @DisplayName("Default constructor and null checks")
+    void testConstructorsAndNullChecks() {
+        UserCreateConstraint defaultConstraint = new UserCreateConstraint();
+        assertNotNull(defaultConstraint);
+
+        assertDoesNotThrow(() -> defaultConstraint.checkConstraints(null));
+        assertDoesNotThrow(() -> defaultConstraint.checkConstraints(new UserCreateRequestDTO(null, "pass")));
+    }
 }

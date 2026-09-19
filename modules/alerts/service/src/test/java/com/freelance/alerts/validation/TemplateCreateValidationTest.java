@@ -377,4 +377,29 @@ class TemplateCreateValidationTest {
         assertTrue(context.getValidationErrors().containsKey("priority"));
         assertTrue(context.getValidationErrors().get("priority").contains(TemplateValidationErrors.INVALID_TEMPLATE_PRIORITY));
     }
+
+    @Test
+    @DisplayName("Should throw ValidationException when button text is blank or button type is null")
+    void testBlankButtonTextOrNullTypeThrows() {
+        TemplateCreateRequestDTO req1 = new TemplateCreateRequestDTO(
+                "TPL_BLANK_BTN_TXT", "Title", "UTILITY", "en", "Content", null, null,
+                AlertChannel.WHATSAPP, null,
+                List.of(new TemplateButtonDTO("   ", ButtonType.URL, "https://1.com", null, false, 1))
+        );
+
+        assertThrows(ValidationException.class, () -> validation.validateRequest(req1));
+        assertTrue(context.getValidationErrors().containsKey("buttons.text"));
+        assertTrue(context.getValidationErrors().get("buttons.text").contains(TemplateValidationErrors.INVALID_TEMPLATE_BUTTON));
+
+        context = TestContextHelper.setUp();
+        TemplateCreateRequestDTO req2 = new TemplateCreateRequestDTO(
+                "TPL_NULL_BTN_TYPE", "Title", "UTILITY", "en", "Content", null, null,
+                AlertChannel.WHATSAPP, null,
+                List.of(new TemplateButtonDTO("Click", null, "https://1.com", null, false, 1))
+        );
+
+        assertThrows(ValidationException.class, () -> validation.validateRequest(req2));
+        assertTrue(context.getValidationErrors().containsKey("buttons.type"));
+        assertTrue(context.getValidationErrors().get("buttons.type").contains(TemplateValidationErrors.INVALID_TEMPLATE_BUTTON));
+    }
 }

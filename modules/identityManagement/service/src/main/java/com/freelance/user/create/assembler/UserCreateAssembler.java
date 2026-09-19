@@ -5,6 +5,9 @@ import com.freelance.user.create.UserCreateRequestDTO;
 import com.freelance.user.create.UserCreateResponseDTO;
 import com.freelance.utility.password.HashUtility;
 
+import java.util.List;
+import java.util.UUID;
+
 public class UserCreateAssembler {
 
     public User toEntity(UserCreateRequestDTO request) {
@@ -17,4 +20,10 @@ public class UserCreateAssembler {
         if (user == null) return null;
         return new UserCreateResponseDTO(user.getId(), user.getUsername());
     }
+
+    public UserCreateResponseDTO fromEntity(User user, List<UUID> roleIds) {
+        if (user == null) return null;
+        return new UserCreateResponseDTO(user.getId(), user.getUsername(), roleIds != null ? roleIds : List.of());
+    }
 }
+

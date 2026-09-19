@@ -376,4 +376,114 @@ class TemplateCreateConstraintTest {
         ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(root));
         assertEquals(TemplateConstraintErrors.TEMPLATE_CHAIN_BROKEN, ex.getError());
     }
+
+    @Test
+    @DisplayName("Should instantiate with 2-arg constructor gracefully")
+    void testTwoArgConstructor() {
+        TemplateCreateConstraint twoArg = new TemplateCreateConstraint(templateRepo, buttonRepo);
+        assertNotNull(twoArg);
+        TemplateCreateRequestDTO req = new TemplateCreateRequestDTO(
+                "TPL_SMS", "Sms", null, "en", "Content", null, null, null, null, null
+        );
+        assertDoesNotThrow(() -> twoArg.checkConstraints(req));
+    }
+
+    @Test
+    @DisplayName("Should instantiate with 0-arg default constructor gracefully")
+    void testDefaultConstructor() {
+        TemplateCreateConstraint defaultCtor = new TemplateCreateConstraint();
+        assertNotNull(defaultCtor);
+    }
+
+    @Test
+    @DisplayName("Repository exceptions in helper lookups return safe false/empty")
+    void testRepositoryExceptionsHandledSafely() {
+        AlertTemplateRepository failingTplRepo = new AlertTemplateRepository() {
+            @Override
+            public Optional<AlertTemplateEntity> findByKey(String templateKey) {
+                throw new RuntimeException("DB error");
+            }
+        };
+        AlertButtonRepository failingBtnRepo = new AlertButtonRepository() {
+            @Override
+            public Optional<AlertButtonEntity> findByPayload(String payload) {
+                throw new RuntimeException("DB error");
+            }
+        };
+        com.freelance.alerts.template.repository.AlertTemplateCategoryRepository failingCatRepo =
+                new com.freelance.alerts.template.repository.AlertTemplateCategoryRepository() {
+            @Override
+            public Optional<com.freelance.alerts.template.entity.AlertTemplateCategoryEntity> findByKey(String categoryKey) {
+                throw new RuntimeException("DB error");
+            }
+        };
+
+        TemplateCreateConstraint c = new TemplateCreateConstraint(failingTplRepo, failingBtnRepo, failingCatRepo);
+        TemplateCreateRequestDTO req = new TemplateCreateRequestDTO(
+                "TPL_FAILSAFE", "Title", null, "en", "Content", null, null, null, null, null
+        );
+        assertDoesNotThrow(() -> c.checkConstraints(req));
+    }
+
+    @Test
+    @DisplayName("Chain validation navigates existing DB template entity buttons and links to request templates")
+    void testValidateChainFromDbEntity() {
+        // Create DB template that has a button pointing to a child template in the request
+        AlertTemplateEntity dbTpl = new AlertTemplateEntity(
+                UUID.randomUUID(), "TPL_DB_PARENT", "DB Parent", "UTILITY", "en", "Body",
+                null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED, false, null, null
+        );
+
+        AlertButtonEntity btn1 = new AlertButtonEntity(UUID.randomUUID(), dbTpl, "Go Child", ButtonType.QUICK_REPLY, "p1", 1);
+        AlertTemplateEntity targetTpl = new AlertTemplateEntity(UUID.randomUUID(), "TPL_REQ_CHILD", "Req Child", "UTILITY", "en", "Child Body", null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED, false, null, null);
+        btn1.setReply(new com.freelance.alerts.template.entity.AlertButtonReplyEntity(UUID.randomUUID(), btn1, targetTpl, false));
+
+        // Add URL button and phone button to dbTpl
+        AlertButtonEntity btnUrl = new AlertButtonEntity(UUID.randomUUID(), dbTpl, "Visit", ButtonType.URL, "https://url.com", 2);
+        AlertButtonEntity btnPhone = new AlertButtonEntity(UUID.randomUUID(), dbTpl, "Call", ButtonType.PHONE_NUMBER, "+123", 3);
+
+        dbTpl.getButtons().add(btn1);
+        dbTpl.getButtons().add(btnUrl);
+        dbTpl.getButtons().add(btnPhone);
+        templateRepo.persist(dbTpl);
+
+        // Child template in request
+        TemplateCreateRequestDTO reqChild = new TemplateCreateRequestDTO(
+                "TPL_REQ_CHILD", "Child", "UTILITY", "en", "Child Content", null, null, null, null, Collections.emptyList()
+        );
+
+        // Root template in request links to dbTpl
+        TemplateCreateRequestDTO rootReq = new TemplateCreateRequestDTO(
+                "TPL_REQ_ROOT", "Root", "UTILITY", "en", "Root Content", null, null, null, null,
+                List.of(new TemplateButtonDTO("To DB", ButtonType.QUICK_REPLY, "p0", "TPL_DB_PARENT", false, 1)),
+                List.of(reqChild)
+        );
+
+        assertDoesNotThrow(() -> constraint.checkConstraints(rootReq));
+    }
+
+    @Test
+    @DisplayName("Should test all constructor overloads and null request check")
+    void testConstructorsAndNullRequest() {
+        TemplateCreateConstraint c0 = new TemplateCreateConstraint();
+        assertNotNull(c0);
+        assertDoesNotThrow(() -> c0.checkConstraints(null));
+
+        TemplateCreateConstraint c1 = new TemplateCreateConstraint(templateRepo);
+        assertNotNull(c1);
+
+        TemplateCreateConstraint c2 = new TemplateCreateConstraint(templateRepo, buttonRepo);
+        assertNotNull(c2);
+    }
+
+    @Test
+    @DisplayName("Should throw ConstraintException when quick-reply button has null replyKey and requiresHuman is false")
+    void testNonTerminalNullReplyKeyThrows() {
+        TemplateCreateRequestDTO req = new TemplateCreateRequestDTO(
+                "TPL_CHAIN_ERR", "Title", "UTILITY", "en", "Content", null, null, null, null,
+                List.of(new TemplateButtonDTO("Next", ButtonType.QUICK_REPLY, "p1", null, false, 1))
+        );
+        ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(req));
+        assertEquals(TemplateConstraintErrors.TEMPLATE_CHAIN_BROKEN, ex.getError());
+    }
 }

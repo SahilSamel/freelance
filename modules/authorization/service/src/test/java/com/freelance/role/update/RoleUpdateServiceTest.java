@@ -74,4 +74,37 @@ class RoleUpdateServiceTest {
         assertEquals(1, response.authorizations().size());
         assertEquals("NEW_AUTH", response.authorizations().get(0).key());
     }
+
+    @Test
+    @DisplayName("updateRole with null authorizationIds preserves existing authorizations")
+    void updateCustomRole_nullAuthIdsPreservesExisting() {
+        FakeRoleRepository roleRepo = new FakeRoleRepository();
+        FakeRoleAuthorizationRepository roleAuthRepo = new FakeRoleAuthorizationRepository();
+        FakeAuthorizationRepository authRepo = new FakeAuthorizationRepository();
+
+        UUID roleId = UUID.randomUUID();
+        Role role = new Role(roleId, "ROLE_TEST", "Desc", false);
+        roleRepo.persist(role);
+
+        UUID authId = UUID.randomUUID();
+        Authorization auth = new Authorization(authId, "AUTH_EXIST", "Name", "Desc", "Group");
+        authRepo.storage.put(authId, auth);
+        roleAuthRepo.persist(new com.freelance.mapping.roleAuthorization.entity.RoleAuthorization(role, auth));
+
+        RoleUpdateService service = new RoleUpdateService(roleRepo, roleAuthRepo, authRepo, new RoleAssembler());
+        RoleUpdateResponseDTO response = service.updateRole(
+                new RoleUpdateRequestDTO(roleId, "ROLE_TEST_UPDATED", null, null)
+        );
+
+        assertNotNull(response);
+        assertEquals("ROLE_TEST_UPDATED", response.name());
+        assertEquals(1, response.authorizations().size());
+        assertEquals("AUTH_EXIST", response.authorizations().get(0).key());
+    }
+
+    @Test
+    @DisplayName("Should test default constructor of RoleUpdateService")
+    void testDefaultConstructor() {
+        assertNotNull(new RoleUpdateService());
+    }
 }

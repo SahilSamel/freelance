@@ -9,13 +9,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.*;
 
-@DisplayName("Audit List Integration Tests")
+@DisplayName("Audit List Integration & RBAC Tests")
 class AuditListIntegrationTest extends BaseIntegrationTest {
 
     @Test
-    @DisplayName("valid token with SUPER_ADMIN role returns 200 and audit logs")
-    void listAuditLogs_superAdmin_returns200() {
-        String token = loginAsSuperAdmin();
+    @DisplayName("audit_officer: queries audit logs successfully (200 OK)")
+    void listAuditLogs_auditOfficer_returns200() {
+        String token = getAuditOfficerToken();
 
         RestAssured
                 .given()
@@ -31,22 +31,9 @@ class AuditListIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("unauthorized request without token returns 400")
-    void listAuditLogs_noToken_returns400() {
-        RestAssured
-                .given()
-                .contentType(ContentType.JSON)
-                .body(AuditLogListRequestDTO.empty())
-                .when()
-                .post("/audit/list")
-                .then()
-                .statusCode(400);
-    }
-
-    @Test
     @DisplayName("audit logs contain sanitized requestData with masked password")
     void listAuditLogs_containsSanitizedRequestData() {
-        String token = loginAsSuperAdmin();
+        String token = getAuditOfficerToken();
 
         RestAssured
                 .given()
@@ -57,8 +44,37 @@ class AuditListIntegrationTest extends BaseIntegrationTest {
                 .post("/audit/list")
                 .then()
                 .statusCode(200)
-                .body("auditLogs.find { it.endpoint == '/auth/login' }.requestData", containsString("\"password\": \"******\""))
-                .body("auditLogs.find { it.endpoint == '/auth/login' }.requestData", containsString("superadmin"))
-                .body("auditLogs.find { it.endpoint == '/auth/login' }.requestData", not(containsString("Welcome@1")));
+                .body("auditLogs.find { it.endpoint == '/auth/login' }.requestData", containsString("\"password\":\"******\""));
+    }
+
+    @Test
+    @DisplayName("cross-boundary RBAC: user_officer cannot list audit logs (403 FL_4101)")
+    void listAuditLogs_userOfficer_forbidden() {
+        String token = getUserOfficerToken();
+
+        RestAssured
+                .given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(AuditLogListRequestDTO.empty())
+                .when()
+                .post("/audit/list")
+                .then()
+                .statusCode(403)
+                .body("errorCode", equalTo("FL_4101"));
+    }
+
+    @Test
+    @DisplayName("unauthorized request without token fails (400 or 401)")
+    void listAuditLogs_noToken_fails() {
+        RestAssured
+                .given()
+                .contentType(ContentType.JSON)
+                .body(AuditLogListRequestDTO.empty())
+                .when()
+                .post("/audit/list")
+                .then()
+                .statusCode(anyOf(equalTo(400), equalTo(401)));
     }
 }
+

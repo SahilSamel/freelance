@@ -35,4 +35,27 @@ class UserCreateServiceTest {
         assertEquals(1, repo.persistCalls);
         assertTrue(repo.existsByUsername("new_user"));
     }
+
+    @Test
+    @DisplayName("createUser with roleIds assigns roles")
+    void createUser_withRoleIds() {
+        FakeUserRepository repo = new FakeUserRepository();
+        final int[] persistCount = {0};
+        com.freelance.mapping.userRole.repository.UserRoleRepository roleRepo = new com.freelance.mapping.userRole.repository.UserRoleRepository() {
+            @Override
+            public void persist(com.freelance.mapping.userRole.entity.UserRoleEntity entity) {
+                persistCount[0]++;
+            }
+        };
+        UserCreateService service = new UserCreateService(repo, roleRepo, new UserCreateAssembler());
+
+        java.util.UUID roleId = java.util.UUID.randomUUID();
+        UserCreateResponseDTO response = service.createUser(new UserCreateRequestDTO("user_with_role", "Password123", java.util.List.of(roleId)));
+
+        assertNotNull(response);
+        assertEquals("user_with_role", response.username());
+        assertEquals(1, response.roleIds().size());
+        assertEquals(1, persistCount[0]);
+    }
 }
+

@@ -23,7 +23,7 @@ class LoginTest extends BaseIntegrationTest {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("superadmin", "Welcome@1"))
+                .body(new AuthLoginRequestDTO(SUPER_ADMIN_USERNAME, SUPER_ADMIN_PASSWORD))
                 .when()
                 .post("/auth/login")
                 .then()
@@ -40,7 +40,7 @@ class LoginTest extends BaseIntegrationTest {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("superadmin", "WrongPassword123"))
+                .body(new AuthLoginRequestDTO(SUPER_ADMIN_USERNAME, "WrongPassword123"))
                 .when()
                 .post("/auth/login")
                 .then()
@@ -54,7 +54,7 @@ class LoginTest extends BaseIntegrationTest {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("no_such_user_xyz", "Welcome@1"))
+                .body(new AuthLoginRequestDTO("no_such_user_xyz", SUPER_ADMIN_PASSWORD))
                 .when()
                 .post("/auth/login")
                 .then()
@@ -70,7 +70,7 @@ class LoginTest extends BaseIntegrationTest {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("", "Welcome@1"))
+                .body(new AuthLoginRequestDTO("", SUPER_ADMIN_PASSWORD))
                 .when()
                 .post("/auth/login")
                 .then()
@@ -85,7 +85,7 @@ class LoginTest extends BaseIntegrationTest {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("superadmin", ""))
+                .body(new AuthLoginRequestDTO(SUPER_ADMIN_USERNAME, ""))
                 .when()
                 .post("/auth/login")
                 .then()
@@ -100,7 +100,7 @@ class LoginTest extends BaseIntegrationTest {
         RestAssured
                 .given()
                 .contentType(ContentType.JSON)
-                .body(new AuthLoginRequestDTO("ab", "Welcome@1"))
+                .body(new AuthLoginRequestDTO("ab", SUPER_ADMIN_PASSWORD))
                 .when()
                 .post("/auth/login")
                 .then()
@@ -122,3 +122,4 @@ class LoginTest extends BaseIntegrationTest {
                 .statusCode(400);
     }
 }
+

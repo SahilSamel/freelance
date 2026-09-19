@@ -123,6 +123,14 @@ public class RedisEventBroker implements EventBroker {
         this.delayedPoller.scheduleWithFixedDelay(this::pollDelayedQueue, 100, 100, TimeUnit.MILLISECONDS);
     }
 
+    public RedisEventBroker(JedisPool jedisPool) {
+        this.jedisPool = jedisPool;
+        this.objectMapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.delayedPoller.scheduleWithFixedDelay(this::pollDelayedQueue, 100, 100, TimeUnit.MILLISECONDS);
+    }
+
     @Override
     public <T> void publish(EventMessage<T> message) {
         if (!running.get()) {

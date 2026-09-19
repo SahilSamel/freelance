@@ -19,4 +19,13 @@ public class AlertsBootstrapTest {
         assertTrue(AttributeResolutionEngine.getInstance().listWhitelistedAttributes().stream()
                 .anyMatch(a -> a.key().equals("USER.username")));
     }
+
+    @Test
+    @DisplayName("Private constructor reflection test")
+    void testConstructor() throws Exception {
+        java.lang.reflect.Constructor<AlertsBootstrap> constructor = AlertsBootstrap.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        AlertsBootstrap instance = constructor.newInstance();
+        assertNotNull(instance);
+    }
 }

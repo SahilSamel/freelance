@@ -52,6 +52,10 @@ public class Main {
         try {
             DatabaseConfig databaseConfig = DatabaseConfig.fromArgs(args);
 
+            logger.info("================================================================================");
+            logger.info("Starting Freelance API Server in [{}] mode", databaseConfig.mode());
+            logger.info("================================================================================");
+
             FlywayMigrationRunner flywayMigrationRunner = new FlywayMigrationRunner();
             flywayMigrationRunner.migrate(databaseConfig);
 

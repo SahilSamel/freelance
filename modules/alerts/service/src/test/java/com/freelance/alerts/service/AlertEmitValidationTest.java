@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -52,6 +53,30 @@ public class AlertEmitValidationTest {
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
         assertTrue(context.getValidationErrors().containsKey("userIds"));
         assertTrue(context.getValidationErrors().get("userIds").contains(AlertEmitValidationErrors.INVALID_USER_IDS));
+    }
+
+    @Test
+    @DisplayName("Should throw ValidationException when request is null")
+    void testNullRequest() {
+        assertThrows(ValidationException.class, () -> validation.validateRequest(null));
+        assertTrue(context.getValidationErrors().containsKey("templateId"));
+        assertTrue(context.getValidationErrors().containsKey("userIds"));
+    }
+
+    @Test
+    @DisplayName("Should throw ValidationException when userIds list is null or contains null elements")
+    void testNullUserIdsAndNullElements() {
+        AlertEmitRequestDTO nullUserIdsReq = new AlertEmitRequestDTO(UUID.randomUUID(), null);
+        assertThrows(ValidationException.class, () -> validation.validateRequest(nullUserIdsReq));
+        assertTrue(context.getValidationErrors().containsKey("userIds"));
+
+        context = TestContextHelper.setUp();
+        List<UUID> listWithNull = new ArrayList<>();
+        listWithNull.add(UUID.randomUUID());
+        listWithNull.add(null);
+        AlertEmitRequestDTO nullElementReq = new AlertEmitRequestDTO(UUID.randomUUID(), listWithNull);
+        assertThrows(ValidationException.class, () -> validation.validateRequest(nullElementReq));
+        assertTrue(context.getValidationErrors().containsKey("userIds[1]"));
     }
 
     @Test

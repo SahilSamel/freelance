@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'jacoco'
 }
 
 group = 'org.example'
@@ -17,7 +18,11 @@ dependencies {
     testImplementation project(':modules:authorization:authorization-dto')
     testImplementation project(':modules:audit:audit-dto')
     testImplementation project(':modules:configuration:configuration-dto')
+    testImplementation project(':modules:alerts:alerts-dto')
     testImplementation project(':Common:enum')
+    testImplementation project(':Common:error')
+    testImplementation project(':Common:config')
+    testImplementation project(':Framework:configuration')
 
     // REST Assured — fluent HTTP test DSL
     testImplementation 'io.rest-assured:rest-assured:5.5.0'
@@ -38,16 +43,9 @@ dependencies {
 test {
     useJUnitPlatform()
     enabled = false
-
-    // Always print test results to console — useful when running from CLI
-    testLogging {
-        events 'passed', 'skipped', 'failed'
-        showStandardStreams = false
-        exceptionFormat = 'full'
-    }
 }
 
-// Separate task name so it's explicit: ./gradlew :testing:integrationTest
+// ── Integration Test Task (JUnit Reports) ───────────────────────────────────
 tasks.register('integrationTest', Test) {
     description = 'Runs HTTP integration tests against a locally running server.'
     group = 'verification'
@@ -56,8 +54,67 @@ tasks.register('integrationTest', Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
 
+    // Automatically clean previous test execution reports before running
+    doFirst {
+        delete layout.buildDirectory.dir("reports/tests/integrationTest")
+        delete layout.buildDirectory.dir("test-results/integrationTest")
+    }
+
     testLogging {
         events 'passed', 'skipped', 'failed'
+        showStandardStreams = false
         exceptionFormat = 'full'
     }
+
+    reports {
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir("reports/tests/integrationTest")
+        junitXml.required = true
+        junitXml.outputLocation = layout.buildDirectory.dir("test-results/integrationTest")
+    }
 }
+
+// ── JaCoCo Integration Code Coverage Report ─────────────────────────────────
+tasks.register('jacocoIntegrationReport', JacocoReport) {
+    description = 'Generates JaCoCo code coverage report for Integration Tests.'
+    dependsOn tasks.named('integrationTest')
+    dependsOn rootProject.subprojects.collect { it.tasks.matching { t -> t.name == 'classes' } }
+    mustRunAfter rootProject.subprojects.collect { it.tasks.matching { t -> t.name == 'test' } }
+    mustRunAfter rootProject.tasks.matching { t -> t.name == 'test' }
+
+    // Automatically clean previous coverage reports before generating fresh ones
+    doFirst {
+        delete layout.buildDirectory.dir("reports/coverage")
+    }
+
+    // Source directories across all project modules
+    additionalSourceDirs.setFrom(files(rootProject.subprojects.collect { it.sourceSets.main.allSource.srcDirs }))
+    sourceDirectories.setFrom(files(rootProject.subprojects.collect { it.sourceSets.main.allSource.srcDirs }))
+
+    // Compiled class directories across all project modules
+    classDirectories.setFrom(files(rootProject.subprojects.collect { it.sourceSets.main.output }))
+
+    // Read all execution data files across server integration and unit test executions
+    executionData.setFrom(fileTree(project.rootDir) {
+        include '**/build/jacoco/*.exec'
+    })
+
+    reports {
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir("reports/coverage/html")
+        xml.required = true
+        xml.outputLocation = layout.buildDirectory.file("reports/coverage/jacoco.xml")
+        csv.required = true
+        csv.outputLocation = layout.buildDirectory.file("reports/coverage/jacoco.csv")
+    }
+}
+
+// ── Convenience Task to Wipe All Reports on Demand ──────────────────────────
+tasks.register('cleanReports', Delete) {
+    description = 'Wipes all test execution and code coverage reports in the testing module.'
+    group = 'verification'
+    delete layout.buildDirectory.dir("reports")
+    delete layout.buildDirectory.dir("jacoco")
+    delete layout.buildDirectory.dir("test-results")
+}
+

@@ -62,4 +62,40 @@ class RoleCreateConstraintTest {
                 () -> constraint.checkConstraints(new RoleCreateRequestDTO("VALID_ROLE", "Desc", List.of(nonExistentAuthId))));
         assertEquals(PermissionConstraintErrors.AUTHORIZATION_NOT_FOUND, ex.getError());
     }
+
+    @Test
+    @DisplayName("null request returns empty list gracefully")
+    void nullRequest_returnsEmptyList() {
+        RoleCreateConstraint constraint = new RoleCreateConstraint();
+        List<Authorization> res = constraint.checkConstraints(null);
+        assertNotNull(res);
+        assertTrue(res.isEmpty());
+    }
+
+    @Test
+    @DisplayName("null authorization list returns empty list and passes")
+    void nullAuths_passes() {
+        FakeRoleRepository roleRepo = new FakeRoleRepository();
+        FakeAuthorizationRepository authRepo = new FakeAuthorizationRepository();
+        RoleCreateConstraint constraint = new RoleCreateConstraint(roleRepo, authRepo);
+
+        List<Authorization> res = constraint.checkConstraints(new RoleCreateRequestDTO("ROLE_NO_AUTHS", "Desc", null));
+        assertNotNull(res);
+        assertTrue(res.isEmpty());
+    }
+
+    @Test
+    @DisplayName("null element in authorization ids list raises AUTHORIZATION_NOT_FOUND")
+    void nullElementInAuthList_raisesError() {
+        FakeRoleRepository roleRepo = new FakeRoleRepository();
+        FakeAuthorizationRepository authRepo = new FakeAuthorizationRepository();
+        RoleCreateConstraint constraint = new RoleCreateConstraint(roleRepo, authRepo);
+
+        List<UUID> authListWithNull = new java.util.ArrayList<>();
+        authListWithNull.add(null);
+
+        ConstraintException ex = assertThrows(ConstraintException.class,
+                () -> constraint.checkConstraints(new RoleCreateRequestDTO("ROLE_NULL_AUTH", "Desc", authListWithNull)));
+        assertEquals(PermissionConstraintErrors.AUTHORIZATION_NOT_FOUND, ex.getError());
+    }
 }

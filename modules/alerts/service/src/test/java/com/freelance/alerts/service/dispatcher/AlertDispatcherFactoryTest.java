@@ -68,4 +68,43 @@ class AlertDispatcherFactoryTest {
         Optional<IAlertDispatcher> dispatcherOpt = factory.getDispatcher(AlertChannel.WHATSAPP);
         assertTrue(dispatcherOpt.isEmpty());
     }
+
+    @Test
+    @DisplayName("Should support constructors with custom dispatchers, varargs, collection, and autoDiscover false")
+    void testCustomDispatcherConstructors() {
+        WhatsAppDispatcherService wa = new WhatsAppDispatcherService();
+        AlertDispatcherFactory f1 = new AlertDispatcherFactory(false);
+        assertFalse(f1.hasDispatcher(AlertChannel.WHATSAPP));
+
+        AlertDispatcherFactory f2 = new AlertDispatcherFactory(wa);
+        assertTrue(f2.hasDispatcher(AlertChannel.WHATSAPP));
+
+        AlertDispatcherFactory f3 = new AlertDispatcherFactory(java.util.List.of(wa));
+        assertTrue(f3.hasDispatcher(AlertChannel.WHATSAPP));
+        assertFalse(f3.getRegisteredDispatchers().isEmpty());
+
+        AlertDispatcherFactory fNull1 = new AlertDispatcherFactory((IAlertDispatcher[]) null);
+        assertNotNull(fNull1);
+
+        AlertDispatcherFactory fNull2 = new AlertDispatcherFactory((java.util.Collection<IAlertDispatcher>) null);
+        assertNotNull(fNull2);
+
+        AlertDispatcherFactory fNull3 = new AlertDispatcherFactory(new IAlertDispatcher[]{null});
+        assertNotNull(fNull3);
+    }
+
+    @Test
+    @DisplayName("Should handle null inputs in register, unregister, and hasDispatcher safely")
+    void testNullInputs() {
+        AlertDispatcherFactory factory = new AlertDispatcherFactory();
+        assertDoesNotThrow(() -> factory.register(null));
+        assertDoesNotThrow(() -> factory.unregister(null));
+        assertFalse(factory.hasDispatcher(null));
+
+        IAlertDispatcher nullChannelDispatcher = new IAlertDispatcher() {
+            @Override public AlertChannel getChannel() { return null; }
+            @Override public com.freelance.dispatcher.data.AlertDispatchResult dispatch(com.freelance.dispatcher.data.AlertDispatchRequest req) { return null; }
+        };
+        assertDoesNotThrow(() -> factory.register(nullChannelDispatcher));
+    }
 }

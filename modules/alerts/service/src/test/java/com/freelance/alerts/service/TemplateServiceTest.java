@@ -380,4 +380,131 @@ class TemplateServiceTest {
         assertEquals("NORMAL", updated.priority());
         assertEquals("NORMAL", savedEntity.getPriority());
     }
+
+    @Test
+    @DisplayName("Should test all constructors of TemplateService")
+    void testConstructors() {
+        assertNotNull(new TemplateService());
+        assertNotNull(new TemplateService(templateRepo, buttonRepo));
+        assertNotNull(new TemplateService(templateRepo, buttonRepo, assembler));
+    }
+
+    @Test
+    @DisplayName("Should update all template fields successfully")
+    void testUpdateAllFields() {
+        AlertTemplateEntity target = new AlertTemplateEntity(
+                UUID.randomUUID(), "TPL_UPDATE_TARGET", "Old Target", "UTILITY", "en",
+                "Old Content", null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED,
+                false, null, null
+        );
+        templateRepo.persist(target);
+
+        AlertTemplateEntity replyTarget = new AlertTemplateEntity(
+                UUID.randomUUID(), "TPL_REPLY_TARGET", "Reply", "UTILITY", "en",
+                "Reply Content", null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED,
+                false, null, null
+        );
+        templateRepo.persist(replyTarget);
+
+        com.freelance.alerts.dto.TemplateUpdateRequestDTO updateReq = new com.freelance.alerts.dto.TemplateUpdateRequestDTO(
+                target.getId(),
+                "TPL_UPDATE_TARGET",
+                "New Name",
+                "AUTHENTICATION",
+                "HIGH",
+                "es",
+                "New Content {{name}}",
+                "https://example.com/img.png",
+                "IMAGE",
+                Set.of("name"),
+                List.of(new TemplateButtonDTO("Reply Btn", ButtonType.QUICK_REPLY, "p_reply", "TPL_REPLY_TARGET", false, 1))
+        );
+
+        TemplateDTO updated = service.updateTemplate(updateReq);
+        assertNotNull(updated);
+        assertEquals("New Name", updated.name());
+        assertEquals("AUTHENTICATION", updated.category());
+        assertEquals("HIGH", updated.priority());
+        assertEquals("es", updated.language());
+        assertEquals("New Content {{name}}", updated.content());
+        assertEquals("https://example.com/img.png", updated.mediaUrl());
+        assertEquals("IMAGE", updated.mediaType());
+        assertTrue(updated.requiredAttributes().contains("name"));
+        assertEquals(1, updated.buttons().size());
+    }
+
+    @Test
+    @DisplayName("Should throw ConstraintException when Meta Graph API rejects update")
+    void testUpdateTemplateMetaFailureThrows() {
+        AlertTemplateEntity target = new AlertTemplateEntity(
+                UUID.randomUUID(), "TPL_FAIL_UPDATE", "Name", "UTILITY", "en",
+                "Content", null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED,
+                false, null, null
+        );
+        templateRepo.persist(target);
+
+        WhatsAppTemplateService failingService = new WhatsAppTemplateService() {
+            @Override
+            public TemplateSubmissionResult submitTemplate(AlertTemplateEntity entity, List<TemplateButtonDTO> buttons) {
+                return TemplateSubmissionResult.failure("Meta rejected update");
+            }
+        };
+
+        TemplateService testService = new TemplateService(templateRepo, buttonRepo, categoryRepo, assembler, failingService);
+
+        com.freelance.alerts.dto.TemplateUpdateRequestDTO updateReq = new com.freelance.alerts.dto.TemplateUpdateRequestDTO(
+                target.getId(), null, "New Name", null, null, null, null, null, null, null, null
+        );
+
+        assertThrows(ConstraintException.class, () -> testService.updateTemplate(updateReq));
+    }
+
+    @Test
+    @DisplayName("Should create template with auto-generated payload when button payload is null")
+    void testCreateTemplateNullButtonPayload() {
+        TemplateCreateRequestDTO req = new TemplateCreateRequestDTO(
+                "TPL_NULL_PAYLOAD", "Null Payload Tpl", "UTILITY", "HIGH", "en", "Content",
+                null, null, AlertChannel.WHATSAPP, null,
+                List.of(new TemplateButtonDTO("Human", ButtonType.QUICK_REPLY, null, null, true, 1)),
+                null
+        );
+
+        TemplateDTO created = service.createTemplate(req);
+        assertNotNull(created);
+        assertEquals(1, created.buttons().size());
+        assertNotNull(created.buttons().get(0).payload());
+    }
+
+    @Test
+    @DisplayName("Should test 5-arg and 4-arg constructors with null and non-null dependencies")
+    void testConstructorWithNullWhatsAppService() {
+        TemplateService s5 = new TemplateService(templateRepo, buttonRepo, categoryRepo, assembler, null);
+        assertNotNull(s5);
+
+        TemplateService s4 = new TemplateService(templateRepo, buttonRepo, categoryRepo, assembler);
+        assertNotNull(s4);
+    }
+
+    @Test
+    @DisplayName("Should clear priority when updated with blank string and handle null buttons in update")
+    void testUpdateBlankPriorityAndNullButtons() {
+        AlertTemplateEntity tpl = new AlertTemplateEntity(
+                UUID.randomUUID(), "TPL_CLEAR_PRIO", "Title", "UTILITY", "en", "Content",
+                null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED, false, null, null, "HIGH"
+        );
+        AlertButtonEntity btn = new AlertButtonEntity(UUID.randomUUID(), tpl, "B1", ButtonType.URL, "https://example.com", 1);
+        tpl.getButtons().add(btn);
+        templateRepo.persist(tpl);
+
+        com.freelance.alerts.dto.TemplateUpdateRequestDTO updateReq = new com.freelance.alerts.dto.TemplateUpdateRequestDTO(
+                tpl.getId(), null, null, null, "   ", null, null, null, null, null, null
+        );
+
+        TemplateDTO updated = service.updateTemplate(updateReq);
+        assertNotNull(updated);
+        assertNull(updated.priority());
+        assertNull(tpl.getPriority());
+        assertEquals(1, updated.buttons().size());
+    }
 }
+

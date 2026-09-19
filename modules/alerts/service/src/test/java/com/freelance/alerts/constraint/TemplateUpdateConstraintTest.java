@@ -209,4 +209,72 @@ class TemplateUpdateConstraintTest {
         ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(req));
         assertEquals(TemplateConstraintErrors.TEMPLATE_CHAIN_BROKEN, ex.getError());
     }
+
+    @Test
+    @DisplayName("Should handle null request gracefully returning null")
+    void testNullRequestReturnsNull() {
+        assertNull(constraint.checkConstraints(null));
+    }
+
+    @Test
+    @DisplayName("Should lookup template by templateKey when id is null")
+    void testLookupByTemplateKeyWhenIdNull() {
+        createSampleTemplate(UUID.randomUUID(), "lookup_by_key");
+        TemplateUpdateRequestDTO req = new TemplateUpdateRequestDTO(
+                null, "lookup_by_key", "Updated Title", "UTILITY", "en", "Content", null, null, null, null
+        );
+
+        AlertTemplateEntity target = assertDoesNotThrow(() -> constraint.checkConstraints(req));
+        assertNotNull(target);
+        assertEquals("lookup_by_key", target.getTemplateKey());
+    }
+
+    @Test
+    @DisplayName("Should allow valid non-terminal button referencing an existing reply template")
+    void testValidReplyTemplateKeyPasses() {
+        UUID replyId = UUID.randomUUID();
+        createSampleTemplate(replyId, "reply_target");
+
+        UUID rootId = UUID.randomUUID();
+        createSampleTemplate(rootId, "root_template");
+
+        TemplateUpdateRequestDTO req = new TemplateUpdateRequestDTO(
+                rootId, null, "Root", null, null, "Content", null, null, null,
+                List.of(new TemplateButtonDTO("Next", ButtonType.QUICK_REPLY, "NEXT_PAYLOAD", "reply_target", false, 1))
+        );
+
+        AlertTemplateEntity target = assertDoesNotThrow(() -> constraint.checkConstraints(req));
+        assertNotNull(target);
+    }
+
+    @Test
+    @DisplayName("Constructors with varying parameters instantiate successfully")
+    void testConstructors() {
+        assertNotNull(new TemplateUpdateConstraint());
+        assertNotNull(new TemplateUpdateConstraint(templateRepo));
+        assertNotNull(new TemplateUpdateConstraint(templateRepo, buttonRepo));
+    }
+
+    @Test
+    @DisplayName("Category repository exception in update constraint returns safe false")
+    void testCategoryRepoExceptionHandled() {
+        com.freelance.alerts.template.repository.AlertTemplateCategoryRepository failingCatRepo =
+                new com.freelance.alerts.template.repository.AlertTemplateCategoryRepository() {
+            @Override
+            public Optional<com.freelance.alerts.template.entity.AlertTemplateCategoryEntity> findByKey(String categoryKey) {
+                throw new RuntimeException("DB error");
+            }
+        };
+
+        TemplateUpdateConstraint c = new TemplateUpdateConstraint(templateRepo, buttonRepo, failingCatRepo);
+        UUID id = UUID.randomUUID();
+        createSampleTemplate(id, "failing_cat_tpl");
+
+        TemplateUpdateRequestDTO req = new TemplateUpdateRequestDTO(
+                id, null, "Sample", "CUSTOM_CAT", "en", "Content", null, null, null, null
+        );
+
+        ConstraintException ex = assertThrows(ConstraintException.class, () -> c.checkConstraints(req));
+        assertEquals(TemplateConstraintErrors.TEMPLATE_CATEGORY_NOT_FOUND, ex.getError());
+    }
 }

@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -93,5 +94,55 @@ class InMemoryEventBrokerPriorityTest {
         for (int i = 1; i <= total; i++) {
             assertEquals("MSG-" + i, executionOrder.get(i - 1), "Events must be processed in FIFO sequence");
         }
+    }
+
+    @Test
+    @DisplayName("publishDelayed with delay <= 0 publishes immediately")
+    void testPublishDelayedZeroOrNegative() throws InterruptedException {
+        TestConsumer destination = TestConsumer.TEST_FIFO_TOPIC;
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<String> result = new AtomicReference<>();
+
+        broker.subscribe(destination, ConsumerConfig.builder().concurrency(1).build(), String.class, msg -> {
+            result.set(msg.getPayload());
+            latch.countDown();
+        });
+
+        broker.publishDelayed(EventMessage.of(destination, "DELAYED_ZERO", EventPriority.NORMAL), 0);
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+        assertEquals("DELAYED_ZERO", result.get());
+    }
+
+    @Test
+    @DisplayName("Duplicate subscriber registration throws IllegalStateException")
+    void testDuplicateSubscriberThrows() {
+        TestConsumer destination = TestConsumer.TEST_FIFO_TOPIC;
+        ConsumerConfig config = ConsumerConfig.builder().concurrency(1).build();
+
+        broker.subscribe(destination, config, String.class, msg -> {});
+        assertThrows(IllegalStateException.class, () ->
+                broker.subscribe(destination, config, String.class, msg -> {})
+        );
+    }
+
+    @Test
+    @DisplayName("Publishing after shutdown throws IllegalStateException")
+    void testPublishAfterShutdownThrows() {
+        broker.shutdown(500);
+        assertThrows(IllegalStateException.class, () ->
+                broker.publish(EventMessage.of(TestConsumer.TEST_FIFO_TOPIC, "AFTER_SHUTDOWN", EventPriority.NORMAL))
+        );
+        // publishDelayed when shutdown returns gracefully without throwing
+        assertDoesNotThrow(() ->
+                broker.publishDelayed(EventMessage.of(TestConsumer.TEST_FIFO_TOPIC, "DELAY_AFTER_SHUTDOWN", EventPriority.NORMAL), 100)
+        );
+    }
+
+    @Test
+    @DisplayName("Broker start and shutdown are idempotent")
+    void testStartAndShutdownIdempotent() {
+        assertDoesNotThrow(() -> broker.start());
+        assertDoesNotThrow(() -> broker.shutdown(100));
+        assertDoesNotThrow(() -> broker.shutdown(100));
     }
 }

@@ -66,4 +66,41 @@ class VendorSupportKeyUtilityTest {
                 VendorSupportKeyUtility.verifyAndParseSupportToken(token, keyPair2.getPublic())
         );
     }
+
+    @Test
+    @DisplayName("parsePublicKey supports PEM headers and whitespace")
+    void testParsePublicKeyWithPem() {
+        KeyPair keyPair = VendorSupportTestHelper.generateRsaKeyPair();
+        String pubBase64 = VendorSupportTestHelper.encodeKeyToBase64(keyPair.getPublic());
+        String pem = "-----BEGIN PUBLIC KEY-----\n" + pubBase64 + "\n-----END PUBLIC KEY-----";
+
+        PublicKey parsedPub = VendorSupportKeyUtility.parsePublicKey(pem);
+        assertEquals(keyPair.getPublic(), parsedPub);
+    }
+
+    @Test
+    @DisplayName("parsePublicKey throws IllegalArgumentException for null, blank, or invalid base64")
+    void testParsePublicKeyInvalidInputs() {
+        assertThrows(IllegalArgumentException.class, () -> VendorSupportKeyUtility.parsePublicKey(null));
+        assertThrows(IllegalArgumentException.class, () -> VendorSupportKeyUtility.parsePublicKey("   "));
+        assertThrows(IllegalArgumentException.class, () -> VendorSupportKeyUtility.parsePublicKey("NOT_A_VALID_KEY_STRING"));
+    }
+
+    @Test
+    @DisplayName("verifyAndParseSupportToken throws IllegalArgumentException or IllegalStateException for missing token/key")
+    void testVerifyAndParseInvalidArguments() {
+        KeyPair keyPair = VendorSupportTestHelper.generateRsaKeyPair();
+        assertThrows(IllegalArgumentException.class, () -> VendorSupportKeyUtility.verifyAndParseSupportToken(null, keyPair.getPublic()));
+        assertThrows(IllegalArgumentException.class, () -> VendorSupportKeyUtility.verifyAndParseSupportToken("   ", keyPair.getPublic()));
+        assertThrows(IllegalStateException.class, () -> VendorSupportKeyUtility.verifyAndParseSupportToken("dummy.token.here", null));
+    }
+
+    @Test
+    @DisplayName("Private constructor reflection test")
+    void testConstructor() throws Exception {
+        java.lang.reflect.Constructor<VendorSupportKeyUtility> ctor = VendorSupportKeyUtility.class.getDeclaredConstructor();
+        ctor.setAccessible(true);
+        VendorSupportKeyUtility instance = ctor.newInstance();
+        assertNotNull(instance);
+    }
 }

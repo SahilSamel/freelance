@@ -111,4 +111,50 @@ class SupportAccessServiceTest {
 
         assertFalse(supportAccessService.isSupportAccessActive());
     }
+
+    @Test
+    @DisplayName("grantDay0Access activates support window with explicit expiry timestamp")
+    void testGrantDay0Access() {
+        Instant future = Instant.now().plus(24, ChronoUnit.HOURS);
+        supportAccessService.grantDay0Access(future);
+
+        assertTrue(supportAccessService.isSupportAccessActive());
+        SupportStatusResponseDTO status = supportAccessService.getStatus();
+        assertTrue(status.active());
+        assertEquals(future, status.expiresAt());
+    }
+
+    @Test
+    @DisplayName("grantAccess falls back to 2 hours when configured duration is invalid (<=0 or >6 or parse exception)")
+    void testGrantAccessInvalidDurationFallback() {
+        CacheManager.getInstance().put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "10");
+
+        SupportGrantResponseDTO res = supportAccessService.grantAccess();
+        assertTrue(res.active());
+        // Should fall back to 2 hours
+        assertTrue(res.expiresAt().isBefore(Instant.now().plus(3, ChronoUnit.HOURS)));
+
+        CacheManager.getInstance().put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "-1");
+        SupportGrantResponseDTO res2 = supportAccessService.grantAccess();
+        assertTrue(res2.active());
+
+        CacheManager.getInstance().put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "not_a_number");
+        SupportGrantResponseDTO res3 = supportAccessService.grantAccess();
+        assertTrue(res3.active());
+    }
+
+    @Test
+    @DisplayName("SupportNotificationService handles null reason and ticketId safely")
+    void testSupportNotificationService() {
+        SupportNotificationService notificationService = new SupportNotificationService();
+        assertDoesNotThrow(() -> notificationService.notifyAdminOfSupportRequest(null, null));
+        assertDoesNotThrow(() -> notificationService.notifyAdminOfSupportRequest("Reason", "TICKET-123"));
+    }
+
+    @Test
+    @DisplayName("Default 0-arg constructor instantiates successfully")
+    void testDefaultConstructor() {
+        SupportAccessService service = new SupportAccessService();
+        assertNotNull(service);
+    }
 }

@@ -14,6 +14,9 @@ dependencies {
     implementation project(":Framework:appcore")
     implementation project(":Common:enum")
     implementation project(":modules:configuration:configuration-dto")
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {

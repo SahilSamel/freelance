@@ -328,4 +328,96 @@ class ConfigurationSeederTest {
         assertTrue(fakeSysRepo.removeCalls > 0);
         assertTrue(fakeErrRepo.removeCalls > 0);
     }
+
+    @Test
+    @DisplayName("Default constructor instantiation")
+    void testDefaultConstructor() {
+        ConfigurationSeeder seeder = new ConfigurationSeeder();
+        assertNotNull(seeder);
+    }
+
+    @Test
+    @DisplayName("seed() updates system-owned error configuration when status code and error message change")
+    void seed_updatesSystemOwnedErrorFields() {
+        FakeSystemConfigurationRepository fakeSysRepo = new FakeSystemConfigurationRepository();
+        FakeErrorConfigurationRepository fakeErrRepo = new FakeErrorConfigurationRepository();
+        UUID systemUserId = SystemHardcoding.SYSTEM_USER_ID.asUuid();
+
+        IError sampleError = ConfigurationRegistry.getAllErrors().get(0);
+        ErrorConfiguration ec = new ErrorConfiguration(sampleError.getErrorKey(), 999, "Old Outdated Message", "Old Desc");
+        ec.setLastUpdatedBy(systemUserId);
+        fakeErrRepo.storage.put(sampleError.getErrorKey(), ec);
+
+        ConfigurationSeeder seeder = new ConfigurationSeeder(fakeSysRepo, fakeErrRepo);
+        seeder.seed();
+
+        ErrorConfiguration updated = fakeErrRepo.get(sampleError.getErrorKey());
+        assertEquals(sampleError.getDefaultStatusCode(), updated.getStatusCode());
+        assertEquals(sampleError.getDefaultMessage(), updated.getErrorMessage());
+        assertEquals(sampleError.getDescription(), updated.getDescription());
+        assertTrue(fakeErrRepo.mergeCalls > 0);
+    }
+
+    @Test
+    @DisplayName("seed() performs no-op when all database configurations and error messages already match code defaults")
+    void seed_noOpWhenFullySynchronized() {
+        FakeSystemConfigurationRepository fakeSysRepo = new FakeSystemConfigurationRepository();
+        FakeErrorConfigurationRepository fakeErrRepo = new FakeErrorConfigurationRepository();
+
+        ConfigurationSeeder seeder = new ConfigurationSeeder(fakeSysRepo, fakeErrRepo);
+
+        // First run inserts everything
+        seeder.seed();
+        int initialPersistedSys = fakeSysRepo.storage.size();
+        int initialPersistedErr = fakeErrRepo.storage.size();
+
+        // Reset tracking metrics
+        fakeSysRepo.mergeCalls = 0;
+        fakeSysRepo.removeCalls = 0;
+        fakeErrRepo.mergeCalls = 0;
+        fakeErrRepo.removeCalls = 0;
+
+        // Second run finds everything in sync -> 0 updates, 0 inserts, 0 deletes
+        seeder.seed();
+        assertEquals(0, fakeSysRepo.mergeCalls);
+        assertEquals(0, fakeSysRepo.removeCalls);
+        assertEquals(0, fakeErrRepo.mergeCalls);
+        assertEquals(0, fakeErrRepo.removeCalls);
+        assertEquals(initialPersistedSys, fakeSysRepo.storage.size());
+        assertEquals(initialPersistedErr, fakeErrRepo.storage.size());
+    }
+
+    @Test
+    @DisplayName("seed() updates and deletes entries where lastUpdatedBy is null")
+    void seed_handlesNullLastUpdatedBy() {
+        FakeSystemConfigurationRepository fakeSysRepo = new FakeSystemConfigurationRepository();
+        FakeErrorConfigurationRepository fakeErrRepo = new FakeErrorConfigurationRepository();
+
+        IConfig config = ConfigurationRegistry.getAllConfigs().get(0);
+        SystemConfiguration sc = new SystemConfiguration(config.getKey(), "old_val", "old_desc", config.getValidation());
+        sc.setLastUpdatedBy(null); // null lastUpdatedBy
+        fakeSysRepo.storage.put(config.getKey(), sc);
+
+        SystemConfiguration obsoleteSc = new SystemConfiguration("obsolete.key", "v", "d");
+        obsoleteSc.setLastUpdatedBy(null); // null lastUpdatedBy
+        fakeSysRepo.storage.put("obsolete.key", obsoleteSc);
+
+        IError err = ConfigurationRegistry.getAllErrors().get(0);
+        ErrorConfiguration ec = new ErrorConfiguration(err.getErrorKey(), 999, "old_msg", "old_desc");
+        ec.setLastUpdatedBy(null); // null lastUpdatedBy
+        fakeErrRepo.storage.put(err.getErrorKey(), ec);
+
+        ErrorConfiguration obsoleteEc = new ErrorConfiguration("OBSOLETE_ERR", 500, "m", "d");
+        obsoleteEc.setLastUpdatedBy(null); // null lastUpdatedBy
+        fakeErrRepo.storage.put("OBSOLETE_ERR", obsoleteEc);
+
+        ConfigurationSeeder seeder = new ConfigurationSeeder(fakeSysRepo, fakeErrRepo);
+        seeder.seed();
+
+        assertNull(fakeSysRepo.get("obsolete.key"));
+        assertNull(fakeErrRepo.get("OBSOLETE_ERR"));
+        assertEquals(config.getDefaultValue(), fakeSysRepo.get(config.getKey()).getConfigValue());
+        assertEquals(err.getDefaultStatusCode(), fakeErrRepo.get(err.getErrorKey()).getStatusCode());
+    }
 }
+

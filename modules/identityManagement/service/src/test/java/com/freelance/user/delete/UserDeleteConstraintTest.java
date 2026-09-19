@@ -69,4 +69,33 @@ class UserDeleteConstraintTest {
                 () -> constraint.checkConstraints(new UserDeleteRequestDTO(callerId)));
         assertEquals(UserConstraintErrors.CANNOT_DELETE_SELF, ex.getError());
     }
+
+    @Test
+    @DisplayName("null request or null id returns null gracefully")
+    void nullRequest_returnsNull() {
+        FakeUserRepository repo = new FakeUserRepository();
+        UserDeleteConstraint constraint = new UserDeleteConstraint(repo);
+        assertNull(constraint.checkConstraints(null));
+        assertNull(constraint.checkConstraints(new UserDeleteRequestDTO(null)));
+    }
+
+    @Test
+    @DisplayName("default 0-arg constructor instantiates successfully")
+    void defaultConstructor() {
+        UserDeleteConstraint c = new UserDeleteConstraint();
+        assertNotNull(c);
+    }
+
+    @Test
+    @DisplayName("executing without transaction context falls back safely")
+    void noTransactionContext() {
+        TestContextHelper.tearDown();
+        FakeUserRepository repo = new FakeUserRepository();
+        UUID targetId = UUID.randomUUID();
+        repo.persist(new User(targetId, "other", "pass"));
+
+        UserDeleteConstraint constraint = new UserDeleteConstraint(repo);
+        User res = constraint.checkConstraints(new UserDeleteRequestDTO(targetId));
+        assertNotNull(res);
+    }
 }

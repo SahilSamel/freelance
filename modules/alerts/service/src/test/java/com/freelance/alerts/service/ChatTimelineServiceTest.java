@@ -211,6 +211,65 @@ class ChatTimelineServiceTest {
         assertEquals(1, dto.buttons().get(0).sequenceOrder());
     }
 
+    @Test
+    @DisplayName("Should handle null request or null userId gracefully returning empty list")
+    void testGetTimeline_nullGuards() {
+        ChatTimelineResponseDTO t1 = timelineService.getTimeline(null);
+        assertNotNull(t1);
+        assertTrue(t1.messages().isEmpty());
+
+        ChatTimelineResponseDTO t2 = timelineService.getTimeline(new ChatTimelineRequestDTO(null, null, null));
+        assertNotNull(t2);
+        assertTrue(t2.messages().isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should query all channels when channel parameter is null")
+    void testGetTimeline_allChannels() {
+        UUID userId = UUID.randomUUID();
+        UserContactEntity contact = new UserContactEntity(
+                UUID.randomUUID(), userId, AlertChannel.WHATSAPP, "+919876543210", false, true, Instant.now().plusSeconds(3600)
+        );
+        contactRepo.persist(contact);
+
+        AlertMessageEntity msg = new AlertMessageEntity(
+                UUID.randomUUID(), userId, AlertChannel.WHATSAPP, AlertDirection.INBOUND,
+                "TEXT", "Hello all channels", "wamid_all", AlertMessageStatus.DELIVERED,
+                null, null, Instant.now()
+        );
+        messageRepo.persist(msg);
+
+        ChatTimelineResponseDTO timeline = timelineService.getTimeline(new ChatTimelineRequestDTO(userId, null, null));
+        assertNotNull(timeline);
+        assertTrue(timeline.isHumanRequired());
+        assertEquals(1, timeline.messages().size());
+    }
+
+    @Test
+    @DisplayName("sendStaffReply sends staff message and clears active human session")
+    void testSendStaffReply_success() {
+        UUID userId = UUID.randomUUID();
+        UserContactEntity contact = new UserContactEntity(
+                UUID.randomUUID(), userId, AlertChannel.WHATSAPP, "+919876543210", false, true, Instant.now().plusSeconds(3600)
+        );
+        contactRepo.persist(contact);
+
+        AdminChatReplyRequestDTO req = new AdminChatReplyRequestDTO(userId, AlertChannel.WHATSAPP, "Staff response text");
+        ChatMessageDTO dto = timelineService.sendStaffReply(req);
+
+        assertNotNull(dto);
+        assertEquals(AlertChannel.WHATSAPP, dto.channel());
+        assertEquals("Staff response text", dto.content());
+        assertNull(contact.getHumanSessionExpiresAt());
+    }
+
+    @Test
+    @DisplayName("Default 0-arg constructor instantiates successfully")
+    void testDefaultConstructor() {
+        ChatTimelineService service = new ChatTimelineService();
+        assertNotNull(service);
+    }
+
     static class FakeAlertMessageRepository extends AlertMessageRepository {
         final List<AlertMessageEntity> storage = new ArrayList<>();
 

@@ -81,4 +81,34 @@ class TokenUtilityTest {
         assertEquals(userId, parseResponse.userId());
         assertEquals(sessionKey, parseResponse.sessionKey());
     }
+
+    @Test
+    @DisplayName("generateToken throws IllegalArgumentException when request or fields are null")
+    void generateToken_nullGuards() {
+        assertThrows(IllegalArgumentException.class, () -> tokenUtility.generateToken(null));
+        assertThrows(IllegalArgumentException.class, () -> tokenUtility.generateToken(new TokenGenerateRequestDTO(null, "key")));
+        assertThrows(IllegalArgumentException.class, () -> tokenUtility.generateToken(new TokenGenerateRequestDTO(UUID.randomUUID(), null)));
+    }
+
+    @Test
+    @DisplayName("parse throws ConstraintException EXPIRED_SESSION when token is expired")
+    void parse_expiredToken() {
+        UUID userId = UUID.randomUUID();
+        String sessionKey = "expired-session";
+
+        // Build an expired token manually
+        String expiredToken = io.jsonwebtoken.Jwts.builder()
+                .subject(userId.toString())
+                .claim("sessionKey", sessionKey)
+                .issuedAt(java.util.Date.from(java.time.Instant.now().minusSeconds(3600)))
+                .expiration(java.util.Date.from(java.time.Instant.now().minusSeconds(1800)))
+                .signWith(JwtSecretManager.getSecretKey())
+                .compact();
+
+        com.freelance.rest.app.service.exception.constraint.ConstraintException ex = assertThrows(
+                com.freelance.rest.app.service.exception.constraint.ConstraintException.class,
+                () -> tokenUtility.parse(new TokenParseRequestDTO(expiredToken))
+        );
+        assertEquals(com.freelance.keys.authentication.session.SessionConstraintErrors.EXPIRED_SESSION, ex.getError());
+    }
 }

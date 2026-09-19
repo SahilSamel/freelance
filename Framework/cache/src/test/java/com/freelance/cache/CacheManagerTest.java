@@ -222,4 +222,45 @@ class CacheManagerTest {
         assertThrows(IllegalStateException.class,
                 () -> CacheManager.getInstance().init(DUPE_PKG));
     }
+
+    @Test
+    void preload_byClass_and_nullGuards() {
+        CacheManager.getInstance().init(PRIMARY_PKG);
+
+        // Preload by class
+        CacheManager.getInstance().preload(FooCache.class, Map.of("k1", "v1", "k2", "v2"));
+        assertEquals("v1", CacheManager.getInstance().get(FooCache.class, "k1"));
+
+        // Null guards
+        assertDoesNotThrow(() -> CacheManager.getInstance().preload((String) null, Map.of("a", "b")));
+        assertDoesNotThrow(() -> CacheManager.getInstance().preload("FooCache", null));
+        assertDoesNotThrow(() -> CacheManager.getInstance().preload("FooCache", Map.of()));
+    }
+
+    @Test
+    void nullAndInvalidParameterGuards() {
+        CacheManager.getInstance().init(PRIMARY_PKG);
+
+        assertDoesNotThrow(() -> CacheManager.getInstance().invalidate((String) null, "key"));
+        assertDoesNotThrow(() -> CacheManager.getInstance().clear((String) null));
+
+        assertThrows(IllegalStateException.class, () -> CacheManager.getInstance().get("NonExistent", "key"));
+
+        // Unregistered class
+        class UnregisteredConfig extends com.freelance.config.AbstractCacheConfig<String, String> {
+            @Override public String name() { return "Unregistered"; }
+            @Override public com.freelance.config.data.CacheType type() { return com.freelance.config.data.CacheType.IN_MEMORY; }
+            @Override public long ttlSeconds() { return 60; }
+            @Override public String load(String key) { return null; }
+        }
+        assertThrows(IllegalStateException.class, () -> CacheManager.getInstance().get(UnregisteredConfig.class, "key"));
+    }
+
+    @Test
+    void privateConstructor_reflection() throws Exception {
+        java.lang.reflect.Constructor<CacheManager> ctor = CacheManager.class.getDeclaredConstructor();
+        ctor.setAccessible(true);
+        CacheManager instance = ctor.newInstance();
+        assertNotNull(instance);
+    }
 }
