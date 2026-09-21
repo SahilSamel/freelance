@@ -57,7 +57,11 @@ public class TemplateCreateConstraint extends AbstractConstraint {
                 raiseConstraintError(TemplateConstraintErrors.TEMPLATE_KEY_ALREADY_EXISTS);
             }
 
-            if (tpl.category() != null && !tpl.category().isBlank()) {
+            AlertChannel channel = tpl.channel() != null
+                    ? tpl.channel()
+                    : ConfigurationEngine.getEnum(AlertEmitConfigKeys.DEFAULT_ALERT_CHANNEL, AlertChannel.class, AlertChannel.WHATSAPP);
+
+            if (channel == AlertChannel.WHATSAPP && tpl.category() != null && !tpl.category().isBlank()) {
                 if (!isCategoryInRepository(tpl.category())) {
                     raiseConstraintError(TemplateConstraintErrors.TEMPLATE_CATEGORY_NOT_FOUND);
                 }

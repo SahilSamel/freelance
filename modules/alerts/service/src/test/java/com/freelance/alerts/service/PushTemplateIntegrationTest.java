@@ -14,14 +14,20 @@ import com.freelance.alerts.template.entity.AlertTemplateEntity;
 import com.freelance.alerts.template.repository.AlertButtonRepository;
 import com.freelance.alerts.template.repository.AlertTemplateCategoryRepository;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
+import com.freelance.alerts.push.PushAlertProcessor;
 import com.freelance.alerts.templates.HumanSupportRequiredTemplate;
-import com.freelance.alerts.templates.ProfileReminderTemplate;
 import com.freelance.alerts.templates.SupportAccessRequestedTemplate;
 import com.freelance.chat.ChatTimelineService;
 import com.freelance.dispatcher.impl.whatsapp.WhatsAppDispatcherService;
+import com.freelance.event.model.EventMessage;
+import com.freelance.event.model.EventPriority;
 import com.freelance.template.TemplateService;
 import com.freelance.template.assembler.TemplateAssembler;
 import com.freelance.template.seeder.TemplateSeeder;
+import com.freelance.user.UserDTO;
+import com.freelance.user.read.UserReadRequestDTO;
+import com.freelance.user.read.UserReadResponseDTO;
+import com.freelance.user.read.UserReadService;
 import com.freelance.fixtures.TestContextHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,6 +94,26 @@ class PushTemplateIntegrationTest {
         }
 
         @Override
+        public AlertMessageEntity get(UUID id) {
+            return messages.stream()
+                    .filter(m -> m.getId().equals(id))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        @Override
+        public AlertMessageEntity merge(AlertMessageEntity entity) {
+            for (int i = 0; i < messages.size(); i++) {
+                if (messages.get(i).getId().equals(entity.getId())) {
+                    messages.set(i, entity);
+                    return entity;
+                }
+            }
+            messages.add(entity);
+            return entity;
+        }
+
+        @Override
         public List<AlertMessageEntity> findByUserAndChannel(UUID userId, AlertChannel channel) {
             return messages.stream()
                     .filter(m -> m.getUserId().equals(userId) && m.getChannel() == channel)
@@ -95,9 +121,23 @@ class PushTemplateIntegrationTest {
         }
 
         @Override
+        public List<AlertMessageEntity> findUnreadByUserAndChannel(UUID userId, AlertChannel channel) {
+            return messages.stream()
+                    .filter(m -> m.getUserId().equals(userId) && m.getChannel() == channel && m.getStatus() != AlertMessageStatus.READ)
+                    .toList();
+        }
+
+        @Override
         public List<AlertMessageEntity> findByUserId(UUID userId) {
             return messages.stream()
                     .filter(m -> m.getUserId().equals(userId))
+                    .toList();
+        }
+
+        @Override
+        public List<AlertMessageEntity> findUnreadByUserId(UUID userId) {
+            return messages.stream()
+                    .filter(m -> m.getUserId().equals(userId) && m.getStatus() != AlertMessageStatus.READ)
                     .toList();
         }
     }
@@ -132,17 +172,14 @@ class PushTemplateIntegrationTest {
         messageRepository = new FakeMessageRepository();
         contactRepository = new FakeContactRepository();
 
+        categoryRepository.categories.put("AUTHENTICATION", new AlertTemplateCategoryEntity(
+                UUID.randomUUID(), "AUTHENTICATION", "Authentication", "Security alerts and OTP", "HIGH"
+        ));
         categoryRepository.categories.put("UTILITY", new AlertTemplateCategoryEntity(
-                UUID.randomUUID(), "UTILITY", "Utility", "Transactional alerts", "NORMAL"
+                UUID.randomUUID(), "UTILITY", "Utility", "Transactional updates", "NORMAL"
         ));
-        categoryRepository.categories.put("SUPPORT", new AlertTemplateCategoryEntity(
-                UUID.randomUUID(), "SUPPORT", "Support", "Support alerts", "HIGH"
-        ));
-        categoryRepository.categories.put("REMINDER", new AlertTemplateCategoryEntity(
-                UUID.randomUUID(), "REMINDER", "Reminder", "Reminders", "NORMAL"
-        ));
-        categoryRepository.categories.put("SECURITY", new AlertTemplateCategoryEntity(
-                UUID.randomUUID(), "SECURITY", "Security", "Security alerts", "HIGH"
+        categoryRepository.categories.put("MARKETING", new AlertTemplateCategoryEntity(
+                UUID.randomUUID(), "MARKETING", "Marketing", "Promotions and announcements", "LOW"
         ));
 
         templateService = new TemplateService(
@@ -239,11 +276,10 @@ class PushTemplateIntegrationTest {
         TemplateSeeder seeder = new TemplateSeeder(templateRepository);
         seeder.seed(List.of(
                 new HumanSupportRequiredTemplate(),
-                new SupportAccessRequestedTemplate(),
-                new ProfileReminderTemplate()
+                new SupportAccessRequestedTemplate()
         ));
 
-        assertEquals(3, templateRepository.storage.size());
+        assertEquals(2, templateRepository.storage.size());
 
         Optional<AlertTemplateEntity> humanReq = templateRepository.findByKey("human_support_required");
         assertTrue(humanReq.isPresent());
@@ -255,11 +291,6 @@ class PushTemplateIntegrationTest {
         assertTrue(supportReq.isPresent());
         assertEquals(AlertChannel.PUSH, supportReq.get().getChannel());
         assertEquals(TemplateStatus.APPROVED, supportReq.get().getStatus());
-
-        Optional<AlertTemplateEntity> reminder = templateRepository.findByKey("profile_incomplete_reminder");
-        assertTrue(reminder.isPresent());
-        assertEquals(AlertChannel.PUSH, reminder.get().getChannel());
-        assertEquals(TemplateStatus.APPROVED, reminder.get().getStatus());
     }
 
     @Test
@@ -332,5 +363,70 @@ class PushTemplateIntegrationTest {
         assertEquals(1, waTimeline.messages().size());
         assertEquals("WhatsApp Message", waTimeline.messages().get(0).content());
         assertEquals(AlertChannel.WHATSAPP, waTimeline.messages().get(0).channel());
+    }
+
+    @Test
+    @DisplayName("Full Push Notification Lifecycle: delivery -> unread timeline -> inbound read -> excluded from unread timeline")
+    void testPushNotificationLifecycle_delivery_inboundRead_timelineFiltering() {
+        UUID userId = UUID.randomUUID();
+
+        UserReadService fakeUserRead = new UserReadService() {
+            @Override
+            public UserReadResponseDTO readUser(UserReadRequestDTO request) {
+                return new UserReadResponseDTO(new UserDTO(
+                        request.id(), "test_user", "hash", java.time.LocalDateTime.now(), java.time.LocalDateTime.now()
+                ));
+            }
+        };
+
+        PushAlertProcessor pushProcessor = new PushAlertProcessor(
+                fakeUserRead,
+                templateRepository,
+                messageRepository,
+                null
+        );
+
+        // 1. Seed Push templates
+        TemplateSeeder seeder = new TemplateSeeder(templateRepository);
+        seeder.seed(List.of(new HumanSupportRequiredTemplate()));
+        AlertTemplateEntity template = templateRepository.findByKey("human_support_required").orElseThrow();
+
+        // 2. Deliver notification via PushAlertProcessor
+        UUID msgId = UUID.randomUUID();
+        AlertEventPayloadDTO outboundPayload = new AlertEventPayloadDTO(template.getId(), userId, null, msgId);
+        pushProcessor.processOutbound(EventMessage.of("alert.outbound.push", outboundPayload, EventPriority.HIGH));
+
+        // Verify message is saved with DELIVERED status
+        AlertMessageEntity persisted = messageRepository.get(msgId);
+        assertNotNull(persisted);
+        assertEquals(AlertMessageStatus.DELIVERED, persisted.getStatus());
+
+        // 3. Query timeline with unreadOnly = true
+        ChatTimelineResponseDTO unreadTimelineBefore = chatTimelineService.getTimeline(
+                new ChatTimelineRequestDTO(userId, AlertChannel.PUSH, 10, true)
+        );
+        assertEquals(1, unreadTimelineBefore.messages().size());
+        assertEquals(msgId, unreadTimelineBefore.messages().get(0).id());
+        assertEquals(AlertMessageStatus.DELIVERED, unreadTimelineBefore.messages().get(0).status());
+
+        // 4. Inbound read event: mark notification as READ
+        NotificationReadRequestDTO readPayload = new NotificationReadRequestDTO(userId, List.of(msgId), AlertChannel.PUSH);
+        pushProcessor.processInbound(EventMessage.of("alert.inbound.push", readPayload, EventPriority.HIGH));
+
+        // Verify message status is updated to READ
+        assertEquals(AlertMessageStatus.READ, messageRepository.get(msgId).getStatus());
+
+        // 5. Query timeline with unreadOnly = true -> should be empty
+        ChatTimelineResponseDTO unreadTimelineAfter = chatTimelineService.getTimeline(
+                new ChatTimelineRequestDTO(userId, AlertChannel.PUSH, 10, true)
+        );
+        assertTrue(unreadTimelineAfter.messages().isEmpty(), "Read notification must not appear when unreadOnly is true");
+
+        // 6. Query timeline with unreadOnly = false -> should return the notification with status READ
+        ChatTimelineResponseDTO allTimeline = chatTimelineService.getTimeline(
+                new ChatTimelineRequestDTO(userId, AlertChannel.PUSH, 10, false)
+        );
+        assertEquals(1, allTimeline.messages().size());
+        assertEquals(AlertMessageStatus.READ, allTimeline.messages().get(0).status());
     }
 }

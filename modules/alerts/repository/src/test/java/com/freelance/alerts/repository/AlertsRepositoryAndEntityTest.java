@@ -106,7 +106,8 @@ class AlertsRepositoryAndEntityTest {
                         case "setFirstResult":
                             return proxy;
                         case "getResultList":
-                            if ("AlertMessage.findByUserId".equals(lastNamedQuery) || "AlertMessage.findByUserAndChannel".equals(lastNamedQuery)) {
+                            if ("AlertMessage.findByUserId".equals(lastNamedQuery) || "AlertMessage.findByUserAndChannel".equals(lastNamedQuery)
+                                    || "AlertMessage.findUnreadByUserAndChannel".equals(lastNamedQuery) || "AlertMessage.findUnreadByUserId".equals(lastNamedQuery)) {
                                 return List.of(new AlertMessageEntity(UUID.randomUUID(), UUID.randomUUID(), AlertChannel.WHATSAPP, AlertDirection.OUTBOUND, "TEMPLATE", "Hi", null, AlertMessageStatus.SENT, null, null, Instant.now()));
                             }
                             if ("AlertTemplate.findAll".equals(lastNamedQuery) || "AlertTemplate.findByStatus".equals(lastNamedQuery)) {
@@ -146,6 +147,15 @@ class AlertsRepositoryAndEntityTest {
             assertTrue(repo.findByUserAndChannel(null, AlertChannel.WHATSAPP).isEmpty());
             assertTrue(repo.findByUserAndChannel(userId, null).isEmpty());
             assertEquals(1, repo.findByUserAndChannel(userId, AlertChannel.WHATSAPP).size());
+
+            assertTrue(repo.findUnreadByUserAndChannel(null, AlertChannel.PUSH).isEmpty());
+            assertTrue(repo.findUnreadByUserAndChannel(userId, null).isEmpty());
+            assertEquals(1, repo.findUnreadByUserAndChannel(userId, AlertChannel.PUSH).size());
+            assertEquals("AlertMessage.findUnreadByUserAndChannel", lastNamedQuery);
+
+            assertTrue(repo.findUnreadByUserId(null).isEmpty());
+            assertEquals(1, repo.findUnreadByUserId(userId).size());
+            assertEquals("AlertMessage.findUnreadByUserId", lastNamedQuery);
 
             assertTrue(repo.findByMetaMessageId(null).isEmpty());
             assertTrue(repo.findByMetaMessageId("   ").isEmpty());

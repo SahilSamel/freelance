@@ -8,6 +8,7 @@ import com.freelance.alerts.TemplateStatus;
 import com.freelance.alerts.channel.entity.AlertChannelConfigEntity;
 import com.freelance.alerts.channel.repository.AlertChannelConfigRepository;
 import com.freelance.alerts.dto.AlertEventPayloadDTO;
+import com.freelance.alerts.dto.NotificationReadRequestDTO;
 import com.freelance.alerts.message.entity.AlertMessageEntity;
 import com.freelance.alerts.message.repository.AlertMessageRepository;
 import com.freelance.alerts.template.entity.AlertTemplateEntity;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -68,8 +70,7 @@ public class PushAlertProcessor {
         }
 
         AlertEventPayloadDTO payload = message.getPayload();
-        if (payload == null || payload.userId() == null
-                || (payload.templateId() == null && (payload.rawContent() == null || payload.rawContent().isBlank()))) {
+        if (payload == null || payload.userId() == null || payload.templateId() == null) {
             return;
         }
 
@@ -83,7 +84,9 @@ public class PushAlertProcessor {
             String reason = AlertErrorCode.CHANNEL_PAUSED.format(CHANNEL, pauseReason);
             logger.warn("[PushAlertProcessor] {}", reason);
 
-            recordFailedMessage(payload, userId, null, payload.rawContent(), AlertErrorCode.CHANNEL_PAUSED.getCode(), reason);
+            AlertTemplateEntity tpl = templateRepository != null ? templateRepository.get(payload.templateId()) : null;
+            String tplContent = tpl != null ? tpl.getContent() : "[Unknown content]";
+            recordFailedMessage(payload, userId, tpl, tplContent, AlertErrorCode.CHANNEL_PAUSED.getCode(), reason);
             return;
         }
 
@@ -94,49 +97,37 @@ public class PushAlertProcessor {
         }
 
         // 3. Template & Attribute Resolution
-        AlertTemplateEntity template = null;
-        String content = null;
-
-        if (payload.rawContent() != null && !payload.rawContent().isBlank()) {
-            content = payload.rawContent();
-        } else if (payload.templateId() != null) {
-            template = templateRepository != null ? templateRepository.get(payload.templateId()) : null;
-            if (template == null) {
-                logger.warn("[PushAlertProcessor] Template with ID {} not found.", payload.templateId());
-                return;
-            }
-
-            if (template.getChannel() != CHANNEL) {
-                String reason = AlertErrorCode.CHANNEL_MISMATCH.format(template.getChannel(), CHANNEL);
-                recordFailedMessage(payload, userId, template, template.getContent(), AlertErrorCode.CHANNEL_MISMATCH.getCode(), reason);
-                return;
-            }
-
-            if (template.getStatus() != TemplateStatus.APPROVED) {
-                String reason = AlertErrorCode.TEMPLATE_NOT_APPROVED.format(template.getTemplateKey(), template.getStatus());
-                recordFailedMessage(payload, userId, template, template.getContent(), AlertErrorCode.TEMPLATE_NOT_APPROVED.getCode(), reason);
-                return;
-            }
-
-            Set<String> requiredAttrs = WhatsAppUtility.parseAttributes(template.getRequiredAttributes());
-            Map<String, String> resolvedAttributes = AttributeResolutionEngine.getInstance().resolveAll(userId, requiredAttrs);
-            content = TemplateRenderUtility.render(template, resolvedAttributes);
+        AlertTemplateEntity template = templateRepository != null ? templateRepository.get(payload.templateId()) : null;
+        if (template == null) {
+            logger.warn("[PushAlertProcessor] Template with ID {} not found.", payload.templateId());
+            return;
         }
 
-        if (content == null) {
-            content = "[No content]";
+        if (template.getChannel() != CHANNEL) {
+            String reason = AlertErrorCode.CHANNEL_MISMATCH.format(template.getChannel(), CHANNEL);
+            recordFailedMessage(payload, userId, template, template.getContent(), AlertErrorCode.CHANNEL_MISMATCH.getCode(), reason);
+            return;
         }
+
+        if (template.getStatus() != TemplateStatus.APPROVED) {
+            String reason = AlertErrorCode.TEMPLATE_NOT_APPROVED.format(template.getTemplateKey(), template.getStatus());
+            recordFailedMessage(payload, userId, template, template.getContent(), AlertErrorCode.TEMPLATE_NOT_APPROVED.getCode(), reason);
+            return;
+        }
+
+        Set<String> requiredAttrs = WhatsAppUtility.parseAttributes(template.getRequiredAttributes());
+        Map<String, String> resolvedAttributes = AttributeResolutionEngine.getInstance().resolveAll(userId, requiredAttrs);
+        String content = TemplateRenderUtility.render(template, resolvedAttributes);
 
         // 4. Record as DELIVERED in FL_ALERT_MESSAGE for in-app timeline polling
         UUID messageId = payload.messageId() != null ? payload.messageId() : UUID.randomUUID();
-        String messageType = template != null ? "TEMPLATE" : "NOTIFICATION";
 
         AlertMessageEntity entity = new AlertMessageEntity(
                 messageId,
                 userId,
                 CHANNEL,
                 AlertDirection.OUTBOUND,
-                messageType,
+                "TEMPLATE",
                 content,
                 template,
                 null,
@@ -148,7 +139,43 @@ public class PushAlertProcessor {
 
         if (messageRepository != null) {
             messageRepository.persist(entity);
-            logger.info("[PushAlertProcessor] In-app notification delivered for user {} (messageId={})", userId, messageId);
+        }
+    }
+
+    public void processInbound(EventMessage<NotificationReadRequestDTO> message) {
+        if (message == null || message.getPayload() == null) {
+            return;
+        }
+
+        NotificationReadRequestDTO payload = message.getPayload();
+        if (payload.userId() == null || messageRepository == null) {
+            return;
+        }
+
+        UUID userId = payload.userId();
+        AlertChannel channel = payload.channel() != null ? payload.channel() : CHANNEL;
+        List<UUID> messageIds = payload.messageIds();
+
+        if (messageIds != null && !messageIds.isEmpty()) {
+            for (UUID msgId : messageIds) {
+                if (msgId == null) continue;
+                AlertMessageEntity entity = messageRepository.get(msgId);
+                if (entity != null && userId.equals(entity.getUserId())) {
+                    if (entity.getStatus() != AlertMessageStatus.READ) {
+                        entity.setStatus(AlertMessageStatus.READ);
+                        messageRepository.merge(entity);
+                        logger.info("[PushAlertProcessor] Marked message {} as READ for user {}", msgId, userId);
+                    }
+                }
+            }
+        } else {
+            List<AlertMessageEntity> unreadMessages = messageRepository.findUnreadByUserAndChannel(userId, channel);
+            for (AlertMessageEntity entity : unreadMessages) {
+                entity.setStatus(AlertMessageStatus.READ);
+                messageRepository.merge(entity);
+            }
+            logger.info("[PushAlertProcessor] Marked {} unread messages as READ for user {} on channel {}",
+                    unreadMessages.size(), userId, channel);
         }
     }
 

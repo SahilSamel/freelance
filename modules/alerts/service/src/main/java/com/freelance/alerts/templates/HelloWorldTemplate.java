@@ -1,6 +1,7 @@
 package com.freelance.alerts.templates;
 
 import com.freelance.alerts.AlertChannel;
+import com.freelance.alerts.TemplateCategory;
 import com.freelance.alerts.template.ITemplate;
 import com.freelance.alerts.template.ITemplateButton;
 
@@ -22,7 +23,7 @@ public class HelloWorldTemplate implements ITemplate {
 
     @Override
     public String getCategory() {
-        return "UTILITY";
+        return TemplateCategory.UTILITY.name();
     }
 
     @Override

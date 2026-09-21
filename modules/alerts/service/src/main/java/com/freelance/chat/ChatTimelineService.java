@@ -21,6 +21,7 @@ import com.freelance.dispatcher.impl.whatsapp.WhatsAppDispatcherService;
 import com.freelance.alerts.dto.TemplateButtonDTO;
 import com.freelance.alerts.template.entity.AlertButtonEntity;
 import com.freelance.chat.validation.ChatReplyValidation;
+import com.freelance.chat.validation.ChatTimelineValidation;
 
 import java.time.Instant;
 import java.util.*;
@@ -42,24 +43,18 @@ public class ChatTimelineService {
     }
 
     public ChatTimelineResponseDTO getTimeline(ChatTimelineRequestDTO request) {
-        if (request == null || request.userId() == null) {
-            return new ChatTimelineResponseDTO(null, false, Collections.emptyList());
-        }
+        new ChatTimelineValidation().validateRequest(request);
 
         AlertChannel channel = request.channel();
-        List<AlertMessageEntity> entities = (channel != null)
-                ? messageRepository.findByUserAndChannel(request.userId(), channel)
-                : messageRepository.findByUserId(request.userId());
+        boolean unreadOnly = Boolean.TRUE.equals(request.unreadOnly());
 
-        boolean isHumanRequired;
-        if (channel != null) {
-            isHumanRequired = contactRepository.findByUserAndChannel(request.userId(), channel)
-                    .map(UserContactEntity::isHumanSessionActive)
-                    .orElse(false);
-        } else {
-            isHumanRequired = contactRepository.findByUserId(request.userId()).stream()
-                    .anyMatch(UserContactEntity::isHumanSessionActive);
-        }
+        List<AlertMessageEntity> entities = unreadOnly
+                ? messageRepository.findUnreadByUserAndChannel(request.userId(), channel)
+                : messageRepository.findByUserAndChannel(request.userId(), channel);
+
+        boolean isHumanRequired = contactRepository.findByUserAndChannel(request.userId(), channel)
+                .map(UserContactEntity::isHumanSessionActive)
+                .orElse(false);
 
         List<ChatMessageDTO> dtos = new ArrayList<>();
         int max = (request.limit() != null && request.limit() > 0) ? request.limit() : Integer.MAX_VALUE;

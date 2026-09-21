@@ -1,6 +1,7 @@
 package com.freelance.template;
 
 import com.freelance.alerts.AlertChannel;
+import com.freelance.alerts.TemplateCategory;
 import com.freelance.alerts.TemplateStatus;
 import com.freelance.alerts.dto.TemplateButtonDTO;
 import com.freelance.alerts.dto.TemplateCreateRequestDTO;
@@ -81,16 +82,20 @@ public class TemplateService {
             AlertChannel channel = tplReq.channel() != null
                     ? tplReq.channel()
                     : ConfigurationEngine.getEnum(AlertEmitConfigKeys.DEFAULT_ALERT_CHANNEL, AlertChannel.class, AlertChannel.WHATSAPP);
-            TemplateStatus initialStatus = TemplateStatus.SUBMITTED;
+            TemplateStatus initialStatus = (channel == AlertChannel.PUSH) ? TemplateStatus.APPROVED : TemplateStatus.SUBMITTED;
             String priority = tplReq.priority() != null && !tplReq.priority().isBlank()
                     ? tplReq.priority().trim().toUpperCase()
                     : null;
+
+            String category = (channel == AlertChannel.WHATSAPP && tplReq.category() != null && !tplReq.category().isBlank())
+                    ? TemplateCategory.fromString(tplReq.category()).name()
+                    : TemplateCategory.UTILITY.name();
 
             AlertTemplateEntity entity = new AlertTemplateEntity(
                     templateId,
                     tplReq.templateKey(),
                     tplReq.name() != null ? tplReq.name() : tplReq.templateKey(),
-                    tplReq.category() != null ? tplReq.category() : "UTILITY",
+                    category,
                     tplReq.language() != null ? tplReq.language() : "en",
                     tplReq.content(),
                     tplReq.mediaUrl(),

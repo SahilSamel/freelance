@@ -1,5 +1,6 @@
 package com.freelance.template.constraint;
 
+import com.freelance.alerts.AlertChannel;
 import com.freelance.alerts.ButtonType;
 import com.freelance.alerts.dto.TemplateButtonDTO;
 import com.freelance.alerts.dto.TemplateUpdateRequestDTO;
@@ -55,7 +56,7 @@ public class TemplateUpdateConstraint extends AbstractConstraint {
             return null;
         }
 
-        if (request.category() != null && !request.category().isBlank()) {
+        if (target.getChannel() == AlertChannel.WHATSAPP && request.category() != null && !request.category().isBlank()) {
             if (!isCategoryInRepository(request.category().trim())) {
                 raiseConstraintError(TemplateConstraintErrors.TEMPLATE_CATEGORY_NOT_FOUND);
             }

@@ -36,9 +36,10 @@ class PushOutboundConsumerTest {
         };
 
         PushOutboundConsumer consumer = new PushOutboundConsumer(fakeProcessor);
+        UUID templateId = UUID.randomUUID();
         EventMessage<AlertEventPayloadDTO> message = EventMessage.of(
                 "alert.outbound.push",
-                new AlertEventPayloadDTO(null, UUID.randomUUID(), "Hello", UUID.randomUUID()),
+                new AlertEventPayloadDTO(templateId, UUID.randomUUID()),
                 EventPriority.HIGH
         );
 

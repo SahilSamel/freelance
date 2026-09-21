@@ -11,17 +11,16 @@ public class ChatTimelineValidation extends AbstractValidation {
             raiseValidationError(AlertEmitValidationErrors.INVALID_USER_IDS, "userId");
             raiseValidationError(AlertEmitValidationErrors.INVALID_CHANNEL, "channel");
             validate();
-            return;
-        }
+        } else {
+            if (request.userId() == null) {
+                raiseValidationError(AlertEmitValidationErrors.INVALID_USER_IDS, "userId");
+            }
 
-        if (request.userId() == null) {
-            raiseValidationError(AlertEmitValidationErrors.INVALID_USER_IDS, "userId");
-        }
+            if (request.channel() == null) {
+                raiseValidationError(AlertEmitValidationErrors.INVALID_CHANNEL, "channel");
+            }
 
-        if (request.channel() == null) {
-            raiseValidationError(AlertEmitValidationErrors.INVALID_CHANNEL, "channel");
+            validate();
         }
-
-        validate();
     }
 }

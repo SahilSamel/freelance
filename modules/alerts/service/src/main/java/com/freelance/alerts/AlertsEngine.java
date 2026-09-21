@@ -1,6 +1,7 @@
 package com.freelance.alerts;
 
 import com.freelance.alerts.dto.AlertEventPayloadDTO;
+import com.freelance.alerts.dto.NotificationReadRequestDTO;
 import com.freelance.alerts.template.entity.AlertTemplateEntity;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
 import com.freelance.alerts.template.ITemplate;
@@ -9,6 +10,7 @@ import com.freelance.event.model.EventPriority;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.UUID;
 
 public final class AlertsEngine {
@@ -57,5 +59,15 @@ public final class AlertsEngine {
         AlertConsumer destination = AlertConsumer.fromChannel(template.getChannel());
         AlertEventPayloadDTO payload = new AlertEventPayloadDTO(templateId, userId);
         EventManagementEngine.emit(destination, payload, priority);
+    }
+
+    public void markNotificationsRead(NotificationReadRequestDTO request) {
+        if (request == null || request.userId() == null) return;
+        EventManagementEngine.emit(AlertConsumer.INBOUND_PUSH, request, EventPriority.HIGH);
+    }
+
+    public void markNotificationsRead(UUID userId, List<UUID> messageIds) {
+        if (userId == null) return;
+        markNotificationsRead(new NotificationReadRequestDTO(userId, messageIds));
     }
 }

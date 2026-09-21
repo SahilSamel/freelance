@@ -18,6 +18,7 @@ import com.freelance.alerts.template.entity.AlertButtonReplyEntity;
 import com.freelance.alerts.template.entity.AlertTemplateEntity;
 import com.freelance.chat.ChatTimelineService;
 import com.freelance.dispatcher.impl.whatsapp.WhatsAppDispatcherService;
+import com.freelance.rest.app.service.exception.validation.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -212,37 +213,63 @@ class ChatTimelineServiceTest {
     }
 
     @Test
-    @DisplayName("Should handle null request or null userId gracefully returning empty list")
-    void testGetTimeline_nullGuards() {
-        ChatTimelineResponseDTO t1 = timelineService.getTimeline(null);
-        assertNotNull(t1);
-        assertTrue(t1.messages().isEmpty());
-
-        ChatTimelineResponseDTO t2 = timelineService.getTimeline(new ChatTimelineRequestDTO(null, null, null));
-        assertNotNull(t2);
-        assertTrue(t2.messages().isEmpty());
-    }
-
-    @Test
-    @DisplayName("Should query all channels when channel parameter is null")
-    void testGetTimeline_allChannels() {
+    @DisplayName("Should populate replyKey when button reply has an associated reply template")
+    void testGetTimeline_withReplyTemplateKey() {
         UUID userId = UUID.randomUUID();
-        UserContactEntity contact = new UserContactEntity(
-                UUID.randomUUID(), userId, AlertChannel.WHATSAPP, "+919876543210", false, true, Instant.now().plusSeconds(3600)
+        AlertTemplateEntity targetTpl = new AlertTemplateEntity(
+                UUID.randomUUID(), "menu_help_reply", "Help Reply", "UTILITY", "en_US", "How can we help?", null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED, true, null, null
         );
-        contactRepo.persist(contact);
+        AlertTemplateEntity mainTpl = new AlertTemplateEntity(
+                UUID.randomUUID(), "main_menu", "Main Menu", "UTILITY", "en_US", "Main Menu", null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED, true, null, null
+        );
+        AlertButtonEntity button = new AlertButtonEntity(
+                UUID.randomUUID(), mainTpl, "Help", ButtonType.QUICK_REPLY, "HELP", 1
+        );
+        button.setReply(new AlertButtonReplyEntity(UUID.randomUUID(), button, targetTpl, false));
+        mainTpl.getButtons().add(button);
 
         AlertMessageEntity msg = new AlertMessageEntity(
-                UUID.randomUUID(), userId, AlertChannel.WHATSAPP, AlertDirection.INBOUND,
-                "TEXT", "Hello all channels", "wamid_all", AlertMessageStatus.DELIVERED,
-                null, null, Instant.now()
+                UUID.randomUUID(), userId, AlertChannel.WHATSAPP, AlertDirection.OUTBOUND,
+                "TEMPLATE", mainTpl.getContent(), mainTpl, "wamid_tpl_2", AlertMessageStatus.SENT, null, null, Instant.now()
         );
         messageRepo.persist(msg);
 
-        ChatTimelineResponseDTO timeline = timelineService.getTimeline(new ChatTimelineRequestDTO(userId, null, null));
+        ChatTimelineResponseDTO timeline = timelineService.getTimeline(new ChatTimelineRequestDTO(userId, AlertChannel.WHATSAPP, 10));
         assertNotNull(timeline);
-        assertTrue(timeline.isHumanRequired());
-        assertEquals(1, timeline.messages().size());
+        assertEquals("menu_help_reply", timeline.messages().get(0).buttons().get(0).replyTemplateKey());
+        assertFalse(timeline.messages().get(0).buttons().get(0).requiresHuman());
+    }
+
+    @Test
+    @DisplayName("Should return all messages when limit is null or non-positive")
+    void testGetTimeline_nullOrNegativeLimit() {
+        UUID userId = UUID.randomUUID();
+        for (int i = 0; i < 3; i++) {
+            messageRepo.persist(new AlertMessageEntity(
+                    UUID.randomUUID(), userId, AlertChannel.WHATSAPP, AlertDirection.INBOUND,
+                    "TEXT", "Msg " + i, "wamid_" + i, AlertMessageStatus.DELIVERED, null, null, Instant.now().plusSeconds(i)
+            ));
+        }
+
+        ChatTimelineResponseDTO tNull = timelineService.getTimeline(new ChatTimelineRequestDTO(userId, AlertChannel.WHATSAPP, null));
+        assertEquals(3, tNull.messages().size());
+
+        ChatTimelineResponseDTO tNeg = timelineService.getTimeline(new ChatTimelineRequestDTO(userId, AlertChannel.WHATSAPP, -1));
+        assertEquals(3, tNeg.messages().size());
+    }
+
+    @Test
+    @DisplayName("Should throw ValidationException when request or userId is null")
+    void testGetTimeline_nullGuards() {
+        assertThrows(ValidationException.class, () -> timelineService.getTimeline(null));
+        assertThrows(ValidationException.class, () -> timelineService.getTimeline(new ChatTimelineRequestDTO(null, null, null)));
+    }
+
+    @Test
+    @DisplayName("Should throw ValidationException when channel parameter is null")
+    void testGetTimeline_nullChannel() {
+        UUID userId = UUID.randomUUID();
+        assertThrows(ValidationException.class, () -> timelineService.getTimeline(new ChatTimelineRequestDTO(userId, null, 50)));
     }
 
     @Test
@@ -261,6 +288,57 @@ class ChatTimelineServiceTest {
         assertEquals(AlertChannel.WHATSAPP, dto.channel());
         assertEquals("Staff response text", dto.content());
         assertNull(contact.getHumanSessionExpiresAt());
+    }
+
+    @Test
+    @DisplayName("sendStaffReply sends staff message when contact does not exist")
+    void testSendStaffReply_noExistingContact() {
+        UUID userId = UUID.randomUUID();
+        AdminChatReplyRequestDTO req = new AdminChatReplyRequestDTO(userId, AlertChannel.WHATSAPP, "Reply with no prior contact record");
+        ChatMessageDTO dto = timelineService.sendStaffReply(req);
+
+        assertNotNull(dto);
+        assertEquals("Reply with no prior contact record", dto.content());
+    }
+
+    @Test
+    @DisplayName("Should filter out READ messages when unreadOnly is true")
+    void testGetTimeline_unreadOnlyFilter() {
+        UUID userId = UUID.randomUUID();
+        // 1 read message
+        AlertMessageEntity m1 = new AlertMessageEntity(
+                UUID.randomUUID(), userId, AlertChannel.PUSH, AlertDirection.OUTBOUND,
+                "TEMPLATE", "Old Read Message", null, null,
+                AlertMessageStatus.READ, null, null, Instant.now().minusSeconds(200)
+        );
+        // 2 unread messages
+        AlertMessageEntity m2 = new AlertMessageEntity(
+                UUID.randomUUID(), userId, AlertChannel.PUSH, AlertDirection.OUTBOUND,
+                "TEMPLATE", "Unread Message 1", null, null,
+                AlertMessageStatus.DELIVERED, null, null, Instant.now().minusSeconds(100)
+        );
+        AlertMessageEntity m3 = new AlertMessageEntity(
+                UUID.randomUUID(), userId, AlertChannel.PUSH, AlertDirection.OUTBOUND,
+                "TEMPLATE", "Unread Message 2", null, null,
+                AlertMessageStatus.DELIVERED, null, null, Instant.now()
+        );
+        messageRepo.persist(m1);
+        messageRepo.persist(m2);
+        messageRepo.persist(m3);
+
+        // Query with unreadOnly = true
+        ChatTimelineResponseDTO unreadTimeline = timelineService.getTimeline(
+                new ChatTimelineRequestDTO(userId, AlertChannel.PUSH, 10, true)
+        );
+        assertEquals(2, unreadTimeline.messages().size());
+        assertEquals("Unread Message 1", unreadTimeline.messages().get(0).content());
+        assertEquals("Unread Message 2", unreadTimeline.messages().get(1).content());
+
+        // Query with unreadOnly = false (all messages)
+        ChatTimelineResponseDTO allTimeline = timelineService.getTimeline(
+                new ChatTimelineRequestDTO(userId, AlertChannel.PUSH, 10, false)
+        );
+        assertEquals(3, allTimeline.messages().size());
     }
 
     @Test
@@ -286,6 +364,20 @@ class ChatTimelineServiceTest {
         @Override
         public List<AlertMessageEntity> findByUserAndChannel(UUID userId, AlertChannel channel) {
             return storage.stream().filter(m -> m.getUserId().equals(userId) && m.getChannel() == channel).toList();
+        }
+
+        @Override
+        public List<AlertMessageEntity> findUnreadByUserAndChannel(UUID userId, AlertChannel channel) {
+            return storage.stream()
+                    .filter(m -> m.getUserId().equals(userId) && m.getChannel() == channel && m.getStatus() != AlertMessageStatus.READ)
+                    .toList();
+        }
+
+        @Override
+        public List<AlertMessageEntity> findUnreadByUserId(UUID userId) {
+            return storage.stream()
+                    .filter(m -> m.getUserId().equals(userId) && m.getStatus() != AlertMessageStatus.READ)
+                    .toList();
         }
     }
 

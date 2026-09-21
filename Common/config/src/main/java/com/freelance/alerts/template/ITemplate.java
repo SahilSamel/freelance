@@ -1,6 +1,7 @@
 package com.freelance.alerts.template;
 
 import com.freelance.alerts.AlertChannel;
+import com.freelance.alerts.TemplateCategory;
 
 import java.util.List;
 import java.util.Set;
@@ -40,17 +41,20 @@ public interface ITemplate {
     /**
      * Meta WhatsApp template classification category.
      * <p>
-     * <b>Common Values:</b>
+     * <b>Values:</b>
      * <ul>
-     *   <li>{@code "AUTHENTICATION"} - OTPs, 2FA, password reset codes.</li>
-     *   <li>{@code "UTILITY"} - Transaction confirmations, billing receipts, account updates.</li>
-     *   <li>{@code "MARKETING"} - Promotions, offers, newsletters.</li>
+     *   <li>{@link TemplateCategory#AUTHENTICATION} - OTPs, 2FA, password reset codes.</li>
+     *   <li>{@link TemplateCategory#UTILITY} - Transaction confirmations, billing receipts, account updates.</li>
+     *   <li>{@link TemplateCategory#MARKETING} - Promotions, offers, newsletters.</li>
      * </ul>
+     * Defaults to {@code UTILITY} if not specified or for non-WhatsApp channels.
      * </p>
      *
-     * @return template category string (defaults to "UTILITY" if null)
+     * @return template category string (defaults to "UTILITY")
      */
-    String getCategory();
+    default String getCategory() {
+        return TemplateCategory.UTILITY.name();
+    }
 
     /**
      * ISO 639-1 language / locale code for message localization.

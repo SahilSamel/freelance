@@ -1,6 +1,7 @@
 package com.freelance.alerts.templates;
 
 import com.freelance.alerts.AlertChannel;
+import com.freelance.alerts.TemplateCategory;
 import com.freelance.alerts.template.ITemplate;
 import com.freelance.alerts.template.ITemplateButton;
 
@@ -24,7 +25,7 @@ public class SupportAccessRequestedTemplate implements ITemplate {
 
     @Override
     public String getCategory() {
-        return "SECURITY";
+        return TemplateCategory.AUTHENTICATION.name();
     }
 
     @Override

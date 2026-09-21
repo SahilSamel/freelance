@@ -8,6 +8,7 @@ import com.freelance.alerts.TemplateStatus;
 import com.freelance.alerts.channel.entity.AlertChannelConfigEntity;
 import com.freelance.alerts.channel.repository.AlertChannelConfigRepository;
 import com.freelance.alerts.dto.AlertEventPayloadDTO;
+import com.freelance.alerts.dto.NotificationReadRequestDTO;
 import com.freelance.alerts.message.entity.AlertMessageEntity;
 import com.freelance.alerts.message.repository.AlertMessageRepository;
 import com.freelance.alerts.push.PushAlertProcessor;
@@ -78,9 +79,43 @@ class PushAlertProcessorTest {
         }
 
         @Override
+        public AlertMessageEntity get(UUID id) {
+            return persisted.stream()
+                    .filter(m -> m.getId().equals(id))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        @Override
+        public AlertMessageEntity merge(AlertMessageEntity entity) {
+            for (int i = 0; i < persisted.size(); i++) {
+                if (persisted.get(i).getId().equals(entity.getId())) {
+                    persisted.set(i, entity);
+                    return entity;
+                }
+            }
+            persisted.add(entity);
+            return entity;
+        }
+
+        @Override
         public List<AlertMessageEntity> findByUserAndChannel(UUID userId, AlertChannel channel) {
             return persisted.stream()
                     .filter(m -> m.getUserId().equals(userId) && m.getChannel() == channel)
+                    .toList();
+        }
+
+        @Override
+        public List<AlertMessageEntity> findUnreadByUserAndChannel(UUID userId, AlertChannel channel) {
+            return persisted.stream()
+                    .filter(m -> m.getUserId().equals(userId) && m.getChannel() == channel && m.getStatus() != AlertMessageStatus.READ)
+                    .toList();
+        }
+
+        @Override
+        public List<AlertMessageEntity> findUnreadByUserId(UUID userId) {
+            return persisted.stream()
+                    .filter(m -> m.getUserId().equals(userId) && m.getStatus() != AlertMessageStatus.READ)
                     .toList();
         }
     }
@@ -156,24 +191,15 @@ class PushAlertProcessorTest {
     }
 
     @Test
-    @DisplayName("Process outbound push with raw text content successfully")
-    void testProcessOutboundRawContentSuccess() {
+    @DisplayName("Payload without templateId is dropped cleanly without saving message")
+    void testPayloadWithoutTemplateIdIsDropped() {
         UUID messageId = UUID.randomUUID();
         AlertEventPayloadDTO payload = new AlertEventPayloadDTO(null, userId, "Your account status has been updated.", messageId);
         EventMessage<AlertEventPayloadDTO> event = EventMessage.of("alert.outbound.push", payload, EventPriority.HIGH);
 
         processor.processOutbound(event);
 
-        assertEquals(1, messageRepository.persisted.size());
-        AlertMessageEntity msg = messageRepository.persisted.get(0);
-        assertEquals(messageId, msg.getId());
-        assertEquals(userId, msg.getUserId());
-        assertEquals(AlertChannel.PUSH, msg.getChannel());
-        assertEquals(AlertDirection.OUTBOUND, msg.getDirection());
-        assertEquals("NOTIFICATION", msg.getMessageType());
-        assertEquals("Your account status has been updated.", msg.getContent());
-        assertEquals(AlertMessageStatus.DELIVERED, msg.getStatus());
-        assertNull(msg.getErrorCode());
+        assertTrue(messageRepository.persisted.isEmpty());
     }
 
     @Test
@@ -184,7 +210,7 @@ class PushAlertProcessorTest {
                 templateId,
                 "profile_incomplete_reminder",
                 "Profile Reminder",
-                "REMINDER",
+                "UTILITY",
                 "en_US",
                 "Hi {{USER.first_name}}, please update your username ({{USER.username}}).",
                 null,
@@ -215,8 +241,15 @@ class PushAlertProcessorTest {
     @Test
     @DisplayName("Non-existent user is dropped cleanly without saving message")
     void testNonExistentUserIsDropped() {
+        UUID templateId = UUID.randomUUID();
+        AlertTemplateEntity tpl = new AlertTemplateEntity(
+                templateId, "tpl_key", "Template", "UTILITY", "en_US", "Content", null, null,
+                AlertChannel.PUSH, TemplateStatus.APPROVED, true, null, null, "NORMAL"
+        );
+        templateRepository.storage.put(templateId, tpl);
+
         UUID unknownUserId = UUID.randomUUID();
-        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(null, unknownUserId, "Hello unknown user", UUID.randomUUID());
+        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(templateId, unknownUserId);
         EventMessage<AlertEventPayloadDTO> event = EventMessage.of("alert.outbound.push", payload, EventPriority.NORMAL);
 
         processor.processOutbound(event);
@@ -229,8 +262,15 @@ class PushAlertProcessorTest {
     void testChannelPausedRecordsFailed() {
         channelConfigRepository.storage.put(AlertChannel.PUSH, new AlertChannelConfigEntity(AlertChannel.PUSH, false, "Database maintenance"));
 
+        UUID templateId = UUID.randomUUID();
+        AlertTemplateEntity tpl = new AlertTemplateEntity(
+                templateId, "tpl_key", "Template", "UTILITY", "en_US", "Notification text", null, null,
+                AlertChannel.PUSH, TemplateStatus.APPROVED, true, null, null, "NORMAL"
+        );
+        templateRepository.storage.put(templateId, tpl);
+
         UUID messageId = UUID.randomUUID();
-        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(null, userId, "Some notification", messageId);
+        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(templateId, userId, null, messageId);
         EventMessage<AlertEventPayloadDTO> event = EventMessage.of("alert.outbound.push", payload, EventPriority.NORMAL);
 
         processor.processOutbound(event);
@@ -303,5 +343,90 @@ class PushAlertProcessorTest {
         AlertMessageEntity msg = messageRepository.persisted.get(0);
         assertEquals(AlertMessageStatus.FAILED, msg.getStatus());
         assertEquals(AlertErrorCode.TEMPLATE_NOT_APPROVED.getCode(), msg.getErrorCode());
+    }
+
+    @Test
+    @DisplayName("Process inbound read request with specific message IDs marks only those messages as READ")
+    void testProcessInbound_specificMessageIds() {
+        UUID msgId1 = UUID.randomUUID();
+        UUID msgId2 = UUID.randomUUID();
+
+        AlertMessageEntity m1 = new AlertMessageEntity(
+                msgId1, userId, AlertChannel.PUSH, AlertDirection.OUTBOUND,
+                "TEMPLATE", "Notification 1", null, null,
+                AlertMessageStatus.DELIVERED, null, null, Instant.now()
+        );
+        AlertMessageEntity m2 = new AlertMessageEntity(
+                msgId2, userId, AlertChannel.PUSH, AlertDirection.OUTBOUND,
+                "TEMPLATE", "Notification 2", null, null,
+                AlertMessageStatus.DELIVERED, null, null, Instant.now()
+        );
+        messageRepository.persist(m1);
+        messageRepository.persist(m2);
+
+        NotificationReadRequestDTO readRequest = new NotificationReadRequestDTO(userId, List.of(msgId1), AlertChannel.PUSH);
+        EventMessage<NotificationReadRequestDTO> event = EventMessage.of("alert.inbound.push", readRequest, EventPriority.HIGH);
+
+        processor.processInbound(event);
+
+        assertEquals(AlertMessageStatus.READ, messageRepository.get(msgId1).getStatus());
+        assertEquals(AlertMessageStatus.DELIVERED, messageRepository.get(msgId2).getStatus());
+    }
+
+    @Test
+    @DisplayName("Process inbound read request without message IDs marks all unread messages for user as READ")
+    void testProcessInbound_allUnreadMessages() {
+        UUID msgId1 = UUID.randomUUID();
+        UUID msgId2 = UUID.randomUUID();
+
+        AlertMessageEntity m1 = new AlertMessageEntity(
+                msgId1, userId, AlertChannel.PUSH, AlertDirection.OUTBOUND,
+                "TEMPLATE", "Notification 1", null, null,
+                AlertMessageStatus.DELIVERED, null, null, Instant.now()
+        );
+        AlertMessageEntity m2 = new AlertMessageEntity(
+                msgId2, userId, AlertChannel.PUSH, AlertDirection.OUTBOUND,
+                "TEMPLATE", "Notification 2", null, null,
+                AlertMessageStatus.DELIVERED, null, null, Instant.now()
+        );
+        messageRepository.persist(m1);
+        messageRepository.persist(m2);
+
+        NotificationReadRequestDTO readRequest = new NotificationReadRequestDTO(userId, null, AlertChannel.PUSH);
+        EventMessage<NotificationReadRequestDTO> event = EventMessage.of("alert.inbound.push", readRequest, EventPriority.HIGH);
+
+        processor.processInbound(event);
+
+        assertEquals(AlertMessageStatus.READ, messageRepository.get(msgId1).getStatus());
+        assertEquals(AlertMessageStatus.READ, messageRepository.get(msgId2).getStatus());
+    }
+
+    @Test
+    @DisplayName("Process inbound read request does not affect messages belonging to other users")
+    void testProcessInbound_ignoresOtherUsers() {
+        UUID otherUserId = UUID.randomUUID();
+        UUID msgId = UUID.randomUUID();
+
+        AlertMessageEntity m1 = new AlertMessageEntity(
+                msgId, otherUserId, AlertChannel.PUSH, AlertDirection.OUTBOUND,
+                "TEMPLATE", "Other user notification", null, null,
+                AlertMessageStatus.DELIVERED, null, null, Instant.now()
+        );
+        messageRepository.persist(m1);
+
+        NotificationReadRequestDTO readRequest = new NotificationReadRequestDTO(userId, List.of(msgId), AlertChannel.PUSH);
+        EventMessage<NotificationReadRequestDTO> event = EventMessage.of("alert.inbound.push", readRequest, EventPriority.HIGH);
+
+        processor.processInbound(event);
+
+        assertEquals(AlertMessageStatus.DELIVERED, messageRepository.get(msgId).getStatus());
+    }
+
+    @Test
+    @DisplayName("Process inbound null and empty guards operate safely")
+    void testProcessInbound_nullGuards() {
+        assertDoesNotThrow(() -> processor.processInbound(null));
+        assertDoesNotThrow(() -> processor.processInbound(EventMessage.of("alert.inbound.push", (NotificationReadRequestDTO) null)));
+        assertDoesNotThrow(() -> processor.processInbound(EventMessage.of("alert.inbound.push", new NotificationReadRequestDTO(null))));
     }
 }

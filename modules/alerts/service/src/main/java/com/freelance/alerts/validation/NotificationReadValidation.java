@@ -10,13 +10,12 @@ public class NotificationReadValidation extends AbstractValidation {
         if (request == null) {
             raiseValidationError(AlertEmitValidationErrors.INVALID_USER_IDS, "userId");
             validate();
-            return;
-        }
+        } else {
+            if (request.userId() == null) {
+                raiseValidationError(AlertEmitValidationErrors.INVALID_USER_IDS, "userId");
+            }
 
-        if (request.userId() == null) {
-            raiseValidationError(AlertEmitValidationErrors.INVALID_USER_IDS, "userId");
+            validate();
         }
-
-        validate();
     }
 }

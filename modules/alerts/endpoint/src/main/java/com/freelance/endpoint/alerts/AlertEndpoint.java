@@ -1,5 +1,6 @@
 package com.freelance.endpoint.alerts;
 
+import com.freelance.alerts.NotificationReadService;
 import com.freelance.alerts.dto.*;
 import com.freelance.alerts.AlertEmitService;
 import com.freelance.chat.ChatTimelineService;
@@ -57,5 +58,19 @@ public class AlertEndpoint extends AbstractEndpoint {
         ChatTimelineService timelineService = new ChatTimelineService();
         ChatMessageDTO response = timelineService.sendStaffReply(request);
         return buildResponse(response, 200);
+    }
+
+    @POST
+    @Path("/notifications/read")
+    @Authorization(
+            key = "ALERT_NOTIFICATION_READ",
+            name = "Mark Notifications As Read",
+            description = "Marks in-app push notifications as read for a user",
+            group = "Alerts.Notification"
+    )
+    public Response markNotificationsRead(NotificationReadRequestDTO request) {
+        NotificationReadService readService = new NotificationReadService();
+        readService.markAsRead(request);
+        return buildResponse(null, 202);
     }
 }

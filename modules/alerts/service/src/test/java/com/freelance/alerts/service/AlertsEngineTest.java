@@ -160,4 +160,33 @@ class AlertsEngineTest {
 
         assertDoesNotThrow(() -> engine.emitAlert(mockHighPriorityTemplate, UUID.randomUUID()));
     }
+
+    @Test
+    @DisplayName("Should mark notifications as read using DTO or direct arguments")
+    void testMarkNotificationsRead() {
+        UUID userId = UUID.randomUUID();
+        List<UUID> msgIds = List.of(UUID.randomUUID(), UUID.randomUUID());
+
+        assertDoesNotThrow(() -> engine.markNotificationsRead(new com.freelance.alerts.dto.NotificationReadRequestDTO(userId, msgIds)));
+        assertDoesNotThrow(() -> engine.markNotificationsRead(userId, msgIds));
+        assertDoesNotThrow(() -> engine.markNotificationsRead(null, msgIds));
+        assertDoesNotThrow(() -> engine.markNotificationsRead((com.freelance.alerts.dto.NotificationReadRequestDTO) null));
+    }
+
+    @Test
+    @DisplayName("Should handle missing template entity gracefully and fallback to default priority")
+    void testEmitAlert_missingTemplateEntity() {
+        UUID unknownTemplateId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        assertDoesNotThrow(() -> engine.emitAlert(unknownTemplateId, userId, null));
+    }
+
+    @Test
+    @DisplayName("getInstance and default constructor should operate cleanly")
+    void testGetInstanceAndDefaultConstructor() {
+        assertNotNull(AlertsEngine.getInstance());
+        AlertsEngine defaultEngine = new AlertsEngine(null);
+        assertNotNull(defaultEngine);
+    }
 }

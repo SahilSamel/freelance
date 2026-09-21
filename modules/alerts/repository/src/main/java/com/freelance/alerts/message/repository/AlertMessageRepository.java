@@ -40,4 +40,17 @@ public class AlertMessageRepository extends AbstractRepository<AlertMessageEntit
                 "channel", channel
         ));
     }
+
+    public List<AlertMessageEntity> findUnreadByUserAndChannel(UUID userId, AlertChannel channel) {
+        if (userId == null || channel == null) return List.of();
+        return executeListResultSearch("AlertMessage.findUnreadByUserAndChannel", Map.of(
+                "userId", userId,
+                "channel", channel
+        ));
+    }
+
+    public List<AlertMessageEntity> findUnreadByUserId(UUID userId) {
+        if (userId == null) return List.of();
+        return executeListResultSearch("AlertMessage.findUnreadByUserId", Map.of("userId", userId));
+    }
 }

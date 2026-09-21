@@ -5,7 +5,9 @@ import com.freelance.event.IConsumer;
 public enum AlertConsumer implements IConsumer {
     OUTBOUND_DISPATCH("alert.outbound.dispatch"),
     OUTBOUND_WHATSAPP("alert.outbound.whatsapp"),
-    INBOUND_WHATSAPP("alert.inbound.whatsapp");
+    INBOUND_WHATSAPP("alert.inbound.whatsapp"),
+    OUTBOUND_PUSH("alert.outbound.push"),
+    INBOUND_PUSH("alert.inbound.push");
 
     private final String destination;
 
@@ -24,6 +26,7 @@ public enum AlertConsumer implements IConsumer {
         }
         return switch (channel) {
             case WHATSAPP -> OUTBOUND_WHATSAPP;
+            case PUSH -> OUTBOUND_PUSH;
         };
     }
 }
