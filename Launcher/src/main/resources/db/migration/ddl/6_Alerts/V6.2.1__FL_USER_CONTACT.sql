@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS freelance.FL_USER_CONTACT
     created_date              TIMESTAMPTZ  NOT NULL,
     last_updated_by           UUID,
     last_updated_date         TIMESTAMPTZ,
-    CONSTRAINT uq_user_contact_channel UNIQUE (user_id, channel)
+    CONSTRAINT uq_user_contact_channel UNIQUE (user_id, channel),
+    CONSTRAINT fk_user_contact_user FOREIGN KEY (user_id) REFERENCES freelance.FL_USERS (id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_contact_phone ON freelance.FL_USER_CONTACT (contact_value, channel);

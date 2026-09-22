@@ -129,12 +129,12 @@ public abstract class BaseIntegrationTest {
             UUID auditViewerRoleId = createRoleIfNotExists(day0Token, "ROLE_AUDIT_VIEWER", "Audit Viewer Role", auditAuthIds);
 
             // 3. Create Persona Users
-            createUserIfNotExists(day0Token, SUPER_ADMIN_USERNAME, SUPER_ADMIN_PASSWORD, List.of(superAdminRoleId));
-            createUserIfNotExists(day0Token, USER_OFFICER_USERNAME, USER_OFFICER_PASSWORD, List.of(userAdminRoleId));
-            createUserIfNotExists(day0Token, ROLE_OFFICER_USERNAME, ROLE_OFFICER_PASSWORD, List.of(roleAdminRoleId));
-            createUserIfNotExists(day0Token, CONFIG_OFFICER_USERNAME, CONFIG_OFFICER_PASSWORD, List.of(configAdminRoleId));
-            createUserIfNotExists(day0Token, ALERTS_OFFICER_USERNAME, ALERTS_OFFICER_PASSWORD, List.of(alertsAdminRoleId));
-            createUserIfNotExists(day0Token, AUDIT_OFFICER_USERNAME, AUDIT_OFFICER_PASSWORD, List.of(auditViewerRoleId));
+            createUserIfNotExists(day0Token, SUPER_ADMIN_USERNAME, SUPER_ADMIN_PASSWORD, List.of(superAdminRoleId), "+10000000001");
+            createUserIfNotExists(day0Token, USER_OFFICER_USERNAME, USER_OFFICER_PASSWORD, List.of(userAdminRoleId), "+10000000002");
+            createUserIfNotExists(day0Token, ROLE_OFFICER_USERNAME, ROLE_OFFICER_PASSWORD, List.of(roleAdminRoleId), "+10000000003");
+            createUserIfNotExists(day0Token, CONFIG_OFFICER_USERNAME, CONFIG_OFFICER_PASSWORD, List.of(configAdminRoleId), "+10000000004");
+            createUserIfNotExists(day0Token, ALERTS_OFFICER_USERNAME, ALERTS_OFFICER_PASSWORD, List.of(alertsAdminRoleId), "+10000000005");
+            createUserIfNotExists(day0Token, AUDIT_OFFICER_USERNAME, AUDIT_OFFICER_PASSWORD, List.of(auditViewerRoleId), "+10000000006");
 
             BOOTSTRAPPED.set(true);
         } catch (Exception e) {
@@ -161,12 +161,12 @@ public abstract class BaseIntegrationTest {
         }
     }
 
-    private static void createUserIfNotExists(String token, String username, String password, List<UUID> roleIds) {
+    private static void createUserIfNotExists(String token, String username, String password, List<UUID> roleIds, String phone) {
         try {
             RestAssured.given()
                     .header("Authorization", "Bearer " + token)
                     .contentType(ContentType.JSON)
-                    .body(new UserCreateRequestDTO(username, password, roleIds))
+                    .body(new UserCreateRequestDTO(username, password, roleIds, com.freelance.alerts.AlertChannel.WHATSAPP, phone))
                     .when()
                     .post("/users/create");
         } catch (Exception ignored) {}

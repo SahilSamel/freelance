@@ -36,6 +36,12 @@ public enum UserConstraintErrors implements IError {
             "The user you are trying to delete does not exist.",
             "Raised when the target user for a delete operation does not exist",
             404
+    ),
+    CONTACT_ALREADY_EXISTS(
+            "FL_3106",
+            "A user with this contact information already exists.",
+            "Raised when contact value is already registered for this channel",
+            409
     );
 
     private static final String CATEGORY = "identity.user.constraint";

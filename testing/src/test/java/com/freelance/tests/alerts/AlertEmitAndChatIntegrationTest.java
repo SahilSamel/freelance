@@ -32,7 +32,7 @@ class AlertEmitAndChatIntegrationTest extends BaseIntegrationTest {
                 .given()
                 .header("Authorization", "Bearer " + userToken)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO(targetUsername, "SecureTargetPass123!"))
+                .body(new UserCreateRequestDTO(targetUsername, "SecureTargetPass123!", AlertChannel.WHATSAPP, "+919876543210"))
                 .when()
                 .post("/users/create")
                 .then()

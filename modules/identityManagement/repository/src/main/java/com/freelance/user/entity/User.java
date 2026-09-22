@@ -1,8 +1,11 @@
 package com.freelance.user.entity;
 
+import com.freelance.alerts.preference.entity.UserContactEntity;
 import com.freelance.rest.app.repository.entity.AbstractAuditEntity;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -30,6 +33,10 @@ public class User extends AbstractAuditEntity {
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private List<UserContactEntity> contacts = new ArrayList<>();
+
     public User() {
     }
 
@@ -44,10 +51,30 @@ public class User extends AbstractAuditEntity {
         this.password = password;
     }
 
+    public User(String username, String password, List<UserContactEntity> contacts) {
+        this.username = username;
+        this.password = password;
+        this.contacts = contacts != null ? contacts : new ArrayList<>();
+    }
+
+    public User(UUID id, String username, String password, List<UserContactEntity> contacts) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.contacts = contacts != null ? contacts : new ArrayList<>();
+    }
+
     @PrePersist
     protected void onCreateUser() {
         if (this.id == null) {
             this.id = UUID.randomUUID();
+        }
+        if (this.contacts != null) {
+            for (UserContactEntity contact : this.contacts) {
+                if (contact != null && contact.getUserId() == null) {
+                    contact.setUserId(this.id);
+                }
+            }
         }
     }
 
@@ -73,5 +100,31 @@ public class User extends AbstractAuditEntity {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public List<UserContactEntity> getContacts() {
+        if (contacts == null) {
+            contacts = new ArrayList<>();
+        }
+        return contacts;
+    }
+
+    public void setContacts(List<UserContactEntity> contacts) {
+        this.contacts = contacts != null ? contacts : new ArrayList<>();
+    }
+
+    public void addContact(UserContactEntity contact) {
+        if (contact != null) {
+            if (this.id != null && contact.getUserId() == null) {
+                contact.setUserId(this.id);
+            }
+            getContacts().add(contact);
+        }
+    }
+
+    public void removeContact(UserContactEntity contact) {
+        if (contact != null) {
+            getContacts().remove(contact);
+        }
     }
 }

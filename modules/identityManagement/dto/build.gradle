@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     implementation project(":Common:dto")
+    implementation project(":Common:enum")
 }
 
 test {

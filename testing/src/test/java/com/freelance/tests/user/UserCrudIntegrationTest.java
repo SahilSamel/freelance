@@ -1,6 +1,8 @@
 package com.freelance.tests.user;
 
+import com.freelance.alerts.AlertChannel;
 import com.freelance.tests.BaseIntegrationTest;
+import com.freelance.user.contact.UserContactRequestDTO;
 import com.freelance.user.create.UserCreateRequestDTO;
 import com.freelance.user.delete.UserDeleteRequestDTO;
 import com.freelance.user.read.UserReadRequestDTO;
@@ -10,6 +12,7 @@ import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
@@ -22,19 +25,23 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
     void fullUserLifecycle_success() {
         String token = getUserOfficerToken();
         String uniqueUsername = "test_user_" + System.currentTimeMillis();
+        String uniquePhone = "+1555" + (System.currentTimeMillis() % 10000000);
 
-        // 1. Create User
+        // 1. Create User with mandatory contact info
         String userIdStr = RestAssured
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO(uniqueUsername, "SecurePass123!"))
+                .body(new UserCreateRequestDTO(uniqueUsername, "SecurePass123!", AlertChannel.WHATSAPP, uniquePhone))
                 .when()
                 .post("/users/create")
                 .then()
                 .statusCode(201)
                 .body("id", notNullValue())
                 .body("username", equalTo(uniqueUsername))
+                .body("contacts", hasSize(1))
+                .body("contacts[0].contactValue", equalTo(uniquePhone))
+                .body("contacts[0].channel", equalTo("WHATSAPP"))
                 .extract()
                 .jsonPath()
                 .getString("id");
@@ -67,21 +74,25 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
                 .body("userDTO.id", equalTo(userIdStr))
                 .body("userDTO.username", equalTo(uniqueUsername));
 
-        // 4. Update User
+        // 4. Update User (including contacts)
         String updatedUsername = uniqueUsername + "_u";
+        String updatedWhatsApp = "+19998887766";
         RestAssured
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new UserUpdateRequestDTO(userId, updatedUsername, "UpdatedPassword456!"))
+                .body(new UserUpdateRequestDTO(userId, updatedUsername, "UpdatedPassword456!", AlertChannel.WHATSAPP, updatedWhatsApp))
                 .when()
                 .post("/users/update")
                 .then()
                 .statusCode(200)
                 .body("id", equalTo(userIdStr))
-                .body("username", equalTo(updatedUsername));
+                .body("username", equalTo(updatedUsername))
+                .body("contacts", hasSize(1))
+                .body("contacts[0].channel", equalTo("WHATSAPP"))
+                .body("contacts[0].contactValue", equalTo(updatedWhatsApp));
 
-        // 5. Delete User
+        // 5. Delete User (cascades to FL_USER_CONTACT and FL_USER_ROLE)
         RestAssured
                 .given()
                 .header("Authorization", "Bearer " + token)
@@ -116,7 +127,7 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO("", "Pass1234!"))
+                .body(new UserCreateRequestDTO("", "Pass1234!", AlertChannel.WHATSAPP, "+15551112233"))
                 .when()
                 .post("/users/create")
                 .then()
@@ -133,7 +144,7 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO("ab", "Pass1234!"))
+                .body(new UserCreateRequestDTO("ab", "Pass1234!", AlertChannel.WHATSAPP, "+15551112234"))
                 .when()
                 .post("/users/create")
                 .then()
@@ -150,7 +161,71 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO("valid_user_" + System.currentTimeMillis(), "short"))
+                .body(new UserCreateRequestDTO("valid_user_" + System.currentTimeMillis(), "short", AlertChannel.WHATSAPP, "+15551112235"))
+                .when()
+                .post("/users/create")
+                .then()
+                .statusCode(400)
+                .body("errorCode", equalTo("FL_1001"));
+    }
+
+    @Test
+    @DisplayName("create user without contacts returns 400 validation error (FL_1001)")
+    void createUser_withoutContacts_returns400() {
+        String token = getUserOfficerToken();
+
+        RestAssured
+                .given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(new UserCreateRequestDTO("user_nocontact_" + System.currentTimeMillis(), "ValidPass123!"))
+                .when()
+                .post("/users/create")
+                .then()
+                .statusCode(400)
+                .body("errorCode", equalTo("FL_1001"));
+    }
+
+    @Test
+    @DisplayName("create user with blank contact value returns 400 validation error (FL_1001)")
+    void createUser_blankContactValue_returns400() {
+        String token = getUserOfficerToken();
+
+        RestAssured
+                .given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(new UserCreateRequestDTO(
+                        "user_blankcontact_" + System.currentTimeMillis(),
+                        "ValidPass123!",
+                        List.of(),
+                        List.of(new UserContactRequestDTO(AlertChannel.WHATSAPP, "   "))
+                ))
+                .when()
+                .post("/users/create")
+                .then()
+                .statusCode(400)
+                .body("errorCode", equalTo("FL_1001"));
+    }
+
+    @Test
+    @DisplayName("create user with duplicate channel returns 400 validation error (FL_1001)")
+    void createUser_duplicateChannel_returns400() {
+        String token = getUserOfficerToken();
+
+        RestAssured
+                .given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(new UserCreateRequestDTO(
+                        "user_dupchan_" + System.currentTimeMillis(),
+                        "ValidPass123!",
+                        List.of(),
+                        List.of(
+                                new UserContactRequestDTO(AlertChannel.WHATSAPP, "+15553334455"),
+                                new UserContactRequestDTO(AlertChannel.WHATSAPP, "+15553334466")
+                        )
+                ))
                 .when()
                 .post("/users/create")
                 .then()
@@ -169,7 +244,7 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO(dupUsername, "Pass1234!"))
+                .body(new UserCreateRequestDTO(dupUsername, "Pass1234!", AlertChannel.WHATSAPP, "+15554445566"))
                 .when()
                 .post("/users/create")
                 .then()
@@ -180,12 +255,42 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO(dupUsername, "AnotherPass123!"))
+                .body(new UserCreateRequestDTO(dupUsername, "AnotherPass123!", AlertChannel.WHATSAPP, "+15554445577"))
                 .when()
                 .post("/users/create")
                 .then()
                 .statusCode(409)
                 .body("errorCode", equalTo("FL_3101"));
+    }
+
+    @Test
+    @DisplayName("create user with duplicate contact across users returns 409 CONTACT_ALREADY_EXISTS (FL_3106)")
+    void createUser_duplicateContact_returns409() {
+        String token = getUserOfficerToken();
+        String phone = "+1555999" + (System.currentTimeMillis() % 10000);
+
+        // 1st create
+        RestAssured
+                .given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(new UserCreateRequestDTO("user_contact_a_" + System.currentTimeMillis(), "Pass1234!", AlertChannel.WHATSAPP, phone))
+                .when()
+                .post("/users/create")
+                .then()
+                .statusCode(201);
+
+        // 2nd create with duplicate contact value for same channel
+        RestAssured
+                .given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(new UserCreateRequestDTO("user_contact_b_" + System.currentTimeMillis(), "AnotherPass123!", AlertChannel.WHATSAPP, phone))
+                .when()
+                .post("/users/create")
+                .then()
+                .statusCode(409)
+                .body("errorCode", equalTo("FL_3106"));
     }
 
     @Test
@@ -274,6 +379,48 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("update user with blank contact value returns 400 validation error (FL_1001)")
+    void updateUser_blankContactValue_returns400() {
+        String token = getUserOfficerToken();
+
+        RestAssured
+                .given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(new UserUpdateRequestDTO(UUID.randomUUID(), "some_username", "NewPassword123!", AlertChannel.WHATSAPP, "   "))
+                .when()
+                .post("/users/update")
+                .then()
+                .statusCode(400)
+                .body("errorCode", equalTo("FL_1001"));
+    }
+
+    @Test
+    @DisplayName("update user with duplicate channels returns 400 validation error (FL_1001)")
+    void updateUser_duplicateChannels_returns400() {
+        String token = getUserOfficerToken();
+
+        RestAssured
+                .given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(new UserUpdateRequestDTO(
+                        UUID.randomUUID(),
+                        "some_username",
+                        "NewPassword123!",
+                        List.of(
+                                new com.freelance.user.contact.UserContactRequestDTO(AlertChannel.WHATSAPP, "+15551111111"),
+                                new com.freelance.user.contact.UserContactRequestDTO(AlertChannel.WHATSAPP, "+15552222222")
+                        )
+                ))
+                .when()
+                .post("/users/update")
+                .then()
+                .statusCode(400)
+                .body("errorCode", equalTo("FL_1001"));
+    }
+
+    @Test
     @DisplayName("delete non-existent user returns 404 USER_TO_DELETE_NOT_FOUND (FL_3105)")
     void deleteUser_nonExistentId_returns404() {
         String token = getUserOfficerToken();
@@ -318,7 +465,7 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO("unauthorized_user", "Password123!"))
+                .body(new UserCreateRequestDTO("unauthorized_user", "Password123!", AlertChannel.WHATSAPP, "+15550009988"))
                 .when()
                 .post("/users/create")
                 .then()
@@ -356,4 +503,3 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
                 .statusCode(anyOf(equalTo(400), equalTo(401)));
     }
 }
-

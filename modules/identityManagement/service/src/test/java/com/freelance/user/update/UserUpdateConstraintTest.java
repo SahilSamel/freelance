@@ -95,5 +95,94 @@ class UserUpdateConstraintTest {
     void defaultConstructor() {
         UserUpdateConstraint c = new UserUpdateConstraint();
         assertNotNull(c);
+        assertNull(c.checkConstraints(null));
+    }
+
+    @Test
+    @DisplayName("updating contact with existing contact of same user passes")
+    void sameUserContact_passes() {
+        FakeUserRepository repo = new FakeUserRepository();
+        UUID userId = UUID.randomUUID();
+        User existing = new User(userId, "user1", "hashedPass");
+        repo.persist(existing);
+
+        com.freelance.alerts.preference.repository.UserContactRepository contactRepo = new com.freelance.alerts.preference.repository.UserContactRepository() {
+            @Override
+            public java.util.Optional<com.freelance.alerts.preference.entity.UserContactEntity> findByContactAndChannel(String contactValue, com.freelance.alerts.AlertChannel channel) {
+                if ("+1234567890".equals(contactValue)) {
+                    return java.util.Optional.of(new com.freelance.alerts.preference.entity.UserContactEntity(UUID.randomUUID(), userId, channel, contactValue));
+                }
+                return java.util.Optional.empty();
+            }
+        };
+
+        UserUpdateConstraint constraint = new UserUpdateConstraint(repo, contactRepo);
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(
+                userId,
+                "user1",
+                null,
+                com.freelance.alerts.AlertChannel.WHATSAPP,
+                "+1234567890"
+        );
+        User result = constraint.checkConstraints(request);
+        assertNotNull(result);
+    }
+
+    @Test
+    @DisplayName("updating contact with contact of another user raises CONTACT_ALREADY_EXISTS")
+    void otherUserContact_raisesError() {
+        FakeUserRepository repo = new FakeUserRepository();
+        UUID userId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+        User existing = new User(userId, "user1", "hashedPass");
+        repo.persist(existing);
+
+        com.freelance.alerts.preference.repository.UserContactRepository contactRepo = new com.freelance.alerts.preference.repository.UserContactRepository() {
+            @Override
+            public java.util.Optional<com.freelance.alerts.preference.entity.UserContactEntity> findByContactAndChannel(String contactValue, com.freelance.alerts.AlertChannel channel) {
+                if ("+1234567890".equals(contactValue)) {
+                    return java.util.Optional.of(new com.freelance.alerts.preference.entity.UserContactEntity(UUID.randomUUID(), otherUserId, channel, contactValue));
+                }
+                return java.util.Optional.empty();
+            }
+        };
+
+        UserUpdateConstraint constraint = new UserUpdateConstraint(repo, contactRepo);
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(
+                userId,
+                "user1",
+                null,
+                com.freelance.alerts.AlertChannel.WHATSAPP,
+                "+1234567890"
+        );
+        ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(request));
+        assertEquals(UserConstraintErrors.CONTACT_ALREADY_EXISTS, ex.getError());
+    }
+
+    @Test
+    @DisplayName("null contact items or blank contact values in update are safely skipped")
+    void invalidContactItems_skipped() {
+        FakeUserRepository repo = new FakeUserRepository();
+        UUID userId = UUID.randomUUID();
+        User existing = new User(userId, "user1", "hashedPass");
+        repo.persist(existing);
+
+        com.freelance.alerts.preference.repository.UserContactRepository contactRepo = new com.freelance.alerts.preference.repository.UserContactRepository() {
+            @Override
+            public java.util.Optional<com.freelance.alerts.preference.entity.UserContactEntity> findByContactAndChannel(String contactValue, com.freelance.alerts.AlertChannel channel) {
+                return java.util.Optional.empty();
+            }
+        };
+
+        UserUpdateConstraint constraint = new UserUpdateConstraint(repo, contactRepo);
+        java.util.List<com.freelance.user.contact.UserContactRequestDTO> contacts = new java.util.ArrayList<>();
+        contacts.add(null);
+        contacts.add(new com.freelance.user.contact.UserContactRequestDTO(null, "+1234567890"));
+        contacts.add(new com.freelance.user.contact.UserContactRequestDTO(com.freelance.alerts.AlertChannel.WHATSAPP, null));
+        contacts.add(new com.freelance.user.contact.UserContactRequestDTO(com.freelance.alerts.AlertChannel.WHATSAPP, "   "));
+        contacts.add(new com.freelance.user.contact.UserContactRequestDTO(com.freelance.alerts.AlertChannel.PUSH, "token123"));
+
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(userId, "user1", null, contacts);
+        assertDoesNotThrow(() -> constraint.checkConstraints(request));
     }
 }

@@ -101,4 +101,103 @@ class UserUpdateValidationTest {
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
         assertTrue(context.getValidationErrors().get("password").contains(UserValidationErrors.INVALID_PASSWORD));
     }
+
+    @Test
+    @DisplayName("valid request with contacts passes validation")
+    void validContacts_passes() {
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(
+                UUID.randomUUID(),
+                "updated_user",
+                "NewPassword123",
+                com.freelance.alerts.AlertChannel.WHATSAPP,
+                "+1234567890"
+        );
+        assertDoesNotThrow(() -> validation.validateRequest(request));
+    }
+
+    @Test
+    @DisplayName("empty contacts list raises CONTACT_INFO_REQUIRED")
+    void emptyContacts_raisesError() {
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(
+                UUID.randomUUID(),
+                "updated_user",
+                "NewPassword123",
+                java.util.List.of()
+        );
+        assertThrows(ValidationException.class, () -> validation.validateRequest(request));
+        assertTrue(context.getValidationErrors().get("contacts").contains(UserValidationErrors.CONTACT_INFO_REQUIRED));
+    }
+
+    @Test
+    @DisplayName("null contact element inside list raises CONTACT_INFO_REQUIRED")
+    void nullContactElement_raisesError() {
+        java.util.List<com.freelance.user.contact.UserContactRequestDTO> contacts = new java.util.ArrayList<>();
+        contacts.add(null);
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(
+                UUID.randomUUID(),
+                "updated_user",
+                "NewPassword123",
+                contacts
+        );
+        assertThrows(ValidationException.class, () -> validation.validateRequest(request));
+        assertTrue(context.getValidationErrors().get("contacts").contains(UserValidationErrors.CONTACT_INFO_REQUIRED));
+    }
+
+    @Test
+    @DisplayName("contact with null channel raises INVALID_CONTACT_CHANNEL")
+    void nullContactChannel_raisesError() {
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(
+                UUID.randomUUID(),
+                "updated_user",
+                "NewPassword123",
+                java.util.List.of(new com.freelance.user.contact.UserContactRequestDTO(null, "+1234567890"))
+        );
+        assertThrows(ValidationException.class, () -> validation.validateRequest(request));
+        assertTrue(context.getValidationErrors().get("contacts.channel").contains(UserValidationErrors.INVALID_CONTACT_CHANNEL));
+    }
+
+    @Test
+    @DisplayName("contact with blank contactValue raises INVALID_CONTACT_VALUE")
+    void blankContactValue_raisesError() {
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(
+                UUID.randomUUID(),
+                "updated_user",
+                "NewPassword123",
+                java.util.List.of(new com.freelance.user.contact.UserContactRequestDTO(com.freelance.alerts.AlertChannel.WHATSAPP, "   "))
+        );
+        assertThrows(ValidationException.class, () -> validation.validateRequest(request));
+        assertTrue(context.getValidationErrors().get("contacts.contactValue").contains(UserValidationErrors.INVALID_CONTACT_VALUE));
+    }
+
+    @Test
+    @DisplayName("duplicate contact channels raise DUPLICATE_CONTACT_CHANNEL")
+    void duplicateContactChannels_raiseError() {
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(
+                UUID.randomUUID(),
+                "updated_user",
+                "NewPassword123",
+                java.util.List.of(
+                        new com.freelance.user.contact.UserContactRequestDTO(com.freelance.alerts.AlertChannel.WHATSAPP, "+1234567890"),
+                        new com.freelance.user.contact.UserContactRequestDTO(com.freelance.alerts.AlertChannel.WHATSAPP, "+0987654321")
+                )
+        );
+        assertThrows(ValidationException.class, () -> validation.validateRequest(request));
+        assertTrue(context.getValidationErrors().get("contacts.channel").contains(UserValidationErrors.DUPLICATE_CONTACT_CHANNEL));
+    }
+
+    @Test
+    @DisplayName("duplicate contact values across distinct channels raise DUPLICATE_CONTACT_VALUE")
+    void duplicateContactValues_raiseError() {
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(
+                UUID.randomUUID(),
+                "updated_user",
+                "NewPassword123",
+                java.util.List.of(
+                        new com.freelance.user.contact.UserContactRequestDTO(com.freelance.alerts.AlertChannel.WHATSAPP, "+1234567890"),
+                        new com.freelance.user.contact.UserContactRequestDTO(com.freelance.alerts.AlertChannel.PUSH, "+1234567890")
+                )
+        );
+        assertThrows(ValidationException.class, () -> validation.validateRequest(request));
+        assertTrue(context.getValidationErrors().get("contacts.contactValue").contains(UserValidationErrors.DUPLICATE_CONTACT_VALUE));
+    }
 }

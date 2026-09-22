@@ -42,4 +42,50 @@ class UserUpdateServiceTest {
         assertEquals(userId, response.id());
         assertEquals(1, repo.mergeCalls);
     }
+
+    @Test
+    @DisplayName("updateUser with contacts updates user contacts and returns them in response DTO")
+    void updateUser_withContacts() {
+        FakeUserRepository repo = new FakeUserRepository();
+        UUID userId = UUID.randomUUID();
+        User existing = new User(userId, "old_name", "oldHash");
+        repo.persist(existing);
+
+        com.freelance.alerts.preference.repository.UserContactRepository contactRepo = new com.freelance.alerts.preference.repository.UserContactRepository() {
+            @Override
+            public java.util.Optional<com.freelance.alerts.preference.entity.UserContactEntity> findByContactAndChannel(String contactValue, com.freelance.alerts.AlertChannel channel) {
+                return java.util.Optional.empty();
+            }
+        };
+
+        UserUpdateService service = new UserUpdateService(repo, contactRepo, new UserUpdateAssembler());
+        UserUpdateRequestDTO request = new UserUpdateRequestDTO(
+                userId,
+                "updated_name",
+                "NewPassword123",
+                com.freelance.alerts.AlertChannel.WHATSAPP,
+                "+19876543210"
+        );
+        UserUpdateResponseDTO response = service.updateUser(request);
+
+        assertNotNull(response);
+        assertEquals("updated_name", response.username());
+        assertEquals(userId, response.id());
+        assertEquals(1, response.contacts().size());
+        assertEquals(com.freelance.alerts.AlertChannel.WHATSAPP, response.contacts().get(0).channel());
+        assertEquals("+19876543210", response.contacts().get(0).contactValue());
+        assertEquals(1, repo.mergeCalls);
+    }
+
+    @Test
+    @DisplayName("test UserUpdateService constructors")
+    void testConstructors() {
+        assertNotNull(new UserUpdateService());
+        assertNotNull(new UserUpdateService(new FakeUserRepository(), new UserUpdateAssembler()));
+        assertNotNull(new UserUpdateService(
+                new FakeUserRepository(),
+                new com.freelance.alerts.preference.repository.UserContactRepository(),
+                new UserUpdateAssembler()
+        ));
+    }
 }

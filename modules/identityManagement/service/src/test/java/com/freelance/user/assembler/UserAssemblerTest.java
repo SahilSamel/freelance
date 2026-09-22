@@ -1,5 +1,8 @@
 package com.freelance.user.assembler;
 
+import com.freelance.alerts.AlertChannel;
+import com.freelance.alerts.preference.entity.UserContactEntity;
+import com.freelance.user.contact.UserContactResponseDTO;
 import com.freelance.user.create.UserCreateRequestDTO;
 import com.freelance.user.create.UserCreateResponseDTO;
 import com.freelance.user.create.assembler.UserCreateAssembler;
@@ -28,8 +31,10 @@ class UserAssemblerTest {
         assertNull(createAssembler.toEntity(null));
         assertNull(createAssembler.fromEntity(null));
         assertNull(createAssembler.fromEntity(null, List.of()));
+        assertNull(createAssembler.fromEntity(null, List.of(), List.of()));
+        assertNull(createAssembler.toContactResponseDTO(null));
 
-        UserCreateRequestDTO request = new UserCreateRequestDTO("testuser", "Password@123");
+        UserCreateRequestDTO request = new UserCreateRequestDTO("testuser", "Password@123", AlertChannel.WHATSAPP, "+1234567890");
         User user = createAssembler.toEntity(request);
         assertNotNull(user);
         assertEquals("testuser", user.getUsername());
@@ -53,6 +58,24 @@ class UserAssemblerTest {
         UserCreateResponseDTO response3 = createAssembler.fromEntity(user, null);
         assertNotNull(response3);
         assertTrue(response3.roleIds().isEmpty());
+
+        UserContactEntity contactEntity = new UserContactEntity(UUID.randomUUID(), userId, AlertChannel.WHATSAPP, "+1234567890");
+        UserContactResponseDTO contactDto = createAssembler.toContactResponseDTO(contactEntity);
+        assertNotNull(contactDto);
+        assertEquals(contactEntity.getId(), contactDto.id());
+        assertEquals(userId, contactDto.userId());
+        assertEquals(AlertChannel.WHATSAPP, contactDto.channel());
+        assertEquals("+1234567890", contactDto.contactValue());
+
+        UserCreateResponseDTO response4 = createAssembler.fromEntity(user, List.of(roleId), List.of(contactDto));
+        assertNotNull(response4);
+        assertEquals(1, response4.contacts().size());
+        assertEquals("+1234567890", response4.contacts().get(0).contactValue());
+
+        UserCreateResponseDTO response5 = createAssembler.fromEntity(user, null, null);
+        assertNotNull(response5);
+        assertTrue(response5.roleIds().isEmpty());
+        assertTrue(response5.contacts().isEmpty());
     }
 
     @Test
@@ -81,5 +104,70 @@ class UserAssemblerTest {
         assertEquals("hashedPass", response.userDTO().password());
         assertEquals(now, response.userDTO().createdDate());
         assertEquals(now, response.userDTO().lastUpdatedDate());
+    }
+
+    @Test
+    @DisplayName("UserUpdateAssembler updates username, password, and contacts")
+    void testUserUpdateAssembler() {
+        com.freelance.user.update.assembler.UserUpdateAssembler updateAssembler = new com.freelance.user.update.assembler.UserUpdateAssembler();
+        assertNull(updateAssembler.fromEntity(null));
+        assertNull(updateAssembler.toContactResponseDTO(null));
+
+        User user = new User("original_user", "original_pass");
+        user.setId(UUID.randomUUID());
+        user.addContact(new UserContactEntity(AlertChannel.WHATSAPP, "+1111111111"));
+
+        // apply null request does nothing
+        updateAssembler.applyUpdates(user, null);
+        updateAssembler.applyUpdates(null, new com.freelance.user.update.UserUpdateRequestDTO(user.getId(), "new_user", "new_pass"));
+        assertEquals("original_user", user.getUsername());
+
+        // apply updates with new username, password, and contacts
+        com.freelance.user.update.UserUpdateRequestDTO request = new com.freelance.user.update.UserUpdateRequestDTO(
+                user.getId(),
+                "updated_user",
+                "NewPassword123",
+                List.of(new com.freelance.user.contact.UserContactRequestDTO(AlertChannel.PUSH, "fcm_token_999"))
+        );
+        updateAssembler.applyUpdates(user, request);
+
+        assertEquals("updated_user", user.getUsername());
+        assertEquals(1, user.getContacts().size());
+        assertEquals(AlertChannel.PUSH, user.getContacts().get(0).getChannel());
+        assertEquals("fcm_token_999", user.getContacts().get(0).getContactValue());
+
+        com.freelance.user.update.UserUpdateResponseDTO response = updateAssembler.fromEntity(user);
+        assertNotNull(response);
+        assertEquals(user.getId(), response.id());
+        assertEquals("updated_user", response.username());
+        assertEquals(1, response.contacts().size());
+        assertEquals("fcm_token_999", response.contacts().get(0).contactValue());
+    }
+
+    @Test
+    @DisplayName("User entity helper methods add, remove, and get contacts")
+    void testUserEntityMethods() {
+        User user = new User();
+        user.setUsername("test");
+        user.setPassword("pass");
+        assertNotNull(user.getContacts());
+
+        UserContactEntity contact1 = new UserContactEntity(AlertChannel.WHATSAPP, "+123");
+        user.addContact(contact1);
+        user.addContact(null);
+        assertEquals(1, user.getContacts().size());
+
+        user.removeContact(contact1);
+        user.removeContact(null);
+        assertEquals(0, user.getContacts().size());
+
+        user.setContacts(null);
+        assertNotNull(user.getContacts());
+
+        User userWithContacts = new User("u", "p", List.of(contact1));
+        assertEquals(1, userWithContacts.getContacts().size());
+
+        User userWithIdAndContacts = new User(UUID.randomUUID(), "u", "p", List.of(contact1));
+        assertEquals(1, userWithIdAndContacts.getContacts().size());
     }
 }

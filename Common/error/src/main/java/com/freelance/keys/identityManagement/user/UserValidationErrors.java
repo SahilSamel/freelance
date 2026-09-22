@@ -48,6 +48,36 @@ public enum UserValidationErrors implements IError {
             "The password is shorter than the required minimum length.",
             "Password does not meet the minimum length requirement",
             400
+    ),
+    CONTACT_INFO_REQUIRED(
+            "FL_3008",
+            "At least one contact information entry is required.",
+            "Contact info is missing or empty",
+            400
+    ),
+    INVALID_CONTACT_CHANNEL(
+            "FL_3009",
+            "The contact channel is required and must be a valid channel.",
+            "Contact channel is null or invalid",
+            400
+    ),
+    INVALID_CONTACT_VALUE(
+            "FL_3010",
+            "The contact value is required and cannot be blank.",
+            "Contact value is null or blank",
+            400
+    ),
+    DUPLICATE_CONTACT_CHANNEL(
+            "FL_3011",
+            "Duplicate contact channels are not allowed for the same user.",
+            "Multiple contacts specified with the same channel",
+            400
+    ),
+    DUPLICATE_CONTACT_VALUE(
+            "FL_3012",
+            "Duplicate contact values are not allowed within the same request.",
+            "Multiple contacts specified with the same value",
+            400
     );
 
     private static final String CATEGORY = "identity.user.validation";

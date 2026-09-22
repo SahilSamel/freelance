@@ -234,11 +234,12 @@ class Day0BootstrapIntegrationTest extends BaseIntegrationTest {
     }
 
     private void createPersonaUser(String token, String username, String password, List<UUID> roleIds) {
+        String phone = "+1888" + String.format("%07d", Math.abs(username.hashCode()) % 10000000);
         RestAssured
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO(username, password, roleIds))
+                .body(new UserCreateRequestDTO(username, password, roleIds, com.freelance.alerts.AlertChannel.WHATSAPP, phone))
                 .when()
                 .post("/users/create")
                 .then()

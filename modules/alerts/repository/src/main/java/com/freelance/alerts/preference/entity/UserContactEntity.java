@@ -49,8 +49,19 @@ public class UserContactEntity extends AbstractAuditEntity {
 
     public UserContactEntity() {}
 
+    public UserContactEntity(AlertChannel channel, String contactValue) {
+        this(null, null, channel, contactValue, false, true, null);
+    }
+
     public UserContactEntity(UUID id, UUID userId, AlertChannel channel, String contactValue) {
         this(id, userId, channel, contactValue, false, true, null);
+    }
+
+    @PrePersist
+    protected void onPrePersist() {
+        if (this.id == null) {
+            this.id = UUID.randomUUID();
+        }
     }
 
     public UserContactEntity(UUID id, UUID userId, AlertChannel channel, String contactValue, boolean isOptedOut, boolean isActive) {
