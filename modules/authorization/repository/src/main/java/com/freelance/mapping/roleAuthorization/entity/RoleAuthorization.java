@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
                 query = "DELETE FROM RoleAuthorization ra WHERE ra.role.id IN (SELECT r.id FROM Role r WHERE r.isSystem = TRUE)"
         )
 })
-@Table(name = "FL_ROLE_AUTHORIZATION", schema = "freelance")
+@Table(name = "FL_ROLE_AUTHORIZATION")
 public class RoleAuthorization {
 
     public static final String QUERY_FIND_ALL_WITH_DETAILS = "RoleAuthorization.findAllWithDetails";

@@ -13,7 +13,7 @@ import java.util.UUID;
         @NamedQuery(name = Role.QUERY_FIND_ALL_SYSTEM_ROLES, query = "SELECT r FROM Role r WHERE r.isSystem = TRUE"),
         @NamedQuery(name = Role.QUERY_DELETE_SYSTEM_ROLES, query = "DELETE FROM Role r WHERE r.isSystem = TRUE")
 })
-@Table(name = "FL_ROLE", schema = "freelance")
+@Table(name = "FL_ROLE")
 public class Role extends AbstractAuditEntity {
 
     public static final String QUERY_FIND_ALL = "Role.findAll";

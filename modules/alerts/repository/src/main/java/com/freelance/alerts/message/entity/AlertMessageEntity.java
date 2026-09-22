@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "FL_ALERT_MESSAGE", schema = "freelance")
+@Table(name = "FL_ALERT_MESSAGE")
 @NamedQueries({
         @NamedQuery(
                 name = "AlertMessage.findByUserId",

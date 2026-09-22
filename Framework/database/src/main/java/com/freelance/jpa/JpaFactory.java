@@ -42,7 +42,6 @@ public class JpaFactory {
                         .applySetting("jakarta.persistence.jdbc.password", databaseConfig.password())
                         .applySetting("jakarta.persistence.jdbc.driver", "org.postgresql.Driver")
                         .applySetting("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect")
-                        .applySetting("hibernate.default_schema", "freelance")
                         .applySetting("hibernate.hbm2ddl.auto", "validate")
                         .build();
 

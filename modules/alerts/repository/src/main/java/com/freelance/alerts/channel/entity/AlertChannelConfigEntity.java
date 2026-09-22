@@ -5,7 +5,7 @@ import com.freelance.rest.app.repository.entity.AbstractAuditEntity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "FL_ALERT_CHANNEL_CONFIG", schema = "freelance")
+@Table(name = "FL_ALERT_CHANNEL_CONFIG")
 public class AlertChannelConfigEntity extends AbstractAuditEntity {
 
     @Id

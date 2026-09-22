@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "FL_AUDIT_LOG", schema = "freelance")
+@Table(name = "FL_AUDIT_LOG")
 public class AuditLog extends AbstractAuditEntity {
 
     @Id
@@ -22,9 +22,6 @@ public class AuditLog extends AbstractAuditEntity {
 
     @Column(name = "user_id", updatable = false)
     private UUID userId;
-
-    @Column(name = "tenant_id", updatable = false, length = 255)
-    private String tenantId;
 
     @Column(name = "http_method", nullable = false, updatable = false, length = 10)
     private String httpMethod;
@@ -57,7 +54,6 @@ public class AuditLog extends AbstractAuditEntity {
             Instant timestamp,
             String traceId,
             UUID userId,
-            String tenantId,
             String httpMethod,
             String endpoint,
             String requestData,
@@ -70,7 +66,6 @@ public class AuditLog extends AbstractAuditEntity {
         this.timestamp = timestamp;
         this.traceId = traceId;
         this.userId = userId;
-        this.tenantId = tenantId;
         this.httpMethod = httpMethod;
         this.endpoint = endpoint;
         this.requestData = requestData;
@@ -85,7 +80,6 @@ public class AuditLog extends AbstractAuditEntity {
             Instant timestamp,
             String traceId,
             UUID userId,
-            String tenantId,
             String httpMethod,
             String endpoint,
             int statusCode,
@@ -94,7 +88,7 @@ public class AuditLog extends AbstractAuditEntity {
             String userAgent,
             String authMechanism
     ) {
-        this(timestamp, traceId, userId, tenantId, httpMethod, endpoint, null, statusCode, durationMs, ipAddress, userAgent, authMechanism);
+        this(timestamp, traceId, userId, httpMethod, endpoint, null, statusCode, durationMs, ipAddress, userAgent, authMechanism);
     }
 
     /**
@@ -140,14 +134,6 @@ public class AuditLog extends AbstractAuditEntity {
 
     public void setUserId(UUID userId) {
         this.userId = userId;
-    }
-
-    public String getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
     }
 
     public String getHttpMethod() {

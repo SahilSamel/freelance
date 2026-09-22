@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "FL_ALERT_TEMPLATE", schema = "freelance")
+@Table(name = "FL_ALERT_TEMPLATE")
 @NamedQueries({
         @NamedQuery(
                 name = "AlertTemplate.findByKey",

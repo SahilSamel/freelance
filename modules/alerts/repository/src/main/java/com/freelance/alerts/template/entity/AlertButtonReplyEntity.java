@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "FL_ALERT_BUTTON_REPLY", schema = "freelance")
+@Table(name = "FL_ALERT_BUTTON_REPLY")
 @NamedQueries({
         @NamedQuery(
                 name = "AlertButtonReply.findByButtonId",

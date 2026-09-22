@@ -9,7 +9,7 @@ import java.util.UUID;
         @NamedQuery(name = Authorization.QUERY_FIND_ALL_KEYS, query = "SELECT a.key FROM Authorization a"),
         @NamedQuery(name = Authorization.QUERY_FIND_BY_KEY, query = "SELECT a FROM Authorization a WHERE a.key = :key")
 })
-@Table(name = "FL_AUTHORIZATION", schema = "freelance")
+@Table(name = "FL_AUTHORIZATION")
 public class Authorization {
 
     public static final String QUERY_FIND_ALL = "Authorization.findAll";

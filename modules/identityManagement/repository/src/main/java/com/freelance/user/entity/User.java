@@ -15,7 +15,7 @@ import java.util.UUID;
         @NamedQuery(name = User.QUERY_COUNT_BY_USERNAME, query = "SELECT COUNT(u) FROM User u WHERE u.username = :username"),
         @NamedQuery(name = User.QUERY_COUNT_ALL, query = "SELECT COUNT(u) FROM User u")
 })
-@Table(name = "FL_USERS", schema = "freelance")
+@Table(name = "FL_USERS")
 public class User extends AbstractAuditEntity {
 
     public static final String QUERY_FIND_BY_USERNAME = "User.findByUsername";

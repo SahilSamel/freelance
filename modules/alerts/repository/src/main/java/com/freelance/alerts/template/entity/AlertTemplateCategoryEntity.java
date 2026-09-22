@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "FL_ALERT_TEMPLATE_CATEGORY", schema = "freelance")
+@Table(name = "FL_ALERT_TEMPLATE_CATEGORY")
 @NamedQueries({
         @NamedQuery(
                 name = "AlertTemplateCategory.findByKey",
