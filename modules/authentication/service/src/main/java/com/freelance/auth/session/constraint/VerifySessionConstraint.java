@@ -13,7 +13,7 @@ public class VerifySessionConstraint extends AbstractConstraint {
 
     public void checkConstraints(SessionVerifyRequestDTO request) {
 
-        SessionCacheEntry sessionCache = CacheManager.getInstance().get(SessionCacheConfig.NAME, request.userId());
+        SessionCacheEntry sessionCache = CacheManager.get(SessionCacheConfig.NAME, request.userId());
 
         if (sessionCache == null) {
             raiseConstraintError(SessionConstraintErrors.INVALID_SESSION);

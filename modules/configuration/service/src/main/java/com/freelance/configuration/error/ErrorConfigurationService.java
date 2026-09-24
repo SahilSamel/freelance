@@ -34,7 +34,7 @@ public class ErrorConfigurationService {
     }
 
     public void preloadErrorCacheEntries() {
-        CacheManager.getInstance().preload(ErrorMessageCache.NAME, repository.getAllErrorEntries());
+        CacheManager.preload(ErrorMessageCache.NAME, repository.getAllErrorEntries());
     }
 
     public ErrorConfigEntry loadErrorConfig(String errorId) {
@@ -80,7 +80,7 @@ public class ErrorConfigurationService {
         repository.merge(entity);
 
         try {
-            CacheManager.getInstance().put(
+            CacheManager.put(
                     ErrorMessageCache.NAME,
                     entity.getErrorId(),
                     new ErrorConfigEntry(entity.getStatusCode(), entity.getErrorMessage())

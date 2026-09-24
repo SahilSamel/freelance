@@ -10,6 +10,7 @@ import com.freelance.keys.authentication.support.SupportConfigKeys;
 import com.freelance.keys.authentication.support.SupportConstraintErrors;
 import com.freelance.manager.CacheManager;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
+import com.freelance.rest.app.transaction.Transaction;
 import com.freelance.system.SystemHardcoding;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +38,7 @@ class AuthenticationSupportTest {
 
         // Configure vendor public key into cache
         String pubKeyBase64 = VendorSupportTestHelper.encodeKeyToBase64(vendorKeyPair.getPublic());
-        CacheManager.getInstance().put("cache_SystemConfig",
+        CacheManager.put("cache_SystemConfig",
                 SupportConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey(),
                 pubKeyBase64);
     }
@@ -111,5 +112,56 @@ class AuthenticationSupportTest {
                 authentication.verify(new AuthVerifyRequestDTO(token))
         );
         assertEquals(SupportConstraintErrors.SUPPORT_ACCESS_DISABLED.getIndirectionCode(), ex.getError().getIndirectionCode());
+    }
+
+    @Test
+    @DisplayName("verify throws INVALID_SESSION when standard token tenant does not match active request tenant")
+    void testVerify_crossTenantTokenRejection() {
+        // Generate a token for tenant "ironfit"
+        java.util.UUID userId = java.util.UUID.randomUUID();
+        String sessionKey = "sess-12345";
+        com.freelance.auth.token.TokenUtility tokenUtility = new com.freelance.auth.token.TokenUtility();
+        String token = tokenUtility.generateToken(
+                new com.freelance.auth.dto.TokenGenerateRequestDTO(userId, sessionKey, "ironfit")
+        ).token();
+
+        // Active request context is for tenant "crossgym"
+        com.freelance.rest.app.transaction.Transaction.getRequestContext().withTenantId("crossgym");
+
+        ConstraintException ex = assertThrows(ConstraintException.class, () ->
+                authentication.verify(new AuthVerifyRequestDTO(token))
+        );
+        assertEquals(com.freelance.keys.authentication.session.SessionConstraintErrors.INVALID_SESSION.getErrorKey(),
+                ex.getError().getErrorKey());
+    }
+
+    @Test
+    @DisplayName("verify throws INVALID_SESSION when vendor token tenant does not match active request tenant")
+    void testVerify_vendorCrossTenantTokenRejection() {
+        // Configure vendor public key and active support window for tenant "crossgym"
+        Transaction.getRequestContext().withTenantId("crossgym");
+        String pubKeyBase64 = VendorSupportTestHelper.encodeKeyToBase64(vendorKeyPair.getPublic());
+        CacheManager.put("cache_SystemConfig",
+                SupportConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey(),
+                pubKeyBase64);
+        supportAccessService.grantAccess();
+
+        // Vendor token issued for tenant "ironfit"
+        java.time.Instant now = java.time.Instant.now();
+        String token = io.jsonwebtoken.Jwts.builder()
+                .issuer(com.freelance.auth.vendor.VendorSupportKeyUtility.VENDOR_ISSUER)
+                .subject(java.util.UUID.randomUUID().toString())
+                .claim("sessionKey", "sess-vendor")
+                .claim("tenantId", "ironfit")
+                .issuedAt(java.util.Date.from(now))
+                .expiration(java.util.Date.from(now.plusSeconds(3600)))
+                .signWith(vendorKeyPair.getPrivate())
+                .compact();
+
+        ConstraintException ex = assertThrows(ConstraintException.class, () ->
+                authentication.verify(new AuthVerifyRequestDTO(token))
+        );
+        assertEquals(com.freelance.keys.authentication.session.SessionConstraintErrors.INVALID_SESSION.getErrorKey(),
+                ex.getError().getErrorKey());
     }
 }

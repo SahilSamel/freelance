@@ -60,7 +60,7 @@ public class RoleCreateService {
             }
             roleAuthorizationRepository.persistEntriesInBatch(mappings);
             try {
-                CacheManager.getInstance().invalidate(RoleAuthorizationKeyCacheConfig.NAME, role.getId());
+                CacheManager.invalidate(RoleAuthorizationKeyCacheConfig.NAME, role.getId());
             } catch (Exception ignored) {}
         }
 

@@ -29,12 +29,12 @@ public class SupportAccessService {
 
     private SupportAccessCacheEntry getEntry() {
         try {
-            SupportAccessCacheEntry entry = CacheManager.getInstance().get(
+            SupportAccessCacheEntry entry = CacheManager.get(
                     SupportAccessCacheConfig.NAME, SupportAccessCacheConfig.KEY_ACTIVE_WINDOW
             );
             if (entry == null) {
                 entry = new SupportAccessCacheEntry();
-                CacheManager.getInstance().put(
+                CacheManager.put(
                         SupportAccessCacheConfig.NAME, SupportAccessCacheConfig.KEY_ACTIVE_WINDOW, entry
                 );
             }
@@ -47,7 +47,7 @@ public class SupportAccessService {
 
     private void saveEntry(SupportAccessCacheEntry entry) {
         try {
-            CacheManager.getInstance().put(
+            CacheManager.put(
                     SupportAccessCacheConfig.NAME, SupportAccessCacheConfig.KEY_ACTIVE_WINDOW, entry
             );
         } catch (Exception e) {
@@ -57,7 +57,7 @@ public class SupportAccessService {
 
     public boolean isSupportAccessActive() {
         try {
-            SupportAccessCacheEntry entry = CacheManager.getInstance().get(
+            SupportAccessCacheEntry entry = CacheManager.get(
                     SupportAccessCacheConfig.NAME, SupportAccessCacheConfig.KEY_ACTIVE_WINDOW
             );
             return entry != null && entry.isActive();

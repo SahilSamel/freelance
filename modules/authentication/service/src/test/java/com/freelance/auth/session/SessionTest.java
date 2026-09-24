@@ -25,13 +25,8 @@ class SessionTest {
     void setUp() throws Exception {
         session = new Session();
 
-        CacheManager mgr = CacheManager.getInstance();
-        setField(mgr, "initialized", false);
-        clearMap(mgr, "configsByName");
-        clearMap(mgr, "nameByClass");
-        clearMap(mgr, "caches");
-
-        mgr.init("com.freelance.fixtures");
+        com.freelance.config.CacheRegistry.getInstance().reset();
+        com.freelance.config.CacheRegistry.getInstance().init("com.freelance.fixtures");
 
         java.lang.reflect.Constructor<?> constructor = Class.forName("com.freelance.rest.app.transaction.context.TransactionContext")
                 .getDeclaredConstructors()[0];
@@ -51,19 +46,6 @@ class SessionTest {
         ((ThreadLocal<?>) field.get(null)).remove();
     }
 
-    private static void setField(Object target, String name, Object value) throws Exception {
-        Field f = target.getClass().getDeclaredField(name);
-        f.setAccessible(true);
-        f.set(target, value);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void clearMap(Object target, String name) throws Exception {
-        Field f = target.getClass().getDeclaredField(name);
-        f.setAccessible(true);
-        ((Map<?, ?>) f.get(target)).clear();
-    }
-
     @Test
     @DisplayName("generateSession creates session in cache with future expiration")
     void generateSession_createsSessionInCache() {
@@ -73,7 +55,7 @@ class SessionTest {
         assertNotNull(response);
         assertNotNull(response.sessionKey());
 
-        SessionCacheEntry entry = CacheManager.getInstance().get(SessionCacheConfig.NAME, userId);
+        SessionCacheEntry entry = CacheManager.get(SessionCacheConfig.NAME, userId);
         assertNotNull(entry);
         assertTrue(entry.getSessions().containsKey(response.sessionKey()));
         assertTrue(entry.getSessions().get(response.sessionKey()) > System.currentTimeMillis());
@@ -86,14 +68,14 @@ class SessionTest {
         SessionGenerateResponseDTO gen = session.generateSession(new SessionGenerateRequestDTO(userId));
         String sessionKey = gen.sessionKey();
 
-        SessionCacheEntry entry = CacheManager.getInstance().get(SessionCacheConfig.NAME, userId);
+        SessionCacheEntry entry = CacheManager.get(SessionCacheConfig.NAME, userId);
         long initialExpiry = entry.getSessions().get(sessionKey);
 
         Thread.sleep(50);
 
         session.verifySession(new SessionVerifyRequestDTO(sessionKey, userId));
 
-        SessionCacheEntry updatedEntry = CacheManager.getInstance().get(SessionCacheConfig.NAME, userId);
+        SessionCacheEntry updatedEntry = CacheManager.get(SessionCacheConfig.NAME, userId);
         long slidExpiry = updatedEntry.getSessions().get(sessionKey);
 
         assertTrue(slidExpiry > initialExpiry, "Expiry should have slid forward after verifySession");
@@ -118,9 +100,9 @@ class SessionTest {
         String sessionKey = gen.sessionKey();
 
         // Expire session manually
-        SessionCacheEntry entry = CacheManager.getInstance().get(SessionCacheConfig.NAME, userId);
+        SessionCacheEntry entry = CacheManager.get(SessionCacheConfig.NAME, userId);
         entry.getSessions().put(sessionKey, System.currentTimeMillis() - 1000L);
-        CacheManager.getInstance().put(SessionCacheConfig.NAME, userId, entry);
+        CacheManager.put(SessionCacheConfig.NAME, userId, entry);
 
         ConstraintException ex = assertThrows(
                 ConstraintException.class,
@@ -141,7 +123,7 @@ class SessionTest {
         assertNotNull(refreshed.newSessionKey());
         assertNotEquals(oldKey, refreshed.newSessionKey());
 
-        SessionCacheEntry entry = CacheManager.getInstance().get(SessionCacheConfig.NAME, userId);
+        SessionCacheEntry entry = CacheManager.get(SessionCacheConfig.NAME, userId);
         assertFalse(entry.getSessions().containsKey(oldKey), "Old session key must be removed");
         assertTrue(entry.getSessions().containsKey(refreshed.newSessionKey()), "New session key must exist in cache");
         assertTrue(entry.getSessions().get(refreshed.newSessionKey()) > System.currentTimeMillis());
@@ -155,9 +137,9 @@ class SessionTest {
         String sessionKey = gen.sessionKey();
 
         // Expire session manually
-        SessionCacheEntry entry = CacheManager.getInstance().get(SessionCacheConfig.NAME, userId);
+        SessionCacheEntry entry = CacheManager.get(SessionCacheConfig.NAME, userId);
         entry.getSessions().put(sessionKey, System.currentTimeMillis() - 1000L);
-        CacheManager.getInstance().put(SessionCacheConfig.NAME, userId, entry);
+        CacheManager.put(SessionCacheConfig.NAME, userId, entry);
 
         SessionRefreshResponseDTO refreshed = session.refreshSession(new SessionRefreshRequestDTO(sessionKey, userId));
         assertNotNull(refreshed);
@@ -174,7 +156,7 @@ class SessionTest {
         SessionInvalidateResponseDTO inv = session.invalidateSession(new SessionInvalidateRequestDTO(sessionKey, userId));
         assertTrue(inv.success());
 
-        SessionCacheEntry entry = CacheManager.getInstance().get(SessionCacheConfig.NAME, userId);
+        SessionCacheEntry entry = CacheManager.get(SessionCacheConfig.NAME, userId);
         assertNull(entry, "Cache entry should be removed when no sessions remain");
     }
 }

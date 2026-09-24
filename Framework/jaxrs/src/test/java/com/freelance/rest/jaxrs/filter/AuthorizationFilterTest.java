@@ -56,7 +56,7 @@ class AuthorizationFilterTest {
 
         Transaction.init(mockEmf);
         Transaction.start();
-        CacheManager.getInstance().init();
+        com.freelance.config.CacheRegistry.getInstance().init();
         filter = new AuthorizationFilter();
     }
 
@@ -98,7 +98,7 @@ class AuthorizationFilterTest {
     @Test
     @DisplayName("filter throws ValidationException when resourceInfo is null and authorization is enabled")
     void testFilterNullResourceInfoAuthEnabledThrows() {
-        CacheManager.getInstance().put("cache_SystemConfig", PermissionConfigKeys.AUTHORIZATION_ENABLED.getKey(), "true");
+        CacheManager.put("cache_SystemConfig", PermissionConfigKeys.AUTHORIZATION_ENABLED.getKey(), "true");
         assertThrows(com.freelance.rest.app.service.exception.validation.ValidationException.class,
                 () -> filter.filter(createMockRequestContext()));
     }
@@ -106,7 +106,7 @@ class AuthorizationFilterTest {
     @Test
     @DisplayName("filter allows request when resourceInfo is null and authorization is disabled")
     void testFilterNullResourceInfoAuthDisabled() {
-        CacheManager.getInstance().put("cache_SystemConfig", PermissionConfigKeys.AUTHORIZATION_ENABLED.getKey(), "false");
+        CacheManager.put("cache_SystemConfig", PermissionConfigKeys.AUTHORIZATION_ENABLED.getKey(), "false");
         assertDoesNotThrow(() -> filter.filter(createMockRequestContext()));
     }
 
@@ -127,7 +127,7 @@ class AuthorizationFilterTest {
     @Test
     @DisplayName("filter returns early when authorization is disabled in configuration")
     void testAuthorizationDisabled() throws Exception {
-        CacheManager.getInstance().put("cache_SystemConfig", PermissionConfigKeys.AUTHORIZATION_ENABLED.getKey(), "false");
+        CacheManager.put("cache_SystemConfig", PermissionConfigKeys.AUTHORIZATION_ENABLED.getKey(), "false");
         setResourceInfo(TestEndpoint.class, "authorizedMethod");
 
         assertDoesNotThrow(() -> filter.filter(createMockRequestContext()));

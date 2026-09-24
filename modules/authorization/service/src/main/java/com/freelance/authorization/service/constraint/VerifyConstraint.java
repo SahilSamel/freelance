@@ -31,7 +31,7 @@ public class VerifyConstraint extends AbstractConstraint {
 
         String requiredKey = Transaction.getRequestContext().authorizationKey();
         for (UUID roleId : rolesAssignedToUser.roleIds()) {
-            RoleAuthorizationKeyCacheEntry entry = CacheManager.getInstance().get(RoleAuthorizationKeyCacheConfig.NAME, roleId);
+            RoleAuthorizationKeyCacheEntry entry = CacheManager.get(RoleAuthorizationKeyCacheConfig.NAME, roleId);
             if (entry != null && entry.getAuthorizationKeys() != null && entry.getAuthorizationKeys().contains(requiredKey)) {
                 return;
             }

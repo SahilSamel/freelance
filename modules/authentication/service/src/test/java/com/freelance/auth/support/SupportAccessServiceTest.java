@@ -77,7 +77,7 @@ class SupportAccessServiceTest {
     @Test
     @DisplayName("grantAccess respects dynamically configured duration from SystemConfig cache")
     void testGrantAccessDynamicConfig() {
-        CacheManager.getInstance().put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "4");
+        CacheManager.put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "4");
 
         SupportGrantResponseDTO grantResponse = supportAccessService.grantAccess();
         assertTrue(grantResponse.active());
@@ -105,7 +105,7 @@ class SupportAccessServiceTest {
     void testExpiredAccess() {
         Instant past = Instant.now().minus(10, ChronoUnit.MINUTES);
         SupportAccessCacheEntry entry = new SupportAccessCacheEntry(past, null, null);
-        CacheManager.getInstance().put(
+        CacheManager.put(
                 SupportAccessCacheConfig.NAME, SupportAccessCacheConfig.KEY_ACTIVE_WINDOW, entry
         );
 
@@ -127,18 +127,18 @@ class SupportAccessServiceTest {
     @Test
     @DisplayName("grantAccess falls back to 2 hours when configured duration is invalid (<=0 or >6 or parse exception)")
     void testGrantAccessInvalidDurationFallback() {
-        CacheManager.getInstance().put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "10");
+        CacheManager.put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "10");
 
         SupportGrantResponseDTO res = supportAccessService.grantAccess();
         assertTrue(res.active());
         // Should fall back to 2 hours
         assertTrue(res.expiresAt().isBefore(Instant.now().plus(3, ChronoUnit.HOURS)));
 
-        CacheManager.getInstance().put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "-1");
+        CacheManager.put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "-1");
         SupportGrantResponseDTO res2 = supportAccessService.grantAccess();
         assertTrue(res2.active());
 
-        CacheManager.getInstance().put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "not_a_number");
+        CacheManager.put("cache_SystemConfig", "authentication.support.access.defaultDurationHours", "not_a_number");
         SupportGrantResponseDTO res3 = supportAccessService.grantAccess();
         assertTrue(res3.active());
     }

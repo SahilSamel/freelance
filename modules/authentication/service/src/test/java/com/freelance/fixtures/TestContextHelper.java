@@ -1,12 +1,13 @@
 package com.freelance.fixtures;
 
-import com.freelance.manager.CacheManager;
+import com.freelance.config.CacheRegistry;
+import com.freelance.manager.TenantCacheKeyResolver;
+import com.freelance.provider.CacheProviderFactory;
 import com.freelance.rest.app.transaction.Transaction;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import com.freelance.rest.context.RequestContext;
 
 import java.lang.reflect.Field;
-import java.util.Map;
 import java.util.UUID;
 
 public class TestContextHelper {
@@ -45,27 +46,9 @@ public class TestContextHelper {
     }
 
     public static void initCache() {
-        try {
-            CacheManager mgr = CacheManager.getInstance();
-            Field initialized = mgr.getClass().getDeclaredField("initialized");
-            initialized.setAccessible(true);
-            initialized.set(mgr, false);
-
-            Field configsByName = mgr.getClass().getDeclaredField("configsByName");
-            configsByName.setAccessible(true);
-            ((Map<?, ?>) configsByName.get(mgr)).clear();
-
-            Field nameByClass = mgr.getClass().getDeclaredField("nameByClass");
-            nameByClass.setAccessible(true);
-            ((Map<?, ?>) nameByClass.get(mgr)).clear();
-
-            Field caches = mgr.getClass().getDeclaredField("caches");
-            caches.setAccessible(true);
-            ((Map<?, ?>) caches.get(mgr)).clear();
-
-            mgr.init("com.freelance.fixtures");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        CacheRegistry.getInstance().reset();
+        TenantCacheKeyResolver.getInstance().reset();
+        CacheProviderFactory.getInstance().reset();
+        CacheRegistry.getInstance().init("com.freelance.fixtures");
     }
 }

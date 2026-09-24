@@ -30,7 +30,7 @@ public class Session {
         String sessionKey = UUID.randomUUID().toString();
         long expiresAt = getExpiryMillis();
 
-        SessionCacheEntry sessionCache = CacheManager.getInstance().get(SessionCacheConfig.NAME, request.userId());
+        SessionCacheEntry sessionCache = CacheManager.get(SessionCacheConfig.NAME, request.userId());
         if (sessionCache == null) {
             sessionCache = new SessionCacheEntry();
         }
@@ -48,7 +48,7 @@ public class Session {
         }
 
         sessionCache.setSessions(keys);
-        CacheManager.getInstance().put(SessionCacheConfig.NAME, request.userId(), sessionCache);
+        CacheManager.put(SessionCacheConfig.NAME, request.userId(), sessionCache);
 
         return new SessionGenerateResponseDTO(sessionKey);
     }
@@ -57,7 +57,7 @@ public class Session {
         new VerifySessionValidation().validateRequest(request);
         new VerifySessionConstraint().checkConstraints(request);
 
-        SessionCacheEntry sessionCache = CacheManager.getInstance().get(SessionCacheConfig.NAME, request.userId());
+        SessionCacheEntry sessionCache = CacheManager.get(SessionCacheConfig.NAME, request.userId());
         if (sessionCache != null) {
             Map<String, Long> keys = sessionCache.getSessions();
             if (keys != null && keys.containsKey(request.sessionKey())) {
@@ -66,7 +66,7 @@ public class Session {
                     keys.put(request.sessionKey(), newExpiresAt);
                 }
                 sessionCache.setSessions(keys);
-                CacheManager.getInstance().put(SessionCacheConfig.NAME, request.userId(), sessionCache);
+                CacheManager.put(SessionCacheConfig.NAME, request.userId(), sessionCache);
             }
         }
     }
@@ -74,7 +74,7 @@ public class Session {
     public SessionInvalidateResponseDTO invalidateSession(SessionInvalidateRequestDTO request) {
         if (request != null && request.sessionKey() != null && request.userId() != null) {
 
-            SessionCacheEntry sessionCache = CacheManager.getInstance().get(SessionCacheConfig.NAME, request.userId());
+            SessionCacheEntry sessionCache = CacheManager.get(SessionCacheConfig.NAME, request.userId());
 
             if (sessionCache != null) {
                 Map<String, Long> keys = sessionCache.getSessions();
@@ -84,10 +84,10 @@ public class Session {
                     }
 
                     if (keys.isEmpty()) {
-                        CacheManager.getInstance().invalidate(SessionCacheConfig.NAME, request.userId());
+                        CacheManager.invalidate(SessionCacheConfig.NAME, request.userId());
                     } else {
                         sessionCache.setSessions(keys);
-                        CacheManager.getInstance().put(SessionCacheConfig.NAME, request.userId(), sessionCache);
+                        CacheManager.put(SessionCacheConfig.NAME, request.userId(), sessionCache);
                     }
                 }
             }
@@ -98,7 +98,7 @@ public class Session {
 
     public SessionRefreshResponseDTO refreshSession(SessionRefreshRequestDTO request) {
 
-        SessionCacheEntry sessionCache = CacheManager.getInstance().get(SessionCacheConfig.NAME, request.userId());
+        SessionCacheEntry sessionCache = CacheManager.get(SessionCacheConfig.NAME, request.userId());
 
         if (sessionCache != null) {
             Map<String, Long> keys = sessionCache.getSessions();
@@ -116,7 +116,7 @@ public class Session {
                     }
 
                     sessionCache.setSessions(keys);
-                    CacheManager.getInstance().put(SessionCacheConfig.NAME, request.userId(), sessionCache);
+                    CacheManager.put(SessionCacheConfig.NAME, request.userId(), sessionCache);
 
                     return new SessionRefreshResponseDTO(newSessionKey);
                 }

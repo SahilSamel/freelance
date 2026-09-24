@@ -7,55 +7,61 @@ import com.freelance.event.consumer.EventHandler;
 import com.freelance.event.engine.GenericConsumerWorker;
 import com.freelance.event.limiter.TokenBucketRateLimiter;
 import com.freelance.event.model.EventMessage;
+import com.freelance.system.SystemHardcoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * High-performance, in-memory message broker backed by JVM {@link PriorityBlockingQueue} instances.
+ * High-performance, in-memory multi-tenant event broker backed by isolated JVM {@link PriorityBlockingQueue} instances.
  * <p>
- * Guarantees strict priority preemption ({@code HIGH} before {@code NORMAL} before {@code LOW})
- * and FIFO ordering for equal priority tasks via monotonically increasing sequence counters.
+ * Provides tenant isolation per destination topic, fair-share round-robin scheduling across active tenants to prevent
+ * noisy-neighbor starvation, per-tenant {@link TokenBucketRateLimiter} instances, strict priority preemption
+ * ({@code HIGH} before {@code NORMAL} before {@code LOW}), and FIFO ordering for equal priority tasks via monotonically
+ * increasing sequence counters.
  * </p>
  * <p>
  * When a topic is subscribed via {@link #subscribe(IConsumer, ConsumerConfig, Class, EventHandler)}, a dedicated
- * worker thread pool and rate limiter are initialized to continuously dequeue messages and delegate execution to
- * {@link com.freelance.event.engine.GenericConsumerWorker}.
+ * worker thread pool is initialized to continuously dequeue messages across active tenant queues using round-robin
+ * scheduling and delegate execution to {@link com.freelance.event.engine.GenericConsumerWorker}.
  * </p>
  * <p>
  * <pre>{@code
  *  ========================================================================================
- *                             IN-MEMORY EVENT BROKER ARCHITECTURE
+ *                         IN-MEMORY MULTI-TENANT BROKER ARCHITECTURE
  *  ========================================================================================
  *
  *  [ 1. INITIALIZATION ]
  *  InMemoryEventBroker()
  *       │
- *       ├──► ConcurrentHashMap<String, TopicRegistration> topics
- *       ├──► ConcurrentHashMap<String, PriorityBlockingQueue> pendingQueues
+ *       ├──► ConcurrentHashMap<String, TopicRegistration<?>> topics
+ *       ├──► ConcurrentHashMap<String, ConcurrentLinkedQueue<EventMessage<?>>> pendingQueues
  *       ├──► AtomicLong sequenceCounter (guarantees FIFO sequence across equal priorities)
  *       └──► ScheduledExecutorService retryScheduler (delays retries asynchronously)
  *
  *  ────────────────────────────────────────────────────────────────────────────────────────
  *
- *  [ 2. SUBSCRIPTION (Per Destination Topic) ]
+ *  [ 2. SUBSCRIPTION & MULTI-TENANT DISPATCH (Per Destination Topic) ]
  *  subscribe(IConsumer destination, ConsumerConfig config, ...)
  *       │
  *       ▼
  *  TopicRegistration(destination)
- *       ├──► Dedicated PriorityBlockingQueue<EventMessage<?>>
- *       ├──► Dedicated TokenBucketRateLimiter(rateLimitPerSecond)
+ *       ├──► ConcurrentHashMap<String, PriorityBlockingQueue<EventMessage<?>>> tenantQueues
+ *       ├──► ConcurrentHashMap<String, TokenBucketRateLimiter> rateLimiters (Per-Tenant Limiters)
+ *       ├──► List<String> activeTenants & AtomicInteger roundRobinCounter (Fair-Share Round-Robin)
  *       └──► Dedicated ExecutorService workerPool(concurrency threads)
  *                 │
- *                 ▼ (continuous worker poll loop)
- *            [ queue.poll(200ms, TimeUnit.MILLISECONDS) ]
+ *                 ▼ (continuous fair round-robin poll across active tenants)
+ *            [ tenantQueues.get(tenantId).poll() ]
  *                 │
- *                 ▼ (rateLimiter.acquire())
+ *                 ▼ (per-tenant rateLimiter.acquire())
  *            [ GenericConsumerWorker.run() ]
  *
  *  ────────────────────────────────────────────────────────────────────────────────────────
@@ -67,13 +73,14 @@ import java.util.concurrent.atomic.AtomicLong;
  *            │                                                        │
  *            │ (assigns monotonic sequence counter)                   │ (schedules timer task)
  *            ▼                                                        ▼
- *  ┌────────────────────────────────────┐                   ┌────────────────────────────────────┐
- *  │ JVM PriorityBlockingQueue:         │                   │ retryScheduler (2 daemon threads)  │
- *  │ destination topic queue            │                   │ (waits delayMillis)                │
- *  │ (Ordered: Priority -> FIFO Seq)    │                   └─────────────────┬──────────────────┘
- *  └─────────────────▲──────────────────┘                                     │
- *                    │                                                        │
- *                    │                      [ retryScheduler Timer Expired ]  ▼
+ *  ┌──────────────────────────────────────────────┐          ┌────────────────────────────────────┐
+ *  │ TopicRegistration.enqueue(msg):              │          │ retryScheduler (2 daemon threads)  │
+ *  │ tenantQueues.get(tenantId)                   │          │ (waits delayMillis)                │
+ *  │ (Ordered: Priority -> FIFO Seq)              │          └─────────────────┬──────────────────┘
+ *  │ Adds tenantId to activeTenants               │                            │
+ *  └─────────────────▲────────────────────────────┘                            │
+ *                    │                                                         │
+ *                    │                      [ retryScheduler Timer Expired ]   ▼
  *                    └─────────────────────── broker.publish(retryMsg)
  *
  *  ========================================================================================
@@ -88,7 +95,7 @@ public class InMemoryEventBroker implements EventBroker {
     private static final Logger logger = LoggerFactory.getLogger(InMemoryEventBroker.class);
 
     private final Map<String, TopicRegistration<?>> topics = new ConcurrentHashMap<>();
-    private final Map<String, PriorityBlockingQueue<EventMessage<?>>> pendingQueues = new ConcurrentHashMap<>();
+    private final Map<String, ConcurrentLinkedQueue<EventMessage<?>>> pendingQueues = new ConcurrentHashMap<>();
     private final ScheduledExecutorService retryScheduler = Executors.newScheduledThreadPool(2, r -> {
         Thread t = new Thread(r, "event-retry-scheduler");
         t.setDaemon(true);
@@ -112,13 +119,13 @@ public class InMemoryEventBroker implements EventBroker {
         TopicRegistration<?> registration = topics.get(destination);
 
         if (registration != null) {
-            registration.queue.offer(msgToPublish);
+            registration.enqueue(msgToPublish);
         } else {
-            pendingQueues.computeIfAbsent(destination, k -> new PriorityBlockingQueue<>()).offer(msgToPublish);
+            pendingQueues.computeIfAbsent(destination, k -> new ConcurrentLinkedQueue<>()).offer(msgToPublish);
         }
 
-        logger.debug("[InMemoryEventBroker] Published message {} to destination '{}' (priority={}, seq={})",
-                msgToPublish.getId(), destination, msgToPublish.getPriority(), msgToPublish.getSequenceNumber());
+        logger.debug("[InMemoryEventBroker] Published message {} to destination '{}' for tenant '{}' (priority={}, seq={})",
+                msgToPublish.getId(), destination, msgToPublish.getTenantId(), msgToPublish.getPriority(), msgToPublish.getSequenceNumber());
     }
 
     @Override
@@ -163,16 +170,19 @@ public class InMemoryEventBroker implements EventBroker {
             throw new IllegalStateException("Consumer already registered for destination topic '" + destName + "'.");
         }
 
-        PriorityBlockingQueue<EventMessage<?>> pending = pendingQueues.remove(destName);
-        if (pending != null && !pending.isEmpty()) {
-            reg.queue.addAll(pending);
+        ConcurrentLinkedQueue<EventMessage<?>> pending = pendingQueues.remove(destName);
+        if (pending != null) {
+            EventMessage<?> pendingMsg;
+            while ((pendingMsg = pending.poll()) != null) {
+                reg.enqueue(pendingMsg);
+            }
         }
 
         if (running.get()) {
             reg.start();
         }
 
-        logger.info("[InMemoryEventBroker] Registered subscriber for '{}' (concurrency={}, rateLimit={}/s)",
+        logger.info("[InMemoryEventBroker] Registered multi-tenant subscriber for '{}' (concurrency={}, rateLimit={}/s)",
                 destName, config.concurrency(), config.rateLimitPerSecond());
     }
 
@@ -216,8 +226,11 @@ public class InMemoryEventBroker implements EventBroker {
         private final EventHandler<T> handler;
         private final EventBroker broker;
 
-        private final PriorityBlockingQueue<EventMessage<?>> queue = new PriorityBlockingQueue<>();
-        private final TokenBucketRateLimiter rateLimiter;
+        private final ConcurrentHashMap<String, PriorityBlockingQueue<EventMessage<?>>> tenantQueues = new ConcurrentHashMap<>();
+        private final ConcurrentHashMap<String, TokenBucketRateLimiter> rateLimiters = new ConcurrentHashMap<>();
+        private final List<String> activeTenants = new CopyOnWriteArrayList<>();
+        private final AtomicInteger roundRobinCounter = new AtomicInteger(0);
+
         private final ExecutorService workerPool;
         private final AtomicBoolean active = new AtomicBoolean(false);
 
@@ -233,12 +246,25 @@ public class InMemoryEventBroker implements EventBroker {
             this.payloadClass = payloadClass;
             this.handler = handler;
             this.broker = broker;
-            this.rateLimiter = new TokenBucketRateLimiter(this.config.rateLimitPerSecond());
             this.workerPool = Executors.newFixedThreadPool(this.config.concurrency(), r -> {
                 Thread t = new Thread(r, "event-worker-" + destination + "-" + System.nanoTime() % 1000);
                 t.setDaemon(true);
                 return t;
             });
+        }
+
+        void enqueue(EventMessage<?> msg) {
+            String tenantId = (msg.getTenantId() != null && !msg.getTenantId().isBlank()) ? msg.getTenantId() : SystemHardcoding.DEFAULT_TENANT.asString();
+            tenantQueues.computeIfAbsent(tenantId, t -> {
+                if (!activeTenants.contains(t)) {
+                    activeTenants.add(t);
+                }
+                return new PriorityBlockingQueue<>();
+            }).offer(msg);
+        }
+
+        private TokenBucketRateLimiter getOrCreateRateLimiter(String tenantId) {
+            return rateLimiters.computeIfAbsent(tenantId, t -> new TokenBucketRateLimiter(config.rateLimitPerSecond()));
         }
 
         void start() {
@@ -252,22 +278,46 @@ public class InMemoryEventBroker implements EventBroker {
         private void processLoop() {
             while (active.get()) {
                 try {
-                    EventMessage<?> msg = queue.poll(200, TimeUnit.MILLISECONDS);
-                    if (msg == null) {
+                    if (activeTenants.isEmpty()) {
+                        Thread.sleep(50);
                         continue;
                     }
 
-                    rateLimiter.acquire();
+                    int tenantCount = activeTenants.size();
+                    int startIdx = (roundRobinCounter.getAndIncrement() & 0x7fffffff) % tenantCount;
+                    boolean processed = false;
 
-                    GenericConsumerWorker<T> task = new GenericConsumerWorker<>(
-                            msg,
-                            payloadClass,
-                            handler,
-                            config,
-                            broker
-                    );
+                    for (int i = 0; i < tenantCount; i++) {
+                        int currentIdx = (startIdx + i) % tenantCount;
+                        if (currentIdx >= activeTenants.size()) {
+                            break;
+                        }
+                        String tenantId = activeTenants.get(currentIdx);
+                        PriorityBlockingQueue<EventMessage<?>> q = tenantQueues.get(tenantId);
+                        if (q != null) {
+                            EventMessage<?> msg = q.poll();
+                            if (msg != null) {
+                                TokenBucketRateLimiter limiter = getOrCreateRateLimiter(msg.getTenantId());
+                                limiter.acquire();
 
-                    task.run();
+                                GenericConsumerWorker<T> task = new GenericConsumerWorker<>(
+                                        msg,
+                                        payloadClass,
+                                        handler,
+                                        config,
+                                        broker
+                                );
+
+                                task.run();
+                                processed = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!processed) {
+                        Thread.sleep(50);
+                    }
 
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();

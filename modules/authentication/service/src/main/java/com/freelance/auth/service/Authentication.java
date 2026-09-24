@@ -30,7 +30,7 @@ public class Authentication {
         UserReadResponseDTO userReadResponseDTO = userService.findByUsername(userReadRequestDTO);
 
         SessionGenerateResponseDTO session = this.session.generateSession(new SessionGenerateRequestDTO(userReadResponseDTO.userDTO().id()));
-        TokenGenerateResponseDTO token = tokenUtility.generateToken(new TokenGenerateRequestDTO(userReadResponseDTO.userDTO().id(), session.sessionKey()));
+        TokenGenerateResponseDTO token = tokenUtility.generateToken(new TokenGenerateRequestDTO(userReadResponseDTO.userDTO().id(), session.sessionKey(), Transaction.getRequestContext().tenantId()));
 
         return new AuthLoginResponseDTO(token.token());
     }
@@ -65,8 +65,7 @@ public class Authentication {
         if (refreshed.newSessionKey() == null) {
             throw new ConstraintException(SessionConstraintErrors.INVALID_SESSION);
         }
-
-        TokenGenerateResponseDTO token = tokenUtility.generateToken(new TokenGenerateRequestDTO(userId, refreshed.newSessionKey()));
+        TokenGenerateResponseDTO token = tokenUtility.generateToken(new TokenGenerateRequestDTO(userId, refreshed.newSessionKey(), Transaction.getRequestContext().tenantId()));
         return new AuthRefreshResponseDTO(token.token());
     }
 }

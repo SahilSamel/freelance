@@ -8,7 +8,6 @@ public record AuditLogDTO(
         Instant timestamp,
         String traceId,
         UUID userId,
-        String tenantId,
         String httpMethod,
         String endpoint,
         String requestData,
@@ -23,7 +22,6 @@ public record AuditLogDTO(
             Instant timestamp,
             String traceId,
             UUID userId,
-            String tenantId,
             String httpMethod,
             String endpoint,
             int statusCode,
@@ -32,6 +30,6 @@ public record AuditLogDTO(
             String userAgent,
             String authMechanism
     ) {
-        this(id, timestamp, traceId, userId, tenantId, httpMethod, endpoint, null, statusCode, durationMs, ipAddress, userAgent, authMechanism);
+        this(id, timestamp, traceId, userId, httpMethod, endpoint, null, statusCode, durationMs, ipAddress, userAgent, authMechanism);
     }
 }

@@ -21,7 +21,7 @@ public class WhatsAppDispatcherServiceTest {
     void setUp() {
         com.freelance.fixtures.TestContextHelper.setUp();
         try {
-            com.freelance.manager.CacheManager.getInstance().init("com.freelance.fixtures");
+            com.freelance.config.CacheRegistry.getInstance().init("com.freelance.fixtures");
         } catch (IllegalStateException ignored) {}
         com.freelance.alerts.whatsapp.WhatsAppUtility.resumeQueue();
     }
@@ -113,7 +113,7 @@ public class WhatsAppDispatcherServiceTest {
         WhatsAppDispatcherService dispatcher = new WhatsAppDispatcherService(fakeClient, msgRepo);
 
         // Put live token in cache
-        com.freelance.manager.CacheManager.getInstance().put(
+        com.freelance.manager.CacheManager.put(
                 "cache_SystemConfig",
                 com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN.getKey(),
                 "EAAB_LIVE_SECRET_TOKEN"
@@ -146,7 +146,7 @@ public class WhatsAppDispatcherServiceTest {
         );
         WhatsAppDispatcherService dispatcher = new WhatsAppDispatcherService(fakeClient, new com.freelance.alerts.message.repository.AlertMessageRepository());
 
-        com.freelance.manager.CacheManager.getInstance().put(
+        com.freelance.manager.CacheManager.put(
                 "cache_SystemConfig",
                 com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN.getKey(),
                 "EAAB_LIVE_SECRET_TOKEN"
@@ -185,7 +185,7 @@ public class WhatsAppDispatcherServiceTest {
         );
         WhatsAppDispatcherService dispatcher = new WhatsAppDispatcherService(fakeClient, new com.freelance.alerts.message.repository.AlertMessageRepository());
 
-        com.freelance.manager.CacheManager.getInstance().put(
+        com.freelance.manager.CacheManager.put(
                 "cache_SystemConfig",
                 com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN.getKey(),
                 "EAAB_LIVE_SECRET_TOKEN"
@@ -213,7 +213,7 @@ public class WhatsAppDispatcherServiceTest {
         );
         WhatsAppDispatcherService errorDispatcher = new WhatsAppDispatcherService(errorClient, new com.freelance.alerts.message.repository.AlertMessageRepository());
 
-        com.freelance.manager.CacheManager.getInstance().put(
+        com.freelance.manager.CacheManager.put(
                 "cache_SystemConfig",
                 com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN.getKey(),
                 "EAAB_LIVE_SECRET_TOKEN"
@@ -282,7 +282,7 @@ public class WhatsAppDispatcherServiceTest {
         );
         WhatsAppDispatcherService dispatcher = new WhatsAppDispatcherService(fakeClient, new com.freelance.alerts.message.repository.AlertMessageRepository());
 
-        com.freelance.manager.CacheManager.getInstance().put(
+        com.freelance.manager.CacheManager.put(
                 "cache_SystemConfig",
                 com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN.getKey(),
                 "EAAB_LIVE_SECRET_TOKEN"

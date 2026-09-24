@@ -32,7 +32,7 @@ class AuthorizationServiceVerifyTest {
     @Test
     @DisplayName("isAuthorized allows request without checks when authorization is disabled")
     void isAuthorized_whenDisabled_allowsRequest() {
-        CacheManager.getInstance().put("cache_SystemConfig", "authorization.enabled", "false");
+        CacheManager.put("cache_SystemConfig", "authorization.enabled", "false");
 
         // Even with no authorization key in request context, it should pass without throwing
         Transaction.getRequestContext().withAuthorizationKey(null);
@@ -43,7 +43,7 @@ class AuthorizationServiceVerifyTest {
     @Test
     @DisplayName("isAuthorized throws validation error when authorization is enabled and authKey is missing")
     void isAuthorized_whenEnabledAndMissingKey_throwsValidationException() {
-        CacheManager.getInstance().put("cache_SystemConfig", "authorization.enabled", "true");
+        CacheManager.put("cache_SystemConfig", "authorization.enabled", "true");
 
         Transaction.getRequestContext().withAuthorizationKey(null);
 

@@ -97,6 +97,43 @@ class InMemoryEventBrokerPriorityTest {
     }
 
     @Test
+    @DisplayName("Multi-tenant queues ensure fair-share round-robin interleaving so no tenant is starved")
+    void testMultiTenantFairShareInterleaving() throws InterruptedException {
+        TestConsumer destination = TestConsumer.TEST_FIFO_TOPIC;
+        int countPerTenant = 10;
+        CountDownLatch latch = new CountDownLatch(countPerTenant * 2);
+        List<String> executionOrder = Collections.synchronizedList(new ArrayList<>());
+
+        // Pre-enqueue 10 tasks for Tenant A
+        for (int i = 1; i <= countPerTenant; i++) {
+            broker.publish(EventMessage.of(destination, "tenant_a", "A-" + i, EventPriority.NORMAL));
+        }
+
+        // Pre-enqueue 10 tasks for Tenant B
+        for (int i = 1; i <= countPerTenant; i++) {
+            broker.publish(EventMessage.of(destination, "tenant_b", "B-" + i, EventPriority.NORMAL));
+        }
+
+        ConsumerConfig config = ConsumerConfig.builder()
+                .concurrency(1)
+                .build();
+
+        broker.subscribe(destination, config, String.class, msg -> {
+            executionOrder.add(msg.getPayload());
+            latch.countDown();
+        });
+
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertEquals(20, executionOrder.size());
+
+        // Verify that Tenant B tasks are interleaved and start executing within the first few rounds
+        boolean foundBInFirstThree = executionOrder.subList(0, 3).stream().anyMatch(s -> s.startsWith("B-"));
+        boolean foundAInFirstThree = executionOrder.subList(0, 3).stream().anyMatch(s -> s.startsWith("A-"));
+        assertTrue(foundBInFirstThree, "Tenant B tasks must not be starved by Tenant A");
+        assertTrue(foundAInFirstThree, "Tenant A tasks must not be starved by Tenant B");
+    }
+
+    @Test
     @DisplayName("publishDelayed with delay <= 0 publishes immediately")
     void testPublishDelayedZeroOrNegative() throws InterruptedException {
         TestConsumer destination = TestConsumer.TEST_FIFO_TOPIC;

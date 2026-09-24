@@ -29,7 +29,7 @@ public class RoleAuthorizationService {
         Map<UUID, RoleAuthorizationKeyCacheEntry> cacheMap =
                 roleAuthorizationAssembler.toRoleIdToCacheEntryMap(roleAuthorizationMappings);
 
-        CacheManager.getInstance().preload(RoleAuthorizationKeyCacheConfig.NAME, cacheMap);
+        CacheManager.preload(RoleAuthorizationKeyCacheConfig.NAME, cacheMap);
     }
 
     public RoleAuthorizationKeyCacheEntry loadRoleAuthorizationCacheEntryByRoleId(UUID roleId) {

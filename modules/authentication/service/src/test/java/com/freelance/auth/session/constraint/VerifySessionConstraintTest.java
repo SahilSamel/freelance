@@ -40,7 +40,7 @@ class VerifySessionConstraintTest {
         String sessionKey = "active-key-1";
 
         SessionCacheEntry entry = new SessionCacheEntry(sessionKey, System.currentTimeMillis() + 60000);
-        CacheManager.getInstance().put(SessionCacheConfig.NAME, userId, entry);
+        CacheManager.put(SessionCacheConfig.NAME, userId, entry);
 
         SessionVerifyRequestDTO req = new SessionVerifyRequestDTO(sessionKey, userId);
         assertDoesNotThrow(() -> constraint.checkConstraints(req));
@@ -62,7 +62,7 @@ class VerifySessionConstraintTest {
         UUID userId = UUID.randomUUID();
         SessionCacheEntry entry = new SessionCacheEntry();
         entry.setSessions(null);
-        CacheManager.getInstance().put(SessionCacheConfig.NAME, userId, entry);
+        CacheManager.put(SessionCacheConfig.NAME, userId, entry);
 
         SessionVerifyRequestDTO req = new SessionVerifyRequestDTO("key-1", userId);
         ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(req));
@@ -75,7 +75,7 @@ class VerifySessionConstraintTest {
         UUID userId = UUID.randomUUID();
         SessionCacheEntry entry = new SessionCacheEntry();
         entry.setSessions(new HashMap<>());
-        CacheManager.getInstance().put(SessionCacheConfig.NAME, userId, entry);
+        CacheManager.put(SessionCacheConfig.NAME, userId, entry);
 
         SessionVerifyRequestDTO req = new SessionVerifyRequestDTO("unknown-key", userId);
         ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(req));
@@ -89,7 +89,7 @@ class VerifySessionConstraintTest {
         String sessionKey = "expired-key";
 
         SessionCacheEntry entry = new SessionCacheEntry(sessionKey, System.currentTimeMillis() - 5000);
-        CacheManager.getInstance().put(SessionCacheConfig.NAME, userId, entry);
+        CacheManager.put(SessionCacheConfig.NAME, userId, entry);
 
         SessionVerifyRequestDTO req = new SessionVerifyRequestDTO(sessionKey, userId);
         ConstraintException ex = assertThrows(ConstraintException.class, () -> constraint.checkConstraints(req));

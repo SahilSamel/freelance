@@ -14,7 +14,7 @@ public class GenerateSessionConstraint extends AbstractConstraint {
         boolean allowConcurrent = ConfigurationEngine.getBoolean(AuthConfigKeys.CONCURRENT_LOGIN_ALLOWED);
 
         if (!allowConcurrent) {
-            CacheManager.getInstance().invalidate(SessionCacheConfig.NAME, request.userId());
+            CacheManager.invalidate(SessionCacheConfig.NAME, request.userId());
         }
     }
 }

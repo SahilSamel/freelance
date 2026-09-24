@@ -13,15 +13,21 @@ public class RequestContext {
     private UUID userId;
     private String sessionKey;
     private String authorizationKey;
+    private String tenantId;
 
     public RequestContext(UUID userId, String sessionKey, String authorizationKey) {
+        this(userId, sessionKey, authorizationKey, null);
+    }
+
+    public RequestContext(UUID userId, String sessionKey, String authorizationKey, String tenantId) {
         this.userId = userId;
         this.sessionKey = sessionKey;
         this.authorizationKey = authorizationKey;
+        this.tenantId = tenantId;
     }
 
     public static RequestContext empty() {
-        return new RequestContext(null, null, null);
+        return new RequestContext(null, null, null, null);
     }
 
     public UUID userId() {
@@ -36,6 +42,10 @@ public class RequestContext {
         return authorizationKey;
     }
 
+    public String tenantId() {
+        return tenantId;
+    }
+
     public void withUserId(UUID userId) {
         this.userId = userId;
     }
@@ -46,5 +56,9 @@ public class RequestContext {
 
     public void withAuthorizationKey(String authorizationKey) {
         this.authorizationKey = authorizationKey;
+    }
+
+    public void withTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 }

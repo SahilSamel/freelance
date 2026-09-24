@@ -33,15 +33,15 @@ class EventMessageTest {
     @DisplayName("High priority events should precede Normal and Low priority in comparison")
     void testPriorityPrecedence() {
         EventMessage<String> low = new EventMessage<>(
-                UUID.randomUUID(), TestConsumer.TEST_PRIORITY_TOPIC, "low-payload", "java.lang.String",
+                UUID.randomUUID(), TestConsumer.TEST_PRIORITY_TOPIC, "tenant_a", "low-payload", "java.lang.String",
                 EventPriority.LOW, UUID.randomUUID(), "trace-low", Instant.now(), 0, 1L);
 
         EventMessage<String> normal = new EventMessage<>(
-                UUID.randomUUID(), TestConsumer.TEST_PRIORITY_TOPIC, "norm-payload", "java.lang.String",
+                UUID.randomUUID(), TestConsumer.TEST_PRIORITY_TOPIC, "tenant_a", "norm-payload", "java.lang.String",
                 EventPriority.NORMAL, UUID.randomUUID(), "trace-norm", Instant.now(), 0, 2L);
 
         EventMessage<String> high = new EventMessage<>(
-                UUID.randomUUID(), TestConsumer.TEST_PRIORITY_TOPIC, "high-payload", "java.lang.String",
+                UUID.randomUUID(), TestConsumer.TEST_PRIORITY_TOPIC, "tenant_a", "high-payload", "java.lang.String",
                 EventPriority.HIGH, UUID.randomUUID(), "trace-high", Instant.now(), 0, 3L);
 
         List<EventMessage<String>> list = new ArrayList<>(List.of(low, normal, high));
@@ -76,14 +76,15 @@ class EventMessageTest {
     }
 
     @Test
-    @DisplayName("EventMessage serialization and deserialization preserves all metadata and generic DTO payload")
+    @DisplayName("EventMessage serialization and deserialization preserves all metadata and generic DTO payload including tenantId")
     void testJsonSerialization() throws Exception {
         UUID userId = UUID.randomUUID();
         SamplePayload payload = new SamplePayload("Freelance Test", 42);
 
         EventMessage<SamplePayload> original = new EventMessage<>(
                 UUID.randomUUID(),
-                TestConsumer.TEST_PRIORITY_TOPIC,
+                TestConsumer.TEST_PRIORITY_TOPIC.getDestination(),
+                "tenant_corporate",
                 payload,
                 SamplePayload.class.getName(),
                 EventPriority.HIGH,
@@ -98,11 +99,13 @@ class EventMessageTest {
         assertNotNull(json);
         assertTrue(json.contains("Freelance Test"));
         assertTrue(json.contains("trace-xyz-123"));
+        assertTrue(json.contains("tenant_corporate"));
 
         EventMessage<?> deserialized = objectMapper.readValue(json, EventMessage.class);
 
         assertEquals(original.getId(), deserialized.getId());
         assertEquals(original.getDestination(), deserialized.getDestination());
+        assertEquals("tenant_corporate", deserialized.getTenantId());
         assertEquals(original.getPriority(), deserialized.getPriority());
         assertEquals(original.getCallerUserId(), deserialized.getCallerUserId());
         assertEquals(original.getTraceId(), deserialized.getTraceId());
@@ -111,26 +114,36 @@ class EventMessageTest {
     }
 
     @Test
-    @DisplayName("EventMessage factory methods create valid messages")
+    @DisplayName("EventMessage factory methods create valid messages with default and explicit tenantId")
     void testFactoryMethods() {
         EventMessage<String> m1 = EventMessage.of(TestConsumer.TEST_FIFO_TOPIC, "payload1");
         assertEquals(TestConsumer.TEST_FIFO_TOPIC.getDestination(), m1.getDestination());
+        assertEquals("freelance", m1.getTenantId());
         assertEquals(EventPriority.NORMAL, m1.getPriority());
 
-        EventMessage<String> m2 = EventMessage.of(TestConsumer.TEST_FIFO_TOPIC, "payload2", EventPriority.HIGH);
+        EventMessage<String> m2 = EventMessage.of(TestConsumer.TEST_FIFO_TOPIC, "tenant_xyz", "payload2", EventPriority.HIGH);
+        assertEquals("tenant_xyz", m2.getTenantId());
         assertEquals(EventPriority.HIGH, m2.getPriority());
 
-        EventMessage<String> m3 = EventMessage.of("custom.topic", "payload3");
+        EventMessage<String> m3 = EventMessage.of("custom.topic", "tenant_abc", "payload3", EventPriority.NORMAL);
         assertEquals("custom.topic", m3.getDestination());
+        assertEquals("tenant_abc", m3.getTenantId());
 
         EventMessage<String> m4 = EventMessage.of("custom.topic", "payload4", EventPriority.LOW);
         assertEquals(EventPriority.LOW, m4.getPriority());
+        assertEquals("freelance", m4.getTenantId());
     }
 
     @Test
-    @DisplayName("EventMessage withSequenceNumber, withRetryCount, and withPayload produce updated immutable copies")
+    @DisplayName("EventMessage withSequenceNumber, withRetryCount, withPayload, and withTenantId produce updated immutable copies")
     void testWithMutators() {
         EventMessage<String> original = EventMessage.of("topic", "original");
+        assertEquals("freelance", original.getTenantId());
+
+        EventMessage<String> withTenant = original.withTenantId("tenant_updated");
+        assertEquals("tenant_updated", withTenant.getTenantId());
+        assertEquals("freelance", original.getTenantId());
+
         EventMessage<String> withSeq = original.withSequenceNumber(99L);
         assertEquals(99L, withSeq.getSequenceNumber());
 
@@ -156,6 +169,7 @@ class EventMessageTest {
         assertNotEquals(msg1, null);
         assertNotEquals(msg1, "string");
         assertTrue(msg1.toString().contains("dest"));
+        assertTrue(msg1.toString().contains("freelance"));
 
         // CompareTo edge cases
         assertEquals(-1, msg1.compareTo(null));

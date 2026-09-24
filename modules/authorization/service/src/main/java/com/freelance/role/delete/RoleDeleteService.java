@@ -32,7 +32,7 @@ public class RoleDeleteService {
         roleRepository.remove(role);
 
         try {
-            CacheManager.getInstance().invalidate(RoleAuthorizationKeyCacheConfig.NAME, role.getId());
+            CacheManager.invalidate(RoleAuthorizationKeyCacheConfig.NAME, role.getId());
         } catch (Exception ignored) {}
 
         return new RoleDeleteResponseDTO(role.getId(), true);

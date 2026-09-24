@@ -62,7 +62,7 @@ class AuditFilterTest {
         );
 
         Transaction.init(mockEmf);
-        com.freelance.manager.CacheManager.getInstance().init();
+        com.freelance.config.CacheRegistry.getInstance().init();
     }
 
     @Test
@@ -241,7 +241,7 @@ class AuditFilterTest {
     @DisplayName("Auditing disabled returns early on ingress and egress")
     void testAuditingDisabled() {
         String key = com.freelance.keys.audit.http.HttpAuditConfigKeys.AUDITING_ENABLED.getKey();
-        com.freelance.manager.CacheManager.getInstance().put("cache_SystemConfig", key, "false");
+        com.freelance.manager.CacheManager.put("cache_SystemConfig", key, "false");
         try {
             Map<String, Object> properties = new HashMap<>();
             ContainerRequestContext reqCtx = (ContainerRequestContext) Proxy.newProxyInstance(
@@ -274,7 +274,7 @@ class AuditFilterTest {
             auditFilter.filter(reqCtx, resCtx);
             assertNotNull(responseHeaders.getFirst("X-Trace-ID"));
         } finally {
-            com.freelance.manager.CacheManager.getInstance().put("cache_SystemConfig", key, "true");
+            com.freelance.manager.CacheManager.put("cache_SystemConfig", key, "true");
         }
     }
 

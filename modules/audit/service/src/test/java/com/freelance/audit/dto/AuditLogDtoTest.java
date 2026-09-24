@@ -19,14 +19,13 @@ class AuditLogDtoTest {
         UUID userId = UUID.randomUUID();
 
         AuditLogDTO dto1 = new AuditLogDTO(
-                id, now, "trace-1", userId, "tenant-1", "GET", "/api/test",
+                id, now, "trace-1", userId, "GET", "/api/test",
                 "req-data", 200, 50L, "127.0.0.1", "JUnit", "Bearer"
         );
         assertEquals("req-data", dto1.requestData());
-        assertEquals("tenant-1", dto1.tenantId());
 
         AuditLogDTO dto2 = new AuditLogDTO(
-                id, now, "trace-1", userId, "tenant-1", "GET", "/api/test",
+                id, now, "trace-1", userId, "GET", "/api/test",
                 200, 50L, "127.0.0.1", "JUnit", "Bearer"
         );
         assertNull(dto2.requestData());

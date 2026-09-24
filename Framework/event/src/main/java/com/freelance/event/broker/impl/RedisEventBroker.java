@@ -10,6 +10,7 @@ import com.freelance.event.consumer.EventHandler;
 import com.freelance.event.engine.GenericConsumerWorker;
 import com.freelance.event.limiter.TokenBucketRateLimiter;
 import com.freelance.event.model.EventMessage;
+import com.freelance.system.SystemHardcoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -18,45 +19,56 @@ import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.resps.Tuple;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * High-throughput, distributed Redis-backed multi-tenant event broker.
  * <p>
- * When a topic is subscribed via {@link #subscribe(IConsumer, ConsumerConfig, Class, EventHandler)}, a dedicated
- * worker thread pool and rate limiter are initialized to continuously dequeue messages and delegate execution to
- * {@link com.freelance.event.engine.GenericConsumerWorker}.
+ * Implements tenant-isolated queue partitioning ({@code event:queue:<destination>:<tenantId>}), tenant tracking sets
+ * ({@code event:tenants:<destination>}), fair-share round-robin dispatching across active tenants to prevent starvation,
+ * per-tenant {@link TokenBucketRateLimiter} instances, priority preemption via Redis ZSET composite scores
+ * ({@code priority * 10^13 + timestamp}), and atomic message dequeuing via {@code ZPOPMIN}.
+ * </p>
+ * <p>
+ * Delayed retries and scheduled message republishing are handled via a global sorted set ({@code event:delayed})
+ * continuously polled by a dedicated daemon executor.
  * </p>
  * <p>
  * <pre>{@code
  *  ========================================================================================
- *                               REDIS EVENT BROKER ARCHITECTURE
+ *                             REDIS MULTI-TENANT BROKER ARCHITECTURE
  *  ========================================================================================
  *
  *  [ 1. INITIALIZATION ]
  *  RedisEventBroker(host, port, auth, db)
  *       │
- *       ├──► JedisPool (Connection Pool Configured)
- *       ├──► ObjectMapper (Jackson JSR-310 Dates)
- *       └──► ScheduledExecutorService delayedPoller (runs pollDelayedQueue every 100ms)
+ *       ├──► JedisPool (Configured connection pooling)
+ *       ├──► ObjectMapper (Jackson JSR-310 JavaTimeModule)
+ *       └──► ScheduledExecutorService delayedPoller (polls "event:delayed" every 100ms)
  *
  *  ────────────────────────────────────────────────────────────────────────────────────────
  *
- *  [ 2. SUBSCRIPTION (Per Destination Topic one queue and a worker thread to listen from that queue) ]
+ *  [ 2. SUBSCRIPTION & FAIR-SHARE DISPATCH (Per Destination Topic) ]
  *  subscribe(IConsumer destination, ConsumerConfig config, ...)
  *       │
  *       ▼
  *  RedisTopicSubscriber(destination)
- *       ├──► Dedicated TokenBucketRateLimiter(rateLimitPerSecond)
+ *       ├──► ConcurrentHashMap<String, TokenBucketRateLimiter> rateLimiters (Per-Tenant Limiters)
+ *       ├──► AtomicInteger roundRobinCounter (Fair-Share Tenant Scheduling)
  *       └──► Dedicated ExecutorService workerPool(concurrency threads)
  *                 │
- *                 ▼ (continuous worker polling loop)
- *            [ jedis.zpopmin("event:queue:<destination>", 1) ]
+ *                 ▼ (fair-share round-robin across active tenant queues)
+ *            [ jedis.smembers("event:tenants:<destination>") ]
+ *            [ jedis.zpopmin("event:queue:<destination>:<tenantId>", 1) ]
  *                 │
- *                 ▼ (deserializes JSON & rateLimiter.acquire())
+ *                 ▼ (deserializes JSON & per-tenant rateLimiter.acquire())
  *            [ GenericConsumerWorker.run() ]
  *
  *  ────────────────────────────────────────────────────────────────────────────────────────
@@ -68,14 +80,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *            │                                                        │
  *            │ (score = priority * 1e13 + timestamp)                  │ (score = now + delayMillis)
  *            ▼                                                        ▼
- *  ┌────────────────────────────────────┐                   ┌────────────────────────────────────┐
- *  │ Redis ZSET:                        │                   │ Redis ZSET:                        │
- *  │ "event:queue:<destination>"        │                   │ "event:delayed"                    │
- *  │ (Ordered: Priority -> FIFO Time)   │                   │ (Ordered by trigger timestamp)     │
- *  └─────────────────▲──────────────────┘                   └─────────────────┬──────────────────┘
- *                    │                                                        │
- *                    │                      [ delayedPoller Executor ]        │
- *                    │               (polls every 100ms: score <= now)        ▼
+ *  ┌──────────────────────────────────────────────┐          ┌────────────────────────────────────┐
+ *  │ Redis ZSET:                                  │          │ Redis ZSET:                        │
+ *  │ "event:queue:<destination>:<tenantId>"       │          │ "event:delayed"                    │
+ *  │ Redis SET:                                   │          │ (Ordered by trigger timestamp)     │
+ *  │ "event:tenants:<destination>"                │          └─────────────────┬──────────────────┘
+ *  │ (Ordered: Priority -> FIFO Time)             │                            │
+ *  └─────────────────▲────────────────────────────┘                            │
+ *                    │                                                         │
+ *                    │                               [ delayedPoller ]         │
+ *                    │                      (polls every 100ms: score <= now)  ▼
  *                    └─────────────────────── jedis.zrangeByScore("event:delayed", 0, now)
  *                                             jedis.zrem(...)
  *                                             broker.publish(readyMsg)
@@ -91,6 +105,7 @@ public class RedisEventBroker implements EventBroker {
 
     private static final Logger logger = LoggerFactory.getLogger(RedisEventBroker.class);
     private static final String QUEUE_PREFIX = "event:queue:";
+    private static final String TENANTS_PREFIX = "event:tenants:";
     private static final String DELAYED_QUEUE_KEY = "event:delayed";
     private static final double PRIORITY_MULTIPLIER = 10_000_000_000_000.0;
 
@@ -140,12 +155,17 @@ public class RedisEventBroker implements EventBroker {
         try (Jedis jedis = jedisPool.getResource()) {
             String jsonPayload = objectMapper.writeValueAsString(message);
             double score = (message.getPriority().getLevel() * PRIORITY_MULTIPLIER) + message.getTimestamp().toEpochMilli();
-            String queueKey = QUEUE_PREFIX + message.getDestination();
+            String tenantId = (message.getTenantId() != null && !message.getTenantId().isBlank())
+                    ? message.getTenantId()
+                    : SystemHardcoding.DEFAULT_TENANT.asString();
+            String queueKey = QUEUE_PREFIX + message.getDestination() + ":" + tenantId;
+            String tenantsSetKey = TENANTS_PREFIX + message.getDestination();
 
             jedis.zadd(queueKey, score, jsonPayload);
+            jedis.sadd(tenantsSetKey, tenantId);
 
-            logger.debug("[RedisEventBroker] Published message {} to Redis key '{}' (priority={}, score={})",
-                    message.getId(), queueKey, message.getPriority(), score);
+            logger.debug("[RedisEventBroker] Published message {} to Redis key '{}' for tenant '{}' (priority={}, score={})",
+                    message.getId(), queueKey, tenantId, message.getPriority(), score);
         } catch (Exception e) {
             logger.error("[RedisEventBroker] Failed to publish message {} to destination '{}'",
                     message.getId(), message.getDestination(), e);
@@ -228,7 +248,7 @@ public class RedisEventBroker implements EventBroker {
             subscriber.start();
         }
 
-        logger.info("[RedisEventBroker] Registered Redis consumer for '{}' (concurrency={}, rateLimit={}/s)",
+        logger.info("[RedisEventBroker] Registered multi-tenant Redis consumer for '{}' (concurrency={}, rateLimit={}/s)",
                 destName, config.concurrency(), config.rateLimitPerSecond());
     }
 
@@ -278,7 +298,8 @@ public class RedisEventBroker implements EventBroker {
         private final JedisPool jedisPool;
         private final ObjectMapper objectMapper;
 
-        private final TokenBucketRateLimiter rateLimiter;
+        private final ConcurrentHashMap<String, TokenBucketRateLimiter> rateLimiters = new ConcurrentHashMap<>();
+        private final AtomicInteger roundRobinCounter = new AtomicInteger(0);
         private final ExecutorService workerPool;
         private final AtomicBoolean active = new AtomicBoolean(false);
 
@@ -298,12 +319,15 @@ public class RedisEventBroker implements EventBroker {
             this.broker = broker;
             this.jedisPool = jedisPool;
             this.objectMapper = objectMapper;
-            this.rateLimiter = new TokenBucketRateLimiter(this.config.rateLimitPerSecond());
             this.workerPool = Executors.newFixedThreadPool(this.config.concurrency(), r -> {
                 Thread t = new Thread(r, "redis-worker-" + destination + "-" + System.nanoTime() % 1000);
                 t.setDaemon(true);
                 return t;
             });
+        }
+
+        private TokenBucketRateLimiter getOrCreateRateLimiter(String tenantId) {
+            return rateLimiters.computeIfAbsent(tenantId, t -> new TokenBucketRateLimiter(config.rateLimitPerSecond()));
         }
 
         void start() {
@@ -315,34 +339,66 @@ public class RedisEventBroker implements EventBroker {
         }
 
         private void pollAndProcessLoop() {
-            String queueKey = QUEUE_PREFIX + destination;
+            String tenantsSetKey = TENANTS_PREFIX + destination;
 
             while (active.get()) {
                 try {
-                    List<Tuple> items;
+                    Set<String> tenants;
                     try (Jedis jedis = jedisPool.getResource()) {
-                        items = jedis.zpopmin(queueKey, 1);
+                        tenants = jedis.smembers(tenantsSetKey);
                     }
 
-                    if (items == null || items.isEmpty()) {
+                    if (tenants == null || tenants.isEmpty()) {
+                        tenants = Set.of(SystemHardcoding.DEFAULT_TENANT.asString());
+                    }
+
+                    List<String> tenantList = new ArrayList<>(tenants);
+                    if (tenantList.isEmpty()) {
                         Thread.sleep(50);
                         continue;
                     }
 
-                    String json = items.getFirst().getElement();
-                    EventMessage<?> rawMessage = objectMapper.readValue(json, EventMessage.class);
+                    int tenantCount = tenantList.size();
+                    int startIdx = (roundRobinCounter.getAndIncrement() & 0x7fffffff) % tenantCount;
+                    boolean processed = false;
 
-                    rateLimiter.acquire();
+                    for (int i = 0; i < tenantCount; i++) {
+                        int currentIdx = (startIdx + i) % tenantCount;
+                        if (currentIdx >= tenantList.size()) {
+                            break;
+                        }
+                        String currentTenant = tenantList.get(currentIdx);
+                        String queueKey = QUEUE_PREFIX + destination + ":" + currentTenant;
 
-                    GenericConsumerWorker<T> task = new GenericConsumerWorker<>(
-                            rawMessage,
-                            payloadClass,
-                            handler,
-                            config,
-                            broker
-                    );
+                        List<Tuple> items;
+                        try (Jedis jedis = jedisPool.getResource()) {
+                            items = jedis.zpopmin(queueKey, 1);
+                        }
 
-                    task.run();
+                        if (items != null && !items.isEmpty()) {
+                            String json = items.getFirst().getElement();
+                            EventMessage<?> rawMessage = objectMapper.readValue(json, EventMessage.class);
+
+                            TokenBucketRateLimiter limiter = getOrCreateRateLimiter(rawMessage.getTenantId());
+                            limiter.acquire();
+
+                            GenericConsumerWorker<T> task = new GenericConsumerWorker<>(
+                                    rawMessage,
+                                    payloadClass,
+                                    handler,
+                                    config,
+                                    broker
+                            );
+
+                            task.run();
+                            processed = true;
+                            break;
+                        }
+                    }
+
+                    if (!processed) {
+                        Thread.sleep(50);
+                    }
 
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();

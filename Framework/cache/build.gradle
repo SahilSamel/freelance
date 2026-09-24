@@ -12,6 +12,7 @@ repositories {
 dependencies {
     implementation 'ch.qos.logback:logback-classic:1.5.18'
     implementation 'org.reflections:reflections:0.10.2'
+    implementation project(":Common:enum")
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

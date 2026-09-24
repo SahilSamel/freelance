@@ -1,7 +1,9 @@
 package com.freelance.rest.app.transaction;
 
+import com.freelance.manager.TenantCacheKeyResolver;
 import com.freelance.rest.app.transaction.context.TransactionContext;
 import com.freelance.rest.context.RequestContext;
+import com.freelance.system.SystemHardcoding;
 import jakarta.persistence.EntityManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,25 +26,64 @@ public class Transaction implements AutoCloseable {
 
     private static EntityManagerFactory emf;
 
+    static {
+        registerTenantSupplier();
+    }
+
     public static void init(EntityManagerFactory factory) {
         emf = factory;
+        registerTenantSupplier();
+    }
+
+    private static void registerTenantSupplier() {
+        try {
+            TenantCacheKeyResolver.getInstance().setTenantSupplier(() -> {
+                try {
+                    TransactionContext ctx = peek();
+                    if (ctx != null && ctx.getRequestContext() != null) {
+                        String tenantId = ctx.getRequestContext().tenantId();
+                        if (tenantId != null && !tenantId.isBlank()) {
+                            return tenantId;
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                return null;
+            });
+        } catch (Exception ignored) {
+        }
     }
 
     /**
-     * Starts a new database transaction and binds an isolated transaction context to the current thread.
-     * <p>
-     * Any thread requiring processing in services or database operations will be required to call start()
-     * before their said operations.
-     * </p>
+     * Starts a new database transaction using the default schema and binds an isolated transaction context.
      */
     public static Transaction start() {
+        return start(null);
+    }
+
+    /**
+     * Starts a new database transaction scoped to the specified tenant schema and binds an isolated transaction context.
+     *
+     * @param tenantId the tenant identifier / schema name
+     */
+    public static Transaction start(String tenantId) {
         if (emf == null) {
             throw new IllegalStateException("Transaction engine has not been initialized with an EntityManagerFactory!");
         }
 
         var em = emf.createEntityManager();
         em.getTransaction().begin();
-        contextHolder.set(new TransactionContext(em));
+
+        String schema = (tenantId != null && !tenantId.isBlank()) ? tenantId.trim().toLowerCase() : SystemHardcoding.DEFAULT_TENANT.asString();
+        try {
+            em.createNativeQuery("SET search_path TO " + schema + ", public").executeUpdate();
+        } catch (Exception e) {
+            logger.debug("Executing SET search_path skipped or unsupported on current connection: {}", e.getMessage());
+        }
+
+        var txContext = new TransactionContext(em);
+        txContext.getRequestContext().withTenantId(schema);
+        contextHolder.set(txContext);
         return new Transaction();
     }
 

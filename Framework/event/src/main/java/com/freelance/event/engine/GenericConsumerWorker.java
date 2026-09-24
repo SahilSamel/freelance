@@ -34,7 +34,7 @@ import java.util.UUID;
  *    │                           │     GenericConsumerWorker.run()      │
  *    │                           │  - Set MDC traceId                   │
  *    │                           │  - Deserialize target DTO payload    │
- *    │                           │  - Start JPA Transaction             │
+ *    │                           │  - Start JPA Tenant Transaction      │
  *    │                           │  - Bind caller RequestContext userId │
  *    │                           └──────────────────┬───────────────────┘
  *    │                                              │
@@ -118,7 +118,7 @@ public class GenericConsumerWorker<T> implements Runnable {
             typedMessage = convertPayload(rawMessage, payloadClass);
 
             try {
-                Transaction.start();
+                Transaction.start(rawMessage.getTenantId());
                 txStarted = true;
             } catch (Exception e) {
                 logger.debug("Transaction engine not initialized for event worker: {}", e.getMessage());
@@ -184,7 +184,7 @@ public class GenericConsumerWorker<T> implements Runnable {
                 boolean dlqTxStarted = false;
                 try {
                     try {
-                        Transaction.start();
+                        Transaction.start(msg.getTenantId());
                         dlqTxStarted = true;
                         if (msg.getCallerUserId() != null) {
                             Transaction.getRequestContext().withUserId(msg.getCallerUserId());

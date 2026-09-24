@@ -26,12 +26,12 @@ class RetryAndDeadLetterTest {
     @BeforeEach
     void setUp() {
         broker = new InMemoryEventBroker();
-        EventManagementEngine.getInstance().setBrokerForTesting(broker);
+        EventRegistry.getInstance().setBrokerForTesting(broker);
     }
 
     @AfterEach
     void tearDown() {
-        EventManagementEngine.getInstance().shutdown(1000);
+        EventRegistry.getInstance().shutdown(1000);
     }
 
     @Test
@@ -48,7 +48,7 @@ class RetryAndDeadLetterTest {
                 .backoffMultiplier(2.0)
                 .build();
 
-        EventManagementEngine.getInstance().registerConsumer(
+        EventRegistry.getInstance().registerConsumer(
                 destination,
                 config,
                 String.class,
@@ -85,7 +85,7 @@ class RetryAndDeadLetterTest {
                 .backoffMultiplier(1.5)
                 .build();
 
-        EventManagementEngine.getInstance().registerConsumer(
+        EventRegistry.getInstance().registerConsumer(
                 destination,
                 config,
                 String.class,

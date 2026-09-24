@@ -36,7 +36,7 @@ public class SystemConfigurationService {
     }
 
     public void preloadSystemCacheEntries() {
-        CacheManager.getInstance().preload(SystemConfigurationCache.NAME, repository.getAll());
+        CacheManager.preload(SystemConfigurationCache.NAME, repository.getAll());
     }
 
     public String loadConfigValue(String configId) {
@@ -67,7 +67,7 @@ public class SystemConfigurationService {
         repository.merge(entity);
 
         try {
-            CacheManager.getInstance().put(SystemConfigurationCache.NAME, entity.getConfigId(), entity.getConfigValue());
+            CacheManager.put(SystemConfigurationCache.NAME, entity.getConfigId(), entity.getConfigValue());
         } catch (Exception ignored) {}
 
         return assembler.toUpdateResponseDTO(entity);

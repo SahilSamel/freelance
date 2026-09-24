@@ -214,17 +214,17 @@ class WhatsAppUtilityTest {
     @DisplayName("Should detect dynamically configured opt-out and opt-in keywords from ConfigurationEngine")
     void testDynamicKeywordConfiguration() {
         try {
-            com.freelance.manager.CacheManager.getInstance().init("com.freelance.fixtures");
+            com.freelance.config.CacheRegistry.getInstance().init("com.freelance.fixtures");
         } catch (IllegalStateException ignored) {
             // already initialized
         }
 
-        com.freelance.manager.CacheManager.getInstance().put(
+        com.freelance.manager.CacheManager.put(
                 "cache_SystemConfig",
                 com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_OPT_OUT_KEYWORDS.getKey(),
                 "HALT, CEASE, BLOCK_ME"
         );
-        com.freelance.manager.CacheManager.getInstance().put(
+        com.freelance.manager.CacheManager.put(
                 "cache_SystemConfig",
                 com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_OPT_IN_KEYWORDS.getKey(),
                 "UNBLOCK, ALLOW_ME, GO"

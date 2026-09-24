@@ -111,4 +111,30 @@ class TokenUtilityTest {
         );
         assertEquals(com.freelance.keys.authentication.session.SessionConstraintErrors.EXPIRED_SESSION, ex.getError());
     }
+
+    @Test
+    @DisplayName("generateToken and parse correctly propagate tenantId claim and standard issuer claim")
+    void generateAndParse_withTenantId() {
+        UUID userId = UUID.randomUUID();
+        String sessionKey = "sess-tenant-123";
+        String tenantId = "ironfit";
+
+        TokenGenerateRequestDTO request = new TokenGenerateRequestDTO(userId, sessionKey, tenantId);
+        TokenGenerateResponseDTO generateResponse = tokenUtility.generateToken(request);
+        assertNotNull(generateResponse.token());
+
+        // Verify standard claims
+        io.jsonwebtoken.Claims rawClaims = io.jsonwebtoken.Jwts.parser()
+                .verifyWith(JwtSecretManager.getSecretKey())
+                .build()
+                .parseSignedClaims(generateResponse.token())
+                .getPayload();
+        assertEquals("ironfit", rawClaims.getIssuer());
+        assertEquals("ironfit", rawClaims.get("tenantId", String.class));
+
+        TokenParseResponseDTO parseResponse = tokenUtility.parse(new TokenParseRequestDTO(generateResponse.token()));
+        assertEquals(userId, parseResponse.userId());
+        assertEquals(sessionKey, parseResponse.sessionKey());
+        assertEquals("ironfit", parseResponse.tenantId());
+    }
 }

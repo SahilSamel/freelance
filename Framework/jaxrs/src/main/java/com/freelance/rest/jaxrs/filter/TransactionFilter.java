@@ -27,8 +27,8 @@ public class TransactionFilter implements ContainerRequestFilter, ContainerRespo
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        Transaction.start();
-        logger.debug("Transaction started for {}", requestContext.getUriInfo());
+        Transaction.start((String) requestContext.getProperty(TenantFilter.TENANT_PROPERTY));
+        logger.debug("Transaction started for on {}", requestContext.getUriInfo());
     }
 
     @Override

@@ -34,8 +34,8 @@ class AuditServiceListTest {
     @DisplayName("listAuditLogs returns all logs when no filter is provided")
     void listAuditLogs_noFilter_returnsAll() {
         FakeAuditLogRepository repo = new FakeAuditLogRepository();
-        repo.storage.add(new AuditLog(Instant.now(), "T1", UUID.randomUUID(), null, "POST", "/users", 201, 20L, "127.0.0.1", "test", "token"));
-        repo.storage.add(new AuditLog(Instant.now(), "T2", UUID.randomUUID(), null, "GET", "/roles", 200, 15L, "127.0.0.1", "test", "token"));
+        repo.storage.add(new AuditLog(Instant.now(), "T1", UUID.randomUUID(), "POST", "/users", 201, 20L, "127.0.0.1", "test", "token"));
+        repo.storage.add(new AuditLog(Instant.now(), "T2", UUID.randomUUID(), "GET", "/roles", 200, 15L, "127.0.0.1", "test", "token"));
 
         AuditService service = new AuditService(repo, new AuditLogAssembler());
         AuditLogListResponseDTO response = service.listAuditLogs(AuditLogListRequestDTO.empty());
@@ -49,8 +49,8 @@ class AuditServiceListTest {
     @DisplayName("listAuditLogs filters by HTTP method and status code")
     void listAuditLogs_filtersByMethodAndStatus() {
         FakeAuditLogRepository repo = new FakeAuditLogRepository();
-        repo.storage.add(new AuditLog(Instant.now(), "T1", UUID.randomUUID(), null, "POST", "/users", 201, 20L, "127.0.0.1", "test", "token"));
-        repo.storage.add(new AuditLog(Instant.now(), "T2", UUID.randomUUID(), null, "GET", "/roles", 200, 15L, "127.0.0.1", "test", "token"));
+        repo.storage.add(new AuditLog(Instant.now(), "T1", UUID.randomUUID(), "POST", "/users", 201, 20L, "127.0.0.1", "test", "token"));
+        repo.storage.add(new AuditLog(Instant.now(), "T2", UUID.randomUUID(), "GET", "/roles", 200, 15L, "127.0.0.1", "test", "token"));
 
         AuditService service = new AuditService(repo, new AuditLogAssembler());
         AuditLogListResponseDTO response = service.listAuditLogs(
@@ -82,7 +82,7 @@ class AuditServiceListTest {
     @Test
     @DisplayName("createAuditLog returns null and skips persisting when auditing is disabled")
     void createAuditLog_whenAuditingDisabled_skips() {
-        com.freelance.manager.CacheManager.getInstance().put("cache_SystemConfig", "audit.enabled", "false");
+        com.freelance.manager.CacheManager.put("cache_SystemConfig", "audit.enabled", "false");
 
         FakeAuditLogRepository repo = new FakeAuditLogRepository();
         AuditService service = new AuditService(repo, new AuditLogAssembler());

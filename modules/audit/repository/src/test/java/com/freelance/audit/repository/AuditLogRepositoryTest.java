@@ -87,7 +87,7 @@ public class AuditLogRepositoryTest {
                             lastFirstResult = (Integer) args[0];
                             return proxy;
                         case "getResultList":
-                            return List.of(new AuditLog(Instant.now(), "trace-1", UUID.randomUUID(), "tenant-1", "POST", "/users/create", 201, 15L, "127.0.0.1", "curl", "bearer"));
+                            return List.of(new AuditLog(Instant.now(), "trace-1", UUID.randomUUID(), "POST", "/users/create", 201, 15L, "127.0.0.1", "curl", "bearer"));
                         default: return null;
                     }
                 }
@@ -186,14 +186,13 @@ public class AuditLogRepositoryTest {
         UUID customId = UUID.randomUUID();
 
         AuditLog log2 = new AuditLog(
-                now, "trace-abc", userId, "tenant-xyz", "GET", "/status",
+                now, "trace-abc", userId, "GET", "/status",
                 "req-payload", 200, 42L, "192.168.1.1", "Mozilla/5.0", "bearer"
         );
 
         assertEquals(now, log2.getTimestamp());
         assertEquals("trace-abc", log2.getTraceId());
         assertEquals(userId, log2.getUserId());
-        assertEquals("tenant-xyz", log2.getTenantId());
         assertEquals("GET", log2.getHttpMethod());
         assertEquals("/status", log2.getEndpoint());
         assertEquals("req-payload", log2.getRequestData());
@@ -208,7 +207,6 @@ public class AuditLogRepositoryTest {
         log2.setTimestamp(now.plusSeconds(60));
         log2.setTraceId("trace-new");
         log2.setUserId(null);
-        log2.setTenantId("tenant-new");
         log2.setHttpMethod("PUT");
         log2.setEndpoint("/new-endpoint");
         log2.setRequestData("new-payload");
@@ -222,7 +220,6 @@ public class AuditLogRepositoryTest {
         assertEquals(now.plusSeconds(60), log2.getTimestamp());
         assertEquals("trace-new", log2.getTraceId());
         assertNull(log2.getUserId());
-        assertEquals("tenant-new", log2.getTenantId());
         assertEquals("PUT", log2.getHttpMethod());
         assertEquals("/new-endpoint", log2.getEndpoint());
         assertEquals("new-payload", log2.getRequestData());

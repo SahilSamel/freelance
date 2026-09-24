@@ -20,6 +20,7 @@ import java.util.UUID;
 public class TokenUtility {
 
     private static final String CLAIM_SESSION_KEY = "sessionKey";
+    private static final String CLAIM_TENANT_ID = "tenantId";
     private static final Logger logger = LoggerFactory.getLogger(TokenUtility.class);
 
     public TokenGenerateResponseDTO generateToken(TokenGenerateRequestDTO request) {
@@ -28,10 +29,18 @@ public class TokenUtility {
         }
 
         Instant now = Instant.now();
-        String token = Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(request.userId().toString())
                 .claim(CLAIM_SESSION_KEY, request.sessionKey())
-                .issuedAt(Date.from(now))
+                .issuedAt(Date.from(now));
+
+        if (request.tenantId() != null && !request.tenantId().isBlank()) {
+            String tenant = request.tenantId().trim().toLowerCase();
+            builder.issuer(tenant);
+            builder.claim(CLAIM_TENANT_ID, tenant);
+        }
+
+        String token = builder
                 .signWith(signingKey())
                 .compact();
 
@@ -49,8 +58,11 @@ public class TokenUtility {
 
             UUID userId = UUID.fromString(claims.getSubject());
             String sessionKey = claims.get(CLAIM_SESSION_KEY, String.class);
+            String tenantId = claims.getIssuer() != null && !claims.getIssuer().isBlank()
+                    ? claims.getIssuer()
+                    : claims.get(CLAIM_TENANT_ID, String.class);
 
-            return new TokenParseResponseDTO(userId, sessionKey);
+            return new TokenParseResponseDTO(userId, sessionKey, tenantId);
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
             logger.warn("JWT token has expired: {}", e.getMessage());
             throw new ConstraintException(SessionConstraintErrors.EXPIRED_SESSION);

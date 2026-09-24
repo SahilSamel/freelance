@@ -174,4 +174,45 @@ class TransactionTest {
         Transaction.init(null);
         assertThrows(IllegalStateException.class, Transaction::start);
     }
+
+    @Test
+    @DisplayName("Should start transaction with tenant schema and bind tenantId to RequestContext")
+    void testStartWithTenantSchema() {
+        try (Transaction tx = Transaction.start("ironfit")) {
+            TransactionContext ctx = Transaction.peek();
+            assertNotNull(ctx);
+            assertEquals("ironfit", ctx.getRequestContext().tenantId());
+        }
+        assertTrue(committed.get());
+        assertTrue(closed.get());
+    }
+
+    @Test
+    @DisplayName("Should fallback to default freelance schema when tenantId is null or blank")
+    void testStartWithNullOrBlankTenantFallback() {
+        try (Transaction tx = Transaction.start(null)) {
+            assertEquals("freelance", Transaction.getRequestContext().tenantId());
+        }
+
+        try (Transaction tx = Transaction.start("   ")) {
+            assertEquals("freelance", Transaction.getRequestContext().tenantId());
+        }
+    }
+
+    @Test
+    @DisplayName("Transaction tenant should dynamically supply active tenant to TenantCacheKeyResolver")
+    void testTransactionSuppliesTenantToCacheManager() {
+        com.freelance.manager.TenantCacheKeyResolver resolver = com.freelance.manager.TenantCacheKeyResolver.getInstance();
+        assertNotNull(resolver.getTenantSupplier());
+
+        // Outside transaction -> null / fallback to freelance
+        assertEquals("freelance", resolver.getTenantSupplier().get() != null ? resolver.getTenantSupplier().get() : "freelance");
+
+        try (Transaction tx = Transaction.start("tenant_zeta")) {
+            assertEquals("tenant_zeta", resolver.getTenantSupplier().get());
+        }
+
+        // After transaction close -> null / fallback
+        assertNull(resolver.getTenantSupplier().get());
+    }
 }

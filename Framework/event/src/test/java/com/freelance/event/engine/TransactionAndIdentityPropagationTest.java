@@ -28,34 +28,37 @@ class TransactionAndIdentityPropagationTest {
     @BeforeEach
     void setUp() {
         broker = new InMemoryEventBroker();
-        EventManagementEngine.getInstance().setBrokerForTesting(broker);
+        EventRegistry.getInstance().setBrokerForTesting(broker);
     }
 
     @AfterEach
     void tearDown() {
-        EventManagementEngine.getInstance().shutdown(1000);
+        EventRegistry.getInstance().shutdown(1000);
     }
 
     @Test
-    @DisplayName("Caller userId and MDC traceId are preserved and propagated to the worker thread")
+    @DisplayName("Caller userId, tenantId, and MDC traceId are preserved and propagated to the worker thread")
     void testCallerIdentityAndMdcPropagation() throws InterruptedException {
         TestConsumer destination = TestConsumer.TEST_IDENTITY_TOPIC;
         UUID expectedCallerId = UUID.randomUUID();
         String expectedTraceId = "trace-custom-abc-987";
+        String expectedTenantId = "tenant_megacorp";
         UserNotificationDTO expectedPayload = new UserNotificationDTO(UUID.randomUUID(), "Welcome aboard!");
 
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<String> receivedTraceId = new AtomicReference<>();
         AtomicReference<UUID> receivedCallerId = new AtomicReference<>();
+        AtomicReference<String> receivedTenantId = new AtomicReference<>();
         AtomicReference<UserNotificationDTO> receivedPayload = new AtomicReference<>();
 
-        EventManagementEngine.getInstance().registerConsumer(
+        EventRegistry.getInstance().registerConsumer(
                 destination,
                 ConsumerConfig.builder().concurrency(1).build(),
                 UserNotificationDTO.class,
                 msg -> {
                     receivedTraceId.set(MDC.get("traceId"));
                     receivedCallerId.set(msg.getCallerUserId());
+                    receivedTenantId.set(msg.getTenantId());
                     receivedPayload.set(msg.getPayload());
                     latch.countDown();
                 }
@@ -63,7 +66,8 @@ class TransactionAndIdentityPropagationTest {
 
         EventMessage<UserNotificationDTO> envelope = new EventMessage<>(
                 UUID.randomUUID(),
-                destination,
+                destination.getDestination(),
+                expectedTenantId,
                 expectedPayload,
                 UserNotificationDTO.class.getName(),
                 EventPriority.HIGH,
@@ -74,13 +78,37 @@ class TransactionAndIdentityPropagationTest {
                 0L
         );
 
-        EventManagementEngine.emit(envelope);
+        broker.publish(envelope);
 
         assertTrue(latch.await(5, TimeUnit.SECONDS), "Event worker should execute task within 5 seconds");
 
         assertEquals(expectedTraceId, receivedTraceId.get(), "Worker MDC traceId must match caller traceId");
         assertEquals(expectedCallerId, receivedCallerId.get(), "Worker message callerUserId must match caller");
+        assertEquals(expectedTenantId, receivedTenantId.get(), "Worker message tenantId must match caller tenantId");
         assertNotNull(receivedPayload.get());
         assertEquals(expectedPayload.message(), receivedPayload.get().message());
+    }
+
+    @Test
+    @DisplayName("emit with explicit tenantId populates tenantId in EventMessage")
+    void testEmitWithExplicitTenant() throws InterruptedException {
+        TestConsumer destination = TestConsumer.TEST_IDENTITY_TOPIC;
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<String> receivedTenantId = new AtomicReference<>();
+
+        EventRegistry.getInstance().registerConsumer(
+                destination,
+                ConsumerConfig.builder().concurrency(1).build(),
+                String.class,
+                msg -> {
+                    receivedTenantId.set(msg.getTenantId());
+                    latch.countDown();
+                }
+        );
+
+        EventManagementEngine.emit(destination, "tenant_finance", "payload", EventPriority.NORMAL);
+
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertEquals("tenant_finance", receivedTenantId.get());
     }
 }

@@ -21,7 +21,7 @@ public final class ConfigurationEngine {
     public static String get(IConfig config) {
         if (config == null) return null;
         try {
-            String value = CacheManager.getInstance().get("cache_SystemConfig", config.getKey());
+            String value = CacheManager.get("cache_SystemConfig", config.getKey());
             return (value != null && !value.isBlank()) ? value : config.getDefaultValue();
         } catch (IllegalStateException e) {
             return config.getDefaultValue();
@@ -77,7 +77,7 @@ public final class ConfigurationEngine {
     public static int getStatusCode(IError error) {
         if (error == null) return 500;
         try {
-            ErrorConfigEntry entry = CacheManager.getInstance().get("cache_ErrorMessage", error.getErrorKey());
+            ErrorConfigEntry entry = CacheManager.get("cache_ErrorMessage", error.getErrorKey());
             return (entry != null && entry.statusCode() > 0)
                     ? entry.statusCode()
                     : error.getDefaultStatusCode();
@@ -89,7 +89,7 @@ public final class ConfigurationEngine {
     public static String getErrorMessage(IError error) {
         if (error == null) return null;
         try {
-            ErrorConfigEntry entry = CacheManager.getInstance().get("cache_ErrorMessage", error.getErrorKey());
+            ErrorConfigEntry entry = CacheManager.get("cache_ErrorMessage", error.getErrorKey());
             return (entry != null && entry.errorMessage() != null && !entry.errorMessage().isBlank())
                     ? entry.errorMessage()
                     : error.getDefaultMessage();
@@ -100,13 +100,13 @@ public final class ConfigurationEngine {
 
     public static void invalidateConfig(IConfig config) {
         if (config != null) {
-            CacheManager.getInstance().invalidate("cache_SystemConfig", config.getKey());
+            CacheManager.invalidate("cache_SystemConfig", config.getKey());
         }
     }
 
     public static void invalidateError(IError error) {
         if (error != null) {
-            CacheManager.getInstance().invalidate("cache_ErrorMessage", error.getErrorKey());
+            CacheManager.invalidate("cache_ErrorMessage", error.getErrorKey());
         }
     }
 

@@ -26,7 +26,7 @@ class AuditLogAssemblerTest {
         UUID userId = UUID.randomUUID();
 
         AuditLog log = new AuditLog(
-                now, "TRACE-123", userId, "TENANT-1", "POST", "/users/create",
+                now, "TRACE-123", userId, "POST", "/users/create",
                 "{\"username\":\"john\"}", 201, 45L, "127.0.0.1", "Mozilla/5.0", "Bearer"
         );
         log.setId(id);
@@ -54,7 +54,7 @@ class AuditLogAssemblerTest {
         assertTrue(empty.auditLogs().isEmpty());
 
         AuditLog log = new AuditLog(
-                Instant.now(), "T1", UUID.randomUUID(), null, "GET", "/test",
+                Instant.now(), "T1", UUID.randomUUID(), "GET", "/test",
                 200, 10L, "127.0.0.1", "agent", "Bearer"
         );
         log.setId(UUID.randomUUID());

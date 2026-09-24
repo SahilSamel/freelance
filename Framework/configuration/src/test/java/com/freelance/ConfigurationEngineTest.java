@@ -1,9 +1,12 @@
 package com.freelance;
 
+import com.freelance.config.CacheRegistry;
 import com.freelance.config.IConfig;
 import com.freelance.config.IError;
 import com.freelance.configuration.dto.ErrorConfigEntry;
 import com.freelance.manager.CacheManager;
+import com.freelance.manager.TenantCacheKeyResolver;
+import com.freelance.provider.CacheProviderFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -74,28 +77,11 @@ class ConfigurationEngineTest {
     // ── Reset CacheManager before each test ───────────────────────────────────
 
     @BeforeEach
-    void setup() throws Exception {
-        CacheManager mgr = CacheManager.getInstance();
-
-        setField(mgr, "initialized", false);
-        clearMap(mgr, "configsByName");
-        clearMap(mgr, "nameByClass");
-        clearMap(mgr, "caches");
-
-        mgr.init(FIXTURE_PACKAGE);
-    }
-
-    private static void setField(Object target, String name, Object value) throws Exception {
-        Field f = target.getClass().getDeclaredField(name);
-        f.setAccessible(true);
-        f.set(target, value);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void clearMap(Object target, String name) throws Exception {
-        Field f = target.getClass().getDeclaredField(name);
-        f.setAccessible(true);
-        ((Map<?, ?>) f.get(target)).clear();
+    void setup() {
+        CacheRegistry.getInstance().reset();
+        TenantCacheKeyResolver.getInstance().reset();
+        CacheProviderFactory.getInstance().reset();
+        CacheRegistry.getInstance().init(FIXTURE_PACKAGE);
     }
 
     // ── get(IConfig) ──────────────────────────────────────────────────────────
@@ -107,7 +93,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("returns cached value when present in cache")
         void returnsCachedValue() {
-            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.STR_CONFIG.getKey(), "custom_value");
+            CacheManager.put("cache_SystemConfig", TestConfigs.STR_CONFIG.getKey(), "custom_value");
             assertEquals("custom_value", ConfigurationEngine.get(TestConfigs.STR_CONFIG));
         }
 
@@ -120,7 +106,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("falls back to default value when cache returns blank string")
         void fallbackOnBlankCache() {
-            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.STR_CONFIG.getKey(), "   ");
+            CacheManager.put("cache_SystemConfig", TestConfigs.STR_CONFIG.getKey(), "   ");
             assertEquals("default_str", ConfigurationEngine.get(TestConfigs.STR_CONFIG));
         }
 
@@ -140,7 +126,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("parses cached int value when valid")
         void parsesCachedInt() {
-            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.INT_CONFIG.getKey(), "42");
+            CacheManager.put("cache_SystemConfig", TestConfigs.INT_CONFIG.getKey(), "42");
             assertEquals(42, ConfigurationEngine.getInt(TestConfigs.INT_CONFIG));
         }
 
@@ -153,7 +139,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("falls back to default int when cached value is non-numeric")
         void fallbackOnInvalidNumber() {
-            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.INT_CONFIG.getKey(), "not-a-number");
+            CacheManager.put("cache_SystemConfig", TestConfigs.INT_CONFIG.getKey(), "not-a-number");
             assertEquals(10, ConfigurationEngine.getInt(TestConfigs.INT_CONFIG));
         }
     }
@@ -167,7 +153,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("parses cached long value when valid")
         void parsesCachedLong() {
-            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.LONG_CONFIG.getKey(), "86400");
+            CacheManager.put("cache_SystemConfig", TestConfigs.LONG_CONFIG.getKey(), "86400");
             assertEquals(86400L, ConfigurationEngine.getLong(TestConfigs.LONG_CONFIG));
         }
 
@@ -180,7 +166,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("falls back to default long when cached value is non-numeric")
         void fallbackOnInvalidNumber() {
-            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.LONG_CONFIG.getKey(), "invalid-long");
+            CacheManager.put("cache_SystemConfig", TestConfigs.LONG_CONFIG.getKey(), "invalid-long");
             assertEquals(3600L, ConfigurationEngine.getLong(TestConfigs.LONG_CONFIG));
         }
     }
@@ -194,10 +180,10 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("parses cached boolean string correctly")
         void parsesCachedBoolean() {
-            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.BOOL_CONFIG.getKey(), "false");
+            CacheManager.put("cache_SystemConfig", TestConfigs.BOOL_CONFIG.getKey(), "false");
             assertFalse(ConfigurationEngine.getBoolean(TestConfigs.BOOL_CONFIG));
 
-            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.BOOL_CONFIG.getKey(), "true");
+            CacheManager.put("cache_SystemConfig", TestConfigs.BOOL_CONFIG.getKey(), "true");
             assertTrue(ConfigurationEngine.getBoolean(TestConfigs.BOOL_CONFIG));
         }
 
@@ -217,7 +203,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("returns cached enum value when present in cache")
         void returnsCachedEnum() {
-            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.ENUM_CONFIG.getKey(), "GAMMA");
+            CacheManager.put("cache_SystemConfig", TestConfigs.ENUM_CONFIG.getKey(), "GAMMA");
             assertEquals(SampleStatus.GAMMA, ConfigurationEngine.getEnum(TestConfigs.ENUM_CONFIG, SampleStatus.class));
         }
 
@@ -230,7 +216,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("falls back to default enum when cached value is invalid")
         void fallbackOnInvalidCachedValue() {
-            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.ENUM_CONFIG.getKey(), "INVALID_VAL");
+            CacheManager.put("cache_SystemConfig", TestConfigs.ENUM_CONFIG.getKey(), "INVALID_VAL");
             assertEquals(SampleStatus.BETA, ConfigurationEngine.getEnum(TestConfigs.ENUM_CONFIG, SampleStatus.class));
         }
 
@@ -252,7 +238,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("returns cached status code when present and > 0")
         void returnsCachedStatusCode() {
-            CacheManager.getInstance().put("cache_ErrorMessage", TestErrors.SAMPLE_ERROR.getErrorKey(),
+            CacheManager.put("cache_ErrorMessage", TestErrors.SAMPLE_ERROR.getErrorKey(),
                     new ErrorConfigEntry(422, "Unprocessable"));
             assertEquals(422, ConfigurationEngine.getStatusCode(TestErrors.SAMPLE_ERROR));
         }
@@ -266,7 +252,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("falls back to default status code when cached status code is 0 or negative")
         void fallbackOnZeroStatusCode() {
-            CacheManager.getInstance().put("cache_ErrorMessage", TestErrors.SAMPLE_ERROR.getErrorKey(),
+            CacheManager.put("cache_ErrorMessage", TestErrors.SAMPLE_ERROR.getErrorKey(),
                     new ErrorConfigEntry(0, "Some msg"));
             assertEquals(400, ConfigurationEngine.getStatusCode(TestErrors.SAMPLE_ERROR));
         }
@@ -287,7 +273,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("returns cached error message when present and non-blank")
         void returnsCachedErrorMessage() {
-            CacheManager.getInstance().put("cache_ErrorMessage", TestErrors.SAMPLE_ERROR.getErrorKey(),
+            CacheManager.put("cache_ErrorMessage", TestErrors.SAMPLE_ERROR.getErrorKey(),
                     new ErrorConfigEntry(400, "Custom database message"));
             assertEquals("Custom database message", ConfigurationEngine.getErrorMessage(TestErrors.SAMPLE_ERROR));
         }
@@ -301,7 +287,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("falls back to default message when cached message is blank")
         void fallbackOnBlankMessage() {
-            CacheManager.getInstance().put("cache_ErrorMessage", TestErrors.SAMPLE_ERROR.getErrorKey(),
+            CacheManager.put("cache_ErrorMessage", TestErrors.SAMPLE_ERROR.getErrorKey(),
                     new ErrorConfigEntry(400, "   "));
             assertEquals("Default error message", ConfigurationEngine.getErrorMessage(TestErrors.SAMPLE_ERROR));
         }
@@ -322,7 +308,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("invalidateConfig removes item from cache_SystemConfig")
         void invalidatesSystemConfig() {
-            CacheManager.getInstance().put("cache_SystemConfig", TestConfigs.STR_CONFIG.getKey(), "to_be_evicted");
+            CacheManager.put("cache_SystemConfig", TestConfigs.STR_CONFIG.getKey(), "to_be_evicted");
             assertEquals("to_be_evicted", ConfigurationEngine.get(TestConfigs.STR_CONFIG));
 
             ConfigurationEngine.invalidateConfig(TestConfigs.STR_CONFIG);
@@ -340,7 +326,7 @@ class ConfigurationEngineTest {
         @Test
         @DisplayName("invalidateError removes item from cache_ErrorMessage")
         void invalidatesErrorMessage() {
-            CacheManager.getInstance().put("cache_ErrorMessage", TestErrors.SAMPLE_ERROR.getErrorKey(),
+            CacheManager.put("cache_ErrorMessage", TestErrors.SAMPLE_ERROR.getErrorKey(),
                     new ErrorConfigEntry(400, "evict_me"));
             assertEquals("evict_me", ConfigurationEngine.getErrorMessage(TestErrors.SAMPLE_ERROR));
 

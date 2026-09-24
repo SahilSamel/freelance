@@ -69,21 +69,21 @@ public class EventBrokerFactoryAndExceptionTest {
     @DisplayName("EventBrokerFactory creates Redis broker when configured")
     void testRedisFactoryCreation() {
         try {
-            com.freelance.manager.CacheManager.getInstance().init("com.freelance.fixtures");
+            com.freelance.config.CacheRegistry.getInstance().init("com.freelance.fixtures");
         } catch (IllegalStateException ignored) {
         }
 
-        com.freelance.manager.CacheManager.getInstance().put(
+        com.freelance.manager.CacheManager.put(
                 "cache_SystemConfig",
                 EventConfigKeys.EVENT_BROKER_TYPE.getKey(),
                 "REDIS"
         );
-        com.freelance.manager.CacheManager.getInstance().put(
+        com.freelance.manager.CacheManager.put(
                 "cache_SystemConfig",
                 EventConfigKeys.REDIS_HOST.getKey(),
                 "localhost"
         );
-        com.freelance.manager.CacheManager.getInstance().put(
+        com.freelance.manager.CacheManager.put(
                 "cache_SystemConfig",
                 EventConfigKeys.REDIS_PORT.getKey(),
                 "6379"

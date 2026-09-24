@@ -9,6 +9,7 @@ import com.freelance.configuration.error.ErrorConfigurationService;
 import com.freelance.configuration.error.repository.ErrorConfigurationRepository;
 import com.freelance.configuration.system.repository.SystemConfigurationRepository;
 import com.freelance.configuration.system.SystemConfigurationService;
+import com.freelance.config.CacheRegistry;
 import com.freelance.manager.CacheManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -60,28 +61,9 @@ class ConfigurationServiceAndCacheTest {
     // ── CacheManager Setup ────────────────────────────────────────────────────
 
     @BeforeEach
-    void setupCacheManager() throws Exception {
-        CacheManager mgr = CacheManager.getInstance();
-
-        setField(mgr, "initialized", false);
-        clearMap(mgr, "configsByName");
-        clearMap(mgr, "nameByClass");
-        clearMap(mgr, "caches");
-
-        mgr.init("com.freelance.cache.config");
-    }
-
-    private static void setField(Object target, String name, Object value) throws Exception {
-        Field f = target.getClass().getDeclaredField(name);
-        f.setAccessible(true);
-        f.set(target, value);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void clearMap(Object target, String name) throws Exception {
-        Field f = target.getClass().getDeclaredField(name);
-        f.setAccessible(true);
-        ((Map<?, ?>) f.get(target)).clear();
+    void setupCacheManager() {
+        CacheRegistry.getInstance().reset();
+        CacheRegistry.getInstance().init("com.freelance.cache.config");
     }
 
     // ── Cache Definitions ─────────────────────────────────────────────────────
@@ -135,8 +117,8 @@ class ConfigurationServiceAndCacheTest {
             SystemConfigurationService service = new SystemConfigurationService(stubRepo);
             service.preloadSystemCacheEntries();
 
-            assertEquals("v1", CacheManager.getInstance().get("cache_SystemConfig", "k1"));
-            assertEquals("v2", CacheManager.getInstance().get("cache_SystemConfig", "k2"));
+            assertEquals("v1", CacheManager.get("cache_SystemConfig", "k1"));
+            assertEquals("v2", CacheManager.get("cache_SystemConfig", "k2"));
         }
     }
 
@@ -179,12 +161,12 @@ class ConfigurationServiceAndCacheTest {
             ErrorConfigurationService service = new ErrorConfigurationService(stubRepo);
             service.preloadErrorCacheEntries();
 
-            ErrorConfigEntry entry1 = CacheManager.getInstance().get("cache_ErrorMessage", "err1");
+            ErrorConfigEntry entry1 = CacheManager.get("cache_ErrorMessage", "err1");
             assertNotNull(entry1);
             assertEquals(400, entry1.statusCode());
             assertEquals("Msg1", entry1.errorMessage());
 
-            ErrorConfigEntry entry2 = CacheManager.getInstance().get("cache_ErrorMessage", "err2");
+            ErrorConfigEntry entry2 = CacheManager.get("cache_ErrorMessage", "err2");
             assertNotNull(entry2);
             assertEquals(500, entry2.statusCode());
             assertEquals("Msg2", entry2.errorMessage());

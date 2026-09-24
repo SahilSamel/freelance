@@ -41,6 +41,7 @@ class RedisEventBrokerTest {
         final List<Tuple> readyTuples = new ArrayList<>();
         final List<String> zremMembers = new ArrayList<>();
         final List<Tuple> popTuples = new ArrayList<>();
+        final Set<String> saddMembers = new HashSet<>();
         boolean throwOnZadd = false;
         boolean closed = false;
 
@@ -57,6 +58,20 @@ class RedisEventBrokerTest {
             zaddScores.add(score);
             zaddMembers.add(member);
             return 1L;
+        }
+
+        @Override
+        public long sadd(String key, String... members) {
+            if (members != null) {
+                Collections.addAll(saddMembers, members);
+                return members.length;
+            }
+            return 0L;
+        }
+
+        @Override
+        public Set<String> smembers(String key) {
+            return new HashSet<>(saddMembers);
         }
 
         @Override
@@ -194,7 +209,7 @@ class RedisEventBrokerTest {
     }
 
     @Test
-    @DisplayName("Successful publish adds message to Redis ZSET with priority-calculated score")
+    @DisplayName("Successful publish adds message to Redis ZSET with priority-calculated score and tenant key")
     void testSuccessfulPublish() {
         FakeJedis fakeJedis = new FakeJedis();
         FakeJedisPool fakePool = new FakeJedisPool(fakeJedis);
@@ -205,8 +220,27 @@ class RedisEventBrokerTest {
         broker.publish(msg);
 
         assertEquals(1, fakeJedis.zaddKeys.size());
-        assertEquals("event:queue:test.redis.topic", fakeJedis.zaddKeys.get(0));
+        assertEquals("event:queue:test.redis.topic:freelance", fakeJedis.zaddKeys.get(0));
+        assertTrue(fakeJedis.saddMembers.contains("freelance"));
         assertTrue(fakeJedis.closed);
+
+        broker.shutdown(50);
+    }
+
+    @Test
+    @DisplayName("Publish with explicit tenantId partitions into tenant-specific queue and updates active tenants set")
+    void testMultiTenantPublish() {
+        FakeJedis fakeJedis = new FakeJedis();
+        FakeJedisPool fakePool = new FakeJedisPool(fakeJedis);
+
+        RedisEventBroker broker = new RedisEventBroker(fakePool);
+
+        EventMessage<String> msg = EventMessage.of(TestTopic.SAMPLE_TOPIC, "tenant_acme", "payload-acme", EventPriority.NORMAL);
+        broker.publish(msg);
+
+        assertEquals(1, fakeJedis.zaddKeys.size());
+        assertEquals("event:queue:test.redis.topic:tenant_acme", fakeJedis.zaddKeys.get(0));
+        assertTrue(fakeJedis.saddMembers.contains("tenant_acme"));
 
         broker.shutdown(50);
     }
@@ -264,7 +298,7 @@ class RedisEventBrokerTest {
 
         assertEquals(1, fakeJedis.zremMembers.size());
         assertEquals(json, fakeJedis.zremMembers.get(0));
-        assertTrue(fakeJedis.zaddKeys.contains("event:queue:test.redis.topic"));
+        assertTrue(fakeJedis.zaddKeys.contains("event:queue:test.redis.topic:freelance"));
 
         broker.shutdown(50);
     }

@@ -53,7 +53,7 @@ class SupportBootstrapServiceTest {
             public SystemConfigurationUpdateResponseDTO updateConfiguration(SystemConfigurationUpdateRequestDTO request) {
                 savedConfigValue.set(request.configValue());
                 try {
-                    CacheManager.getInstance().put(SystemConfigurationCache.NAME, request.configId(), request.configValue());
+                    CacheManager.put(SystemConfigurationCache.NAME, request.configId(), request.configValue());
                 } catch (Exception ignored) {}
                 return new SystemConfigurationUpdateResponseDTO(request.configId(), request.configValue(), request.description());
             }
@@ -93,6 +93,19 @@ class SupportBootstrapServiceTest {
         assertEquals("vendor-support", claims.getIssuer());
         assertEquals(com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_USER_ID.asString(), claims.getSubject());
         assertEquals(com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_SESSION_KEY.asString(), claims.get("sessionKey"));
+        assertEquals("freelance", claims.get("tenantId"));
+    }
+
+    @Test
+    @DisplayName("Day-0 Tenant Boot: Mints valid token containing tenantId claim")
+    void testBootstrapTenant_EmbedsTenantIdClaim() {
+        Day0BootstrapResult result = bootstrapService.bootstrapTenant("tenant_supercorp");
+
+        assertTrue(result.bootstrapped());
+        PublicKey publicKey = VendorSupportKeyUtility.parsePublicKey(result.publicKeyBase64());
+        Claims claims = VendorSupportKeyUtility.verifyAndParseSupportToken(result.token(), publicKey);
+
+        assertEquals("tenant_supercorp", claims.get("tenantId"));
     }
 
     @Test
@@ -100,7 +113,7 @@ class SupportBootstrapServiceTest {
     void testBootstrap_KeyAlreadyConfigured_Skips() {
         // Pre-configure public key in cache
         try {
-            CacheManager.getInstance().put(
+            CacheManager.put(
                     SystemConfigurationCache.NAME,
                     SupportConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY.getKey(),
                     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."

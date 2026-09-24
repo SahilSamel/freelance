@@ -76,7 +76,7 @@ public class RoleUpdateService {
         }
 
         try {
-            CacheManager.getInstance().invalidate(RoleAuthorizationKeyCacheConfig.NAME, role.getId());
+            CacheManager.invalidate(RoleAuthorizationKeyCacheConfig.NAME, role.getId());
         } catch (Exception ignored) {}
 
         return roleAssembler.toUpdateResponseDTO(role, effectiveAuthorizations);

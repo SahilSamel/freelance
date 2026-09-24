@@ -25,7 +25,12 @@ public enum SystemHardcoding {
     /**
      * Well-known session key identifier for authenticated vendor technical support sessions.
      */
-    VENDOR_SUPPORT_SESSION_KEY("VENDOR_SUPPORT_SESSION");
+    VENDOR_SUPPORT_SESSION_KEY("VENDOR_SUPPORT_SESSION"),
+
+    /**
+     * Default fallback tenant identifier for single-tenant operations and default provisioning.
+     */
+    DEFAULT_TENANT("freelance");
 
     private final Object value;
 
