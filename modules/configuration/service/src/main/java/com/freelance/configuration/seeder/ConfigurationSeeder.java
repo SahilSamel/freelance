@@ -43,15 +43,13 @@ public class ConfigurationSeeder {
     }
 
     public void seed() {
-        UUID systemUserId = SystemHardcoding.SYSTEM_USER_ID.asUuid();
-
-        syncSystemConfigurations(systemUserId);
-        syncErrorConfigurations(systemUserId);
+        syncSystemConfigurations();
+        syncErrorConfigurations();
 
         logger.info("[ConfigurationSeeder] Configuration database synchronization completed successfully.");
     }
 
-    private void syncSystemConfigurations(UUID systemUserId) {
+    private void syncSystemConfigurations() {
         List<IConfig> configs = ConfigurationRegistry.getAllConfigs();
         Map<String, SystemConfiguration> existingMap = systemConfigRepo.findAllEntitiesAsMap();
         Set<String> codeKeys = new HashSet<>();
@@ -72,7 +70,7 @@ public class ConfigurationSeeder {
                         config.getValidation()
                 ));
             } else {
-                boolean notModifiedByAnyUser = (existing.getLastUpdatedBy() == null || existing.getLastUpdatedBy().equals(systemUserId));
+                boolean notModifiedByAnyUser = (existing.getLastUpdatedBy() == null || existing.getLastUpdatedBy().equals(SystemHardcoding.SYSTEM_USER_ID.asUuid()));
                 boolean changed = false;
 
                 if (notModifiedByAnyUser) {
@@ -111,7 +109,7 @@ public class ConfigurationSeeder {
         for (Map.Entry<String, SystemConfiguration> entry : existingMap.entrySet()) {
             if (!codeKeys.contains(entry.getKey())) {
                 SystemConfiguration entity = entry.getValue();
-                boolean notModifiedByAnyUser = (entity.getLastUpdatedBy() == null || entity.getLastUpdatedBy().equals(systemUserId));
+                boolean notModifiedByAnyUser = (entity.getLastUpdatedBy() == null || entity.getLastUpdatedBy().equals(SystemHardcoding.SYSTEM_USER_ID.asUuid()));
                 if (notModifiedByAnyUser) {
                     toDelete.add(entity);
                 }
@@ -138,7 +136,7 @@ public class ConfigurationSeeder {
         }
     }
 
-    private void syncErrorConfigurations(UUID systemUserId) {
+    private void syncErrorConfigurations() {
         List<IError> errors = ConfigurationRegistry.getAllErrors();
 
         Map<String, IError> seenCodes = new HashMap<>();
@@ -175,7 +173,7 @@ public class ConfigurationSeeder {
                         error.getDescription()
                 ));
             } else {
-                boolean notModifiedByAnyUser = (existing.getLastUpdatedBy() == null || existing.getLastUpdatedBy().equals(systemUserId));
+                boolean notModifiedByAnyUser = (existing.getLastUpdatedBy() == null || existing.getLastUpdatedBy().equals(SystemHardcoding.SYSTEM_USER_ID.asUuid()));
                 boolean changed = false;
 
                 if (notModifiedByAnyUser) {
@@ -204,7 +202,7 @@ public class ConfigurationSeeder {
         for (Map.Entry<String, ErrorConfiguration> entry : existingMap.entrySet()) {
             if (!codeKeys.contains(entry.getKey())) {
                 ErrorConfiguration entity = entry.getValue();
-                boolean notModifiedByAnyUser = (entity.getLastUpdatedBy() == null || entity.getLastUpdatedBy().equals(systemUserId));
+                boolean notModifiedByAnyUser = (entity.getLastUpdatedBy() == null || entity.getLastUpdatedBy().equals(SystemHardcoding.SYSTEM_USER_ID.asUuid()));
                 if (notModifiedByAnyUser) {
                     toDelete.add(entity);
                 }

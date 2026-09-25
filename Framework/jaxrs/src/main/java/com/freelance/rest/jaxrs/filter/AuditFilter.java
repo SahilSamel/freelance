@@ -173,8 +173,13 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
                     authMechanism
             );
 
-            try (Transaction tx = Transaction.start()) {
-                auditService.createAuditLog(auditDto);
+            try {
+                String tenantId = (String) requestContext.getProperty(TenantFilter.TENANT_PROPERTY);
+                try (Transaction tx = Transaction.start(tenantId)) {
+                    auditService.createAuditLog(auditDto);
+                }
+            } catch (Exception e) {
+                logger.warn("[Audit] Failed to persist audit log: {}", e.getMessage());
             }
 
             logger.debug("[Audit] Request completed: {} {} -> status={} duration={}ms",

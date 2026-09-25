@@ -102,6 +102,10 @@ public class Transaction implements AutoCloseable {
         return peek().getRequestContext();
     }
 
+    public static boolean hasActiveTransaction() {
+        return contextHolder.get() != null;
+    }
+
     /**
      * Finalizes and closes the active transaction bound to the current thread.
      * <p>

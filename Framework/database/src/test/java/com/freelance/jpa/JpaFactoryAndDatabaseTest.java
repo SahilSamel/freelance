@@ -34,11 +34,11 @@ class JpaFactoryAndDatabaseTest {
         assertEquals("pass", config4.password());
         assertEquals(DeploymentMode.TEST, config4.mode());
 
-        // 3 args (defaults to DEV)
+        // 3 args (defaults to PROD)
         String[] args3 = {"jdbc:postgresql://localhost:5432/db", "user", "pass"};
         DatabaseConfig config3 = DatabaseConfig.fromArgs(args3);
         assertNotNull(config3);
-        assertEquals(DeploymentMode.DEV, config3.mode());
+        assertEquals(DeploymentMode.PROD, config3.mode());
 
         // PROD mode
         String[] argsProd = {"jdbc:postgresql://localhost:5432/db", "user", "pass", "prod"};
@@ -52,7 +52,7 @@ class JpaFactoryAndDatabaseTest {
 
         // 3-param constructor
         DatabaseConfig config3Param = new DatabaseConfig("url", "user", "pass");
-        assertEquals(DeploymentMode.DEV, config3Param.mode());
+        assertEquals(DeploymentMode.PROD, config3Param.mode());
     }
 
     @Test

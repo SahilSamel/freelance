@@ -1,6 +1,6 @@
 package com.freelance.fixtures;
 
-import com.freelance.auth.vendor.VendorSupportKeyUtility;
+import com.freelance.auth.token.TokenUtility;
 import io.jsonwebtoken.Jwts;
 
 import java.security.*;
@@ -59,7 +59,7 @@ public final class VendorSupportTestHelper {
         Instant expiry = now.plus(duration != null ? duration : Duration.ofHours(1));
 
         return Jwts.builder()
-                .issuer(VendorSupportKeyUtility.VENDOR_ISSUER)
+                .issuer(TokenUtility.VENDOR_ISSUER)
                 .subject(com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_USER_ID.asString())
                 .claim("sessionKey", com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_SESSION_KEY.asString())
                 .issuedAt(Date.from(now))

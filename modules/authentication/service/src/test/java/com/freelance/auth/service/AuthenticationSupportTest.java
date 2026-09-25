@@ -149,7 +149,7 @@ class AuthenticationSupportTest {
         // Vendor token issued for tenant "ironfit"
         java.time.Instant now = java.time.Instant.now();
         String token = io.jsonwebtoken.Jwts.builder()
-                .issuer(com.freelance.auth.vendor.VendorSupportKeyUtility.VENDOR_ISSUER)
+                .issuer(com.freelance.auth.token.TokenUtility.VENDOR_ISSUER)
                 .subject(java.util.UUID.randomUUID().toString())
                 .claim("sessionKey", "sess-vendor")
                 .claim("tenantId", "ironfit")

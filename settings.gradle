@@ -51,6 +51,12 @@ include 'modules:alerts:endpoint'
 include 'modules:alerts:service'
 include 'modules:alerts:repository'
 
+include 'modules:tenant'
+include 'modules:tenant:dto'
+include 'modules:tenant:endpoint'
+include 'modules:tenant:service'
+include 'modules:tenant:repository'
+
 // ─── DISAMBIGUATE DUPLICATE SUBPROJECT NAMES ─────────────────────────
 project(':modules:authentication:dto').name = 'authentication-dto'
 project(':modules:authentication:service').name = 'authentication-service'
@@ -81,6 +87,11 @@ project(':modules:alerts:dto').name = 'alerts-dto'
 project(':modules:alerts:endpoint').name = 'alerts-endpoint'
 project(':modules:alerts:service').name = 'alerts-service'
 project(':modules:alerts:repository').name = 'alerts-repository'
+
+project(':modules:tenant:dto').name = 'tenant-dto'
+project(':modules:tenant:endpoint').name = 'tenant-endpoint'
+project(':modules:tenant:service').name = 'tenant-service'
+project(':modules:tenant:repository').name = 'tenant-repository'
 
 include 'Common:enum'
 include 'testing'

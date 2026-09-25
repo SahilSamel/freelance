@@ -10,6 +10,7 @@ import com.freelance.rest.app.service.exception.BaseException;
 import com.freelance.rest.app.service.exception.validation.ValidationException;
 import com.freelance.rest.app.transaction.Transaction;
 import com.freelance.rest.app.transaction.context.TransactionContext;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -85,9 +86,14 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> {
     }
 
     public BaseResponse buildResponse(Throwable throwable) {
+        TransactionContext ctx = null;
         try {
-            TransactionContext ctx = Transaction.peek();
+            ctx = Transaction.peek();
+        } catch (Exception e) {
+            logger.debug("No transaction context available in buildResponse: {}", e.getMessage());
+        }
 
+        try {
             switch (throwable) {
                 case ValidationException validationException -> {
                     List<ValidationErrorItem> items = getValidationErrorItems(ctx);
@@ -104,6 +110,14 @@ public class ExceptionHandler implements ExceptionMapper<Throwable> {
                     return createResponse(
                             statusCode,
                             new StandardErrorResponse(error.getIndirectionCode(), ConfigurationEngine.getErrorMessage(error)));
+                }
+
+                case WebApplicationException wae -> {
+                    int statusCode = wae.getResponse() != null ? wae.getResponse().getStatus() : 500;
+                    String message = wae.getMessage() != null ? wae.getMessage() : "Web Application Exception";
+                    return createResponse(
+                            statusCode,
+                            new StandardErrorResponse("FL_" + statusCode, message));
                 }
 
                 case null, default -> {

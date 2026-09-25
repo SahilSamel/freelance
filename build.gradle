@@ -18,6 +18,7 @@ subprojects {
     }
 
     test {
+        jvmArgs("-Dnet.bytebuddy.experimental=true")
         jacoco {
             includes = ['com.freelance.*']
         }

@@ -25,21 +25,33 @@ public class UserUpdateAssembler {
         }
 
         if (request.contacts() != null) {
-            user.getContacts().clear();
+            java.util.Map<com.freelance.alerts.AlertChannel, UserContactEntity> existingByChannel = new java.util.HashMap<>();
+            for (UserContactEntity c : user.getContacts()) {
+                existingByChannel.put(c.getChannel(), c);
+            }
+
+            List<UserContactEntity> updatedList = new java.util.ArrayList<>();
             for (UserContactRequestDTO contactDto : request.contacts()) {
                 if (contactDto != null && contactDto.channel() != null && contactDto.contactValue() != null && !contactDto.contactValue().isBlank()) {
-                    UserContactEntity contactEntity = new UserContactEntity(
-                            UUID.randomUUID(),
-                            user.getId(),
-                            contactDto.channel(),
-                            contactDto.contactValue().trim(),
-                            false,
-                            true,
-                            null
-                    );
-                    user.addContact(contactEntity);
+                    UserContactEntity existing = existingByChannel.remove(contactDto.channel());
+                    if (existing != null) {
+                        existing.setContactValue(contactDto.contactValue().trim());
+                        updatedList.add(existing);
+                    } else {
+                        updatedList.add(new UserContactEntity(
+                                UUID.randomUUID(),
+                                user.getId(),
+                                contactDto.channel(),
+                                contactDto.contactValue().trim(),
+                                false,
+                                true,
+                                null
+                        ));
+                    }
                 }
             }
+            user.getContacts().clear();
+            user.getContacts().addAll(updatedList);
         }
     }
 

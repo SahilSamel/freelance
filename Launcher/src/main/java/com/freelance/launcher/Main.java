@@ -7,6 +7,7 @@ import com.freelance.initialization.Init;
 import com.freelance.jpa.JpaFactory;
 import com.freelance.manager.CacheManager;
 import com.freelance.rest.app.transaction.Transaction;
+import com.freelance.system.SystemHardcoding;
 import jakarta.persistence.EntityManagerFactory;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.ssl.SSLContextConfigurator;
@@ -57,7 +58,7 @@ public class Main {
             logger.info("================================================================================");
 
             FlywayMigrationRunner flywayMigrationRunner = new FlywayMigrationRunner();
-            flywayMigrationRunner.migrate(databaseConfig);
+            flywayMigrationRunner.migrate(databaseConfig, SystemHardcoding.DEFAULT_TENANT.asString());
 
             JpaFactory jpaFactory = new JpaFactory();
             entityManagerFactory = jpaFactory.createEntityManagerFactory(
@@ -65,7 +66,7 @@ public class Main {
                     "com.freelance"
             );
 
-            Init.startUp(entityManagerFactory);
+            Init.startUp(entityManagerFactory, databaseConfig);
 
             httpServer = bootHttpServer();
 

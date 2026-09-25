@@ -4,7 +4,6 @@ import com.freelance.auth.dto.AuthVerifyRequestDTO;
 import com.freelance.auth.dto.TokenGenerateRequestDTO;
 import com.freelance.auth.support.SupportAccessService;
 import com.freelance.auth.token.TokenUtility;
-import com.freelance.auth.vendor.VendorSupportKeyUtility;
 import com.freelance.fixtures.TestContextHelper;
 import com.freelance.fixtures.VendorSupportTestHelper;
 import com.freelance.keys.authentication.session.SessionConstraintErrors;
@@ -156,7 +155,7 @@ class VerifyAuthConstraintTest {
 
         Instant now = Instant.now();
         String token = Jwts.builder()
-                .issuer(VendorSupportKeyUtility.VENDOR_ISSUER)
+                .issuer(TokenUtility.VENDOR_ISSUER)
                 .subject(UUID.randomUUID().toString())
                 .claim("sessionKey", "sess-vendor")
                 .claim("tenantId", "ironfit")

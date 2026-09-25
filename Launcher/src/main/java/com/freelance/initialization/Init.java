@@ -1,68 +1,61 @@
 package com.freelance.initialization;
 
-import com.freelance.auth.bootstrap.SupportBootstrapService;
-import com.freelance.auth.support.SupportAccessService;
 import com.freelance.auth.token.JwtSecretManager;
-import com.freelance.template.seeder.AlertsBootstrap;
-import com.freelance.authorization.seeder.AuthorizationSeeder;
-import com.freelance.configuration.error.ErrorConfigurationService;
-import com.freelance.configuration.seeder.ConfigurationSeeder;
-import com.freelance.configuration.system.SystemConfigurationService;
-import com.freelance.event.engine.EventManagementEngine;
-import com.freelance.manager.CacheManager;
-import com.freelance.mapping.roleAuthorization.RoleAuthorizationService;
+import com.freelance.bootstrap.ControlPlaneBootstrap;
+import com.freelance.config.DatabaseConfig;
+import com.freelance.config.CacheRegistry;
+import com.freelance.enums.DeploymentMode;
+import com.freelance.event.engine.EventRegistry;
 import com.freelance.rest.app.transaction.Transaction;
-import com.freelance.system.SystemHardcoding;
-import com.freelance.user.repository.UserRepository;
+import com.freelance.tenant.dto.TenantCreateRequestDTO;
+import com.freelance.tenant.dto.TenantOnboardResponseDTO;
+import com.freelance.tenant.onboarding.TenantOnboardingService;
 import jakarta.persistence.EntityManagerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Init {
 
-    public static void startUp(EntityManagerFactory entityManagerFactory) {
+    private static final Logger logger = LoggerFactory.getLogger(Init.class);
+    private static volatile TenantOnboardResponseDTO defaultTenantResult;
+
+    public static void startUp(EntityManagerFactory entityManagerFactory, DatabaseConfig databaseConfig) {
         if (entityManagerFactory == null || !entityManagerFactory.isOpen()) {
             throw new IllegalStateException("FATAL: EntityManagerFactory is null or closed. Cannot initialize application startup!");
         }
 
         try {
+            // 1. Initialize Global Engines
             Transaction.init(entityManagerFactory);
+            JwtSecretManager.initialize();
+            CacheRegistry.getInstance().init();
+            EventRegistry.getInstance().init();
 
-            try (Transaction tx = Transaction.start()) {
+            // 2. Initialize Control Plane
+            if (databaseConfig != null) {
+                ControlPlaneBootstrap.bootstrap(databaseConfig);
 
-                //Setting the userId as System UUID so that all automatically seeded entries are marked as such
-                Transaction.getRequestContext().withUserId(SystemHardcoding.SYSTEM_USER_ID.asUuid());
-
-                JwtSecretManager.initialize();
-
-                ConfigurationSeeder configurationSeeder = new ConfigurationSeeder();
-                configurationSeeder.seed();
-
-                AuthorizationSeeder authorizationSeeder = new AuthorizationSeeder();
-                authorizationSeeder.seed();
-
-                CacheManager.getInstance().init();
-
-                SystemConfigurationService systemConfigurationService = new SystemConfigurationService();
-                systemConfigurationService.preloadSystemCacheEntries();
-
-                ErrorConfigurationService errorConfigurationService = new ErrorConfigurationService();
-                errorConfigurationService.preloadErrorCacheEntries();
-
-                SupportBootstrapService supportBootstrapService = new SupportBootstrapService(
-                        new UserRepository(),
-                        systemConfigurationService,
-                        new SupportAccessService()
-                );
-                supportBootstrapService.bootstrapIfRequired();
-
-                RoleAuthorizationService roleAuthorizationService = new RoleAuthorizationService();
-                roleAuthorizationService.preloadRoleAuthorizationCacheEntries();
-
-                EventManagementEngine.getInstance().init();
-
-                AlertsBootstrap.init();
+                // In TEST mode, provision a pristine test customer tenant for integration tests
+                if (databaseConfig.mode() == DeploymentMode.TEST) {
+                    TenantOnboardingService onboardingService = new TenantOnboardingService();
+                    defaultTenantResult = onboardingService.onboardTenant(
+                            new TenantCreateRequestDTO("testtenant", "Test Customer Tenant")
+                    );
+                    logger.info("[Init] TEST MODE: Provisioned test customer tenant 'testtenant'.");
+                }
             }
+
+            logger.info("[Init] Application server engines initialized successfully.");
         } catch (Exception e) {
             throw new IllegalStateException("FATAL: Critical failure during application startup in Init.startUp()! Server startup aborted.", e);
         }
+    }
+
+    public static void startUp(EntityManagerFactory entityManagerFactory) {
+        startUp(entityManagerFactory, null);
+    }
+
+    public static TenantOnboardResponseDTO getDefaultTenantResult() {
+        return defaultTenantResult;
     }
 }

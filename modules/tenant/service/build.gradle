@@ -1,0 +1,51 @@
+plugins {
+    id 'java'
+}
+
+group = 'tenant'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":modules:tenant:tenant-repository")
+    implementation project(":modules:tenant:tenant-dto")
+    implementation project(":Common:config")
+    implementation project(":Common:error")
+    implementation project(":Common:enum")
+    implementation project(":Framework:appcore")
+    implementation project(":Framework:cache")
+    implementation project(":Framework:configuration")
+    implementation project(":Framework:database")
+    implementation project(":Framework:jaxrs")
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+    implementation project(":modules:authentication:authentication-service")
+    implementation project(":modules:authentication:authentication-dto")
+    implementation project(":modules:authorization:authorization-service")
+    implementation project(":modules:configuration:configuration-service")
+    implementation project(":modules:configuration:configuration-dto")
+    implementation project(":modules:alerts:alerts-service")
+    implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
+    implementation 'ch.qos.logback:logback-classic:1.5.18'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.mockito:mockito-core:5.14.2'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.14.2'
+    testImplementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat = 'full'
+        showExceptions = true
+        showCauses = true
+        showStackTraces = false
+    }
+}

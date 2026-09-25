@@ -7,7 +7,6 @@ import com.freelance.auth.service.validation.LoginValidation;
 import com.freelance.auth.service.validation.VerifyAuthValidation;
 import com.freelance.auth.session.Session;
 import com.freelance.auth.token.TokenUtility;
-import com.freelance.auth.vendor.VendorSupportKeyUtility;
 import com.freelance.keys.authentication.session.SessionConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.ConstraintException;
 import com.freelance.rest.app.transaction.Transaction;
@@ -43,7 +42,7 @@ public class Authentication {
         new VerifyAuthValidation().validateRequest(request);
         new VerifyAuthConstraint().checkConstraints(request);
 
-        if (VendorSupportKeyUtility.isVendorToken(request.token())) {
+        if (tokenUtility.isVendorToken(request.token())) {
             return new AuthVerifyResponseDTO(
                     SystemHardcoding.VENDOR_SUPPORT_USER_ID.asUuid(),
                     SystemHardcoding.VENDOR_SUPPORT_SESSION_KEY.asString()

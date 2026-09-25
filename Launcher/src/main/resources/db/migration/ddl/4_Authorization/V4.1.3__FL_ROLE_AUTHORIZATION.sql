@@ -1,9 +1,0 @@
-CREATE TABLE IF NOT EXISTS freelance.FL_ROLE_AUTHORIZATION (
-    role_id UUID NOT NULL,
-    authorization_id UUID NOT NULL,
-    created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (role_id, authorization_id),
-    CONSTRAINT fk_role_auth_role FOREIGN KEY (role_id) REFERENCES freelance.FL_ROLE (id) ON DELETE CASCADE,
-    CONSTRAINT fk_role_auth_auth FOREIGN KEY (authorization_id) REFERENCES freelance.FL_AUTHORIZATION (id) ON DELETE CASCADE
-    );

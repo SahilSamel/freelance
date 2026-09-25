@@ -57,19 +57,52 @@ public abstract class BaseIntegrationTest {
                         .allowAllHostnames())
                 .objectMapperConfig(
                         ObjectMapperConfig.objectMapperConfig()
-                                .jackson2ObjectMapperFactory((cls, charset) -> new ObjectMapper())
+                                .jackson2ObjectMapperFactory((cls, charset) -> new ObjectMapper().findAndRegisterModules())
                 );
+
+        RestAssured.requestSpecification = new io.restassured.builder.RequestSpecBuilder()
+                .addHeader("X-Tenant-ID", "testtenant")
+                .build();
 
         ensureSystemBootstrapped();
     }
 
     public static String getDay0VendorToken() {
         try {
-            Path tokenPath = Path.of(System.getProperty("java.io.tmpdir"), "freelance-day0-token.jwt");
-            if (Files.exists(tokenPath)) {
-                return Files.readString(tokenPath).trim();
+            if (com.freelance.initialization.Init.getDefaultTenantResult() != null) {
+                return com.freelance.initialization.Init.getDefaultTenantResult().day0Token();
             }
         } catch (Exception ignored) {}
+
+        try (java.sql.Connection conn = java.sql.DriverManager.getConnection(
+                "jdbc:postgresql://localhost:5432/freelance_db", "postgres", "welcome1");
+             java.sql.PreparedStatement ps = conn.prepareStatement(
+                "SELECT config_value FROM freelance.FL_SYSTEM_CONFIGURATION WHERE config_id = 'control.platform.vendor.privateKey'");
+             java.sql.ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                String pem = rs.getString(1);
+                String base64Key = pem.replace("-----BEGIN PRIVATE KEY-----", "")
+                        .replace("-----END PRIVATE KEY-----", "")
+                        .replaceAll("\\s+", "");
+                byte[] keyBytes = java.util.Base64.getDecoder().decode(base64Key);
+                java.security.KeyFactory kf = java.security.KeyFactory.getInstance("RSA");
+                java.security.PrivateKey privateKey = kf.generatePrivate(new java.security.spec.PKCS8EncodedKeySpec(keyBytes));
+                java.time.Instant now = java.time.Instant.now();
+                return io.jsonwebtoken.Jwts.builder()
+                        .issuer(com.freelance.auth.token.TokenUtility.VENDOR_ISSUER)
+                        .subject(com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_USER_ID.asString())
+                        .claim("sessionKey", com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_SESSION_KEY.asString())
+                        .claim("tenantId", "testtenant")
+                        .issuedAt(java.util.Date.from(now))
+                        .expiration(java.util.Date.from(now.plus(1, java.time.temporal.ChronoUnit.HOURS)))
+                        .signWith(privateKey)
+                        .compact();
+            }
+        } catch (Exception e) {
+            System.err.println("[BaseIntegrationTest] Failed to read vendor private key via JDBC: " + e.getMessage());
+            e.printStackTrace();
+        }
+
         return null;
     }
 
@@ -81,6 +114,7 @@ public abstract class BaseIntegrationTest {
         // Check if super_admin can already log in
         try {
             int status = RestAssured.given()
+                    .header("X-Tenant-ID", "testtenant")
                     .contentType(ContentType.JSON)
                     .body(new com.freelance.auth.dto.AuthLoginRequestDTO(SUPER_ADMIN_USERNAME, SUPER_ADMIN_PASSWORD))
                     .when()
@@ -96,12 +130,14 @@ public abstract class BaseIntegrationTest {
 
         String day0Token = getDay0VendorToken();
         if (day0Token == null || day0Token.isBlank()) {
+            System.err.println("[BaseIntegrationTest] Warning: day0Token is null or blank. Bootstrap cannot proceed.");
             return;
         }
 
         try {
             // 1. Fetch all authorizations using Day-0 token
             AuthorizationListResponseDTO authListResponse = RestAssured.given()
+                    .header("X-Tenant-ID", "testtenant")
                     .header("Authorization", "Bearer " + day0Token)
                     .contentType(ContentType.JSON)
                     .body("{}")
@@ -138,7 +174,8 @@ public abstract class BaseIntegrationTest {
 
             BOOTSTRAPPED.set(true);
         } catch (Exception e) {
-            // Ignore during intermediate test phases
+            System.err.println("[BaseIntegrationTest] Failed to bootstrap test personas: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -146,6 +183,7 @@ public abstract class BaseIntegrationTest {
         try {
             return UUID.fromString(
                     RestAssured.given()
+                            .header("X-Tenant-ID", "testtenant")
                             .header("Authorization", "Bearer " + token)
                             .contentType(ContentType.JSON)
                             .body(new RoleCreateRequestDTO(name, description, authIds))
@@ -157,6 +195,7 @@ public abstract class BaseIntegrationTest {
                             .getString("id")
             );
         } catch (Exception e) {
+            System.err.println("[BaseIntegrationTest] Failed to create role " + name + ": " + e.getMessage());
             return UUID.randomUUID();
         }
     }
@@ -164,12 +203,15 @@ public abstract class BaseIntegrationTest {
     private static void createUserIfNotExists(String token, String username, String password, List<UUID> roleIds, String phone) {
         try {
             RestAssured.given()
+                    .header("X-Tenant-ID", "testtenant")
                     .header("Authorization", "Bearer " + token)
                     .contentType(ContentType.JSON)
                     .body(new UserCreateRequestDTO(username, password, roleIds, com.freelance.alerts.AlertChannel.WHATSAPP, phone))
                     .when()
                     .post("/users/create");
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            System.err.println("[BaseIntegrationTest] Failed to create user " + username + ": " + e.getMessage());
+        }
     }
 
     public static List<AuthorizationDTO> flattenAuthorizations(List<AuthorizationGroupDTO> groups) {
@@ -188,6 +230,7 @@ public abstract class BaseIntegrationTest {
 
     public String loginAndGetToken(String username, String password) {
         return RestAssured.given()
+                .header("X-Tenant-ID", "testtenant")
                 .contentType(ContentType.JSON)
                 .body(new com.freelance.auth.dto.AuthLoginRequestDTO(username, password))
                 .when()

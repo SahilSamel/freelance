@@ -33,7 +33,9 @@ public class TransactionFilter implements ContainerRequestFilter, ContainerRespo
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        Transaction.finish();
-        logger.debug("Transaction closed for {}", requestContext.getUriInfo());
+        if (Transaction.hasActiveTransaction()) {
+            Transaction.finish();
+            logger.debug("Transaction closed for {}", requestContext.getUriInfo());
+        }
     }
 }

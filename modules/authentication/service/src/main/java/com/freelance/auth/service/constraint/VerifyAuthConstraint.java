@@ -6,7 +6,6 @@ import com.freelance.auth.dto.TokenParseRequestDTO;
 import com.freelance.auth.dto.TokenParseResponseDTO;
 import com.freelance.auth.support.SupportAccessService;
 import com.freelance.auth.token.TokenUtility;
-import com.freelance.auth.vendor.VendorSupportKeyUtility;
 import com.freelance.keys.authentication.session.SessionConstraintErrors;
 import com.freelance.keys.authentication.support.SupportConfigKeys;
 import com.freelance.keys.authentication.support.SupportConstraintErrors;
@@ -41,7 +40,7 @@ public class VerifyAuthConstraint extends AbstractConstraint {
                 ? Transaction.getRequestContext().tenantId()
                 : null;
 
-        if (VendorSupportKeyUtility.isVendorToken(request.token())) {
+        if (tokenUtility.isVendorToken(request.token())) {
             String pubKeyStr = ConfigurationEngine.get(SupportConfigKeys.VENDOR_SUPPORT_PUBLIC_KEY);
             if (pubKeyStr == null || pubKeyStr.isBlank()) {
                 raiseConstraintError(SupportConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN);
@@ -49,8 +48,8 @@ public class VerifyAuthConstraint extends AbstractConstraint {
 
             Claims claims;
             try {
-                PublicKey pubKey = VendorSupportKeyUtility.parsePublicKey(pubKeyStr);
-                claims = VendorSupportKeyUtility.verifyAndParseSupportToken(request.token(), pubKey);
+                PublicKey pubKey = tokenUtility.parsePublicKey(pubKeyStr);
+                claims = tokenUtility.verifyAndParseSupportToken(request.token(), pubKey);
             } catch (Exception e) {
                 raiseConstraintError(SupportConstraintErrors.INVALID_VENDOR_SUPPORT_TOKEN);
                 return;

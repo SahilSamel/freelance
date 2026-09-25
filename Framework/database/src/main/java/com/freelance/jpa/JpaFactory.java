@@ -42,7 +42,7 @@ public class JpaFactory {
                         .applySetting("jakarta.persistence.jdbc.password", databaseConfig.password())
                         .applySetting("jakarta.persistence.jdbc.driver", "org.postgresql.Driver")
                         .applySetting("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect")
-                        .applySetting("hibernate.hbm2ddl.auto", "validate")
+                        .applySetting("hibernate.hbm2ddl.auto", "none")
                         .build();
 
         MetadataSources metadataSources = new MetadataSources(serviceRegistry);

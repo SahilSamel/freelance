@@ -137,4 +137,38 @@ class TokenUtilityTest {
         assertEquals(sessionKey, parseResponse.sessionKey());
         assertEquals("ironfit", parseResponse.tenantId());
     }
+
+    @Test
+    @DisplayName("isVendorToken, parsePublicKey, and parseVendorToken work correctly for RSA tokens")
+    void testVendorTokenOperations() throws Exception {
+        java.security.KeyPairGenerator kpg = java.security.KeyPairGenerator.getInstance("RSA");
+        kpg.initialize(2048);
+        java.security.KeyPair keyPair = kpg.generateKeyPair();
+
+        String pubBase64 = java.util.Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
+        java.security.PublicKey parsedPub = tokenUtility.parsePublicKey(pubBase64);
+        assertNotNull(parsedPub);
+
+        UUID vendorUserId = UUID.randomUUID();
+        String sessionKey = "vendor-session";
+        String tenantId = "ironfit";
+
+        String vendorToken = io.jsonwebtoken.Jwts.builder()
+                .issuer(TokenUtility.VENDOR_ISSUER)
+                .subject(vendorUserId.toString())
+                .claim("sessionKey", sessionKey)
+                .claim("tenantId", tenantId)
+                .issuedAt(new java.util.Date())
+                .signWith(keyPair.getPrivate())
+                .compact();
+
+        assertTrue(tokenUtility.isVendorToken(vendorToken));
+        assertFalse(tokenUtility.isVendorToken("not.a.token"));
+        assertFalse(tokenUtility.isVendorToken(null));
+
+        TokenParseResponseDTO parsedVendor = tokenUtility.parseVendorToken(vendorToken, parsedPub);
+        assertEquals(vendorUserId, parsedVendor.userId());
+        assertEquals(sessionKey, parsedVendor.sessionKey());
+        assertEquals(tenantId, parsedVendor.tenantId());
+    }
 }

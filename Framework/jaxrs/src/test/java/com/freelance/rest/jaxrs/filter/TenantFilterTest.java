@@ -31,6 +31,7 @@ class TenantFilterTest {
 
     @BeforeEach
     void setUp() {
+        com.freelance.rest.jaxrs.tenant.TenantRegistry.clear();
         tenantFilter = new TenantFilter();
         transactionFilter = new TransactionFilter();
         requestProperties = new HashMap<>();
@@ -131,14 +132,35 @@ class TenantFilterTest {
     }
 
     @Test
-    @DisplayName("Should fallback to default tenant when host is localhost and header is absent")
-    void testFallbackForLocalhost() {
+    @DisplayName("Should throw 404 Not Found when tenant header is missing and no subdomain is present")
+    void testMissingTenantThrowsNotFound() {
         headers.put("Host", "localhost:8080");
         ContainerRequestContext ctx = createMockRequestContext();
 
-        tenantFilter.filter(ctx);
+        WebApplicationException ex = assertThrows(WebApplicationException.class, () -> tenantFilter.filter(ctx));
+        assertEquals(404, ex.getResponse().getStatus());
+    }
 
-        assertEquals(TenantFilter.DEFAULT_TENANT, requestProperties.get(TenantFilter.TENANT_PROPERTY));
+    @Test
+    @DisplayName("Should reject deactivated tenant with 404 Not Found")
+    void testDeactivatedTenantRejected() {
+        com.freelance.rest.jaxrs.tenant.TenantRegistry.registerTenant("disabled_corp", com.freelance.rest.jaxrs.tenant.TenantRegistry.STATUS_DEACTIVATED);
+        headers.put(TenantFilter.TENANT_HEADER, "disabled_corp");
+        ContainerRequestContext ctx = createMockRequestContext();
+
+        WebApplicationException ex = assertThrows(WebApplicationException.class, () -> tenantFilter.filter(ctx));
+        assertEquals(404, ex.getResponse().getStatus());
+    }
+
+    @Test
+    @DisplayName("Should reject unknown tenant with 404 Not Found when registry is populated")
+    void testUnknownTenantRejected() {
+        com.freelance.rest.jaxrs.tenant.TenantRegistry.registerTenant("existing_corp", com.freelance.rest.jaxrs.tenant.TenantRegistry.STATUS_ACTIVE);
+        headers.put(TenantFilter.TENANT_HEADER, "non_existent_tenant");
+        ContainerRequestContext ctx = createMockRequestContext();
+
+        WebApplicationException ex = assertThrows(WebApplicationException.class, () -> tenantFilter.filter(ctx));
+        assertEquals(404, ex.getResponse().getStatus());
     }
 
     @Test
@@ -153,13 +175,13 @@ class TenantFilterTest {
     }
 
     @Test
-    @DisplayName("Should reject invalid tenant format with 400 Bad Request")
+    @DisplayName("Should reject invalid tenant format with 404 Not Found")
     void testInvalidTenantFormat() {
         headers.put(TenantFilter.TENANT_HEADER, "invalid!@#");
         ContainerRequestContext ctx = createMockRequestContext();
 
         WebApplicationException ex = assertThrows(WebApplicationException.class, () -> tenantFilter.filter(ctx));
-        assertEquals(400, ex.getResponse().getStatus());
+        assertEquals(404, ex.getResponse().getStatus());
     }
 
     @Test

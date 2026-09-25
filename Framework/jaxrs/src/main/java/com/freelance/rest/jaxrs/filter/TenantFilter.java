@@ -1,5 +1,6 @@
 package com.freelance.rest.jaxrs.filter;
 
+import com.freelance.rest.jaxrs.tenant.TenantRegistry;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -48,24 +49,44 @@ public class TenantFilter implements ContainerRequestFilter {
         }
 
         String tenantId = resolveTenantId(requestContext);
-
-        if (tenantId == null || tenantId.isBlank()) {
-            tenantId = DEFAULT_TENANT;
+        if (tenantId != null) {
+            tenantId = tenantId.trim().toLowerCase();
         }
 
-        if (!isValidTenantId(tenantId)) {
-            logger.warn("[TenantFilter] Invalid tenant identifier format: '{}'", tenantId);
-            throw new WebApplicationException("Invalid tenant identifier format: " + tenantId, 400);
+        if (tenantId == null
+                || tenantId.isBlank()
+                || !isValidTenantId(tenantId)
+                || (TenantRegistry.hasAnyTenantsRegistered() && !TenantRegistry.isActive(tenantId))
+                || (isControlPlanePath(path) && !DEFAULT_TENANT.equalsIgnoreCase(tenantId))) {
+            logger.warn("[TenantFilter] Rejected request for path '/{}' with tenant '{}'", path, tenantId);
+            throw new WebApplicationException(
+                    "Not Found",
+                    Response.status(Response.Status.NOT_FOUND)
+                            .entity("{\"error\": \"Not Found\"}")
+                            .type(MediaType.APPLICATION_JSON)
+                            .build()
+            );
         }
 
-        tenantId = tenantId.trim().toLowerCase();
         requestContext.setProperty(TENANT_PROPERTY, tenantId);
         logger.debug("[TenantFilter] Resolved tenant context: '{}' for request path '/{}'", tenantId, path);
+    }
+
+    private boolean isControlPlanePath(String path) {
+        if (path == null) {
+            return false;
+        }
+        String clean = path.startsWith("/") ? path.substring(1) : path;
+        return clean.equals("control") || clean.startsWith("control/");
     }
 
     private String resolveTenantId(ContainerRequestContext requestContext) {
         String headerTenant = requestContext.getHeaderString(TENANT_HEADER);
         if (headerTenant != null && !headerTenant.isBlank()) {
+            if (headerTenant.contains(",")) {
+                String[] parts = headerTenant.split(",", -1);
+                return parts[parts.length - 1].trim();
+            }
             return headerTenant.trim();
         }
 

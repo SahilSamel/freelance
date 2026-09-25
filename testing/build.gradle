@@ -19,21 +19,27 @@ dependencies {
     testImplementation project(':modules:audit:audit-dto')
     testImplementation project(':modules:configuration:configuration-dto')
     testImplementation project(':modules:alerts:alerts-dto')
+    testImplementation project(':modules:tenant:tenant-dto')
     testImplementation project(':Common:enum')
     testImplementation project(':Common:error')
     testImplementation project(':Common:config')
     testImplementation project(':Framework:configuration')
+    testImplementation project(':Launcher')
 
     // REST Assured — fluent HTTP test DSL
     testImplementation 'io.rest-assured:rest-assured:5.5.0'
 
     // Jackson integration — REST Assured auto-detects this and uses it for Java records/DTOs
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
+    testImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.3'
 
     // JJWT for vendor token generation in integration tests
     testImplementation 'io.jsonwebtoken:jjwt-api:0.13.0'
     testRuntimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
     testRuntimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
+
+    // PostgreSQL JDBC Driver
+    testImplementation 'org.postgresql:postgresql:42.7.11'
 
     // JUnit 5
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
@@ -62,7 +68,7 @@ tasks.register('integrationTest', Test) {
 
     testLogging {
         events 'passed', 'skipped', 'failed'
-        showStandardStreams = false
+        showStandardStreams = true
         exceptionFormat = 'full'
     }
 

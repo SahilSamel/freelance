@@ -54,21 +54,23 @@ class Day0BootstrapIntegrationTest extends BaseIntegrationTest {
         if (day0Token == null) return;
 
         try {
-            java.nio.file.Path keyPath = java.nio.file.Path.of(System.getProperty("java.io.tmpdir"), "freelance-day0-key.pem");
-            if (java.nio.file.Files.exists(keyPath)) {
-                String pem = java.nio.file.Files.readString(keyPath);
-                String base64Key = pem.replace("-----BEGIN PRIVATE KEY-----", "")
-                        .replace("-----END PRIVATE KEY-----", "")
-                        .replaceAll("\\s+", "");
-                byte[] keyBytes = java.util.Base64.getDecoder().decode(base64Key);
-                java.security.KeyFactory kf = java.security.KeyFactory.getInstance("RSA");
-                java.security.spec.PKCS8EncodedKeySpec spec = new java.security.spec.PKCS8EncodedKeySpec(keyBytes);
-                java.security.PrivateKey privKey = kf.generatePrivate(spec);
-                java.security.interfaces.RSAPrivateCrtKey rsaPriv = (java.security.interfaces.RSAPrivateCrtKey) privKey;
-                java.security.spec.RSAPublicKeySpec pubSpec = new java.security.spec.RSAPublicKeySpec(rsaPriv.getModulus(), rsaPriv.getPublicExponent());
-                java.security.PublicKey pubKey = kf.generatePublic(pubSpec);
-                String pubKeyBase64 = java.util.Base64.getEncoder().encodeToString(pubKey.getEncoded());
+            String pubKeyBase64 = null;
+            if (com.freelance.initialization.Init.getDefaultTenantResult() != null) {
+                pubKeyBase64 = com.freelance.initialization.Init.getDefaultTenantResult().publicKeyBase64();
+            }
+            if (pubKeyBase64 == null) {
+                try (java.sql.Connection conn = java.sql.DriverManager.getConnection(
+                        "jdbc:postgresql://localhost:5432/freelance_db", "postgres", "welcome1");
+                     java.sql.PreparedStatement ps = conn.prepareStatement(
+                        "SELECT config_value FROM freelance.FL_SYSTEM_CONFIGURATION WHERE config_key = 'platform.vendor.publicKey'");
+                     java.sql.ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        pubKeyBase64 = rs.getString(1);
+                    }
+                } catch (Exception ignored) {}
+            }
 
+            if (pubKeyBase64 != null && !pubKeyBase64.isBlank()) {
                 String adminToken = new Day0BootstrapIntegrationTest().getSuperAdminToken();
                 RestAssured.given()
                         .header("Authorization", "Bearer " + adminToken)

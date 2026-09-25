@@ -76,7 +76,7 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
 
         // 4. Update User (including contacts)
         String updatedUsername = uniqueUsername + "_u";
-        String updatedWhatsApp = "+19998887766";
+        String updatedWhatsApp = "+199" + String.format("%08d", System.currentTimeMillis() % 100000000);
         RestAssured
                 .given()
                 .header("Authorization", "Bearer " + token)
@@ -237,14 +237,17 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
     @DisplayName("create user with duplicate username returns 409 USER_ALREADY_EXISTS (FL_3101)")
     void createUser_duplicateUsername_returns409() {
         String token = getUserOfficerToken();
-        String dupUsername = "dup_user_" + System.currentTimeMillis();
+        long ts = System.currentTimeMillis() % 10000000;
+        String dupUsername = "dup_user_" + ts;
+        String dupPhone1 = "+155" + String.format("%07d", ts);
+        String dupPhone2 = "+156" + String.format("%07d", ts);
 
         // 1st create
         RestAssured
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO(dupUsername, "Pass1234!", AlertChannel.WHATSAPP, "+15554445566"))
+                .body(new UserCreateRequestDTO(dupUsername, "Pass1234!", AlertChannel.WHATSAPP, dupPhone1))
                 .when()
                 .post("/users/create")
                 .then()
@@ -255,7 +258,7 @@ class UserCrudIntegrationTest extends BaseIntegrationTest {
                 .given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO(dupUsername, "AnotherPass123!", AlertChannel.WHATSAPP, "+15554445577"))
+                .body(new UserCreateRequestDTO(dupUsername, "AnotherPass123!", AlertChannel.WHATSAPP, dupPhone2))
                 .when()
                 .post("/users/create")
                 .then()

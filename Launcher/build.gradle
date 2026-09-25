@@ -56,6 +56,10 @@ dependencies {
     implementation project(":modules:alerts:alerts-repository")
     implementation project(":modules:alerts:alerts-service")
     implementation project(":modules:alerts:alerts-endpoint")
+    implementation project(":modules:tenant:tenant-repository")
+    implementation project(":modules:tenant:tenant-service")
+    implementation project(":modules:tenant:tenant-endpoint")
+    implementation project(":modules:tenant:tenant-dto")
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
