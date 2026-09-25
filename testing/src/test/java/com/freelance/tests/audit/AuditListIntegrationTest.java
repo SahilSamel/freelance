@@ -5,11 +5,13 @@ import com.freelance.tests.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.*;
 
-@DisplayName("Audit List Integration & RBAC Tests")
+@Order(48)
+@DisplayName("Stage 04.8: Audit Log Trail Verification & Data Sanitization")
 class AuditListIntegrationTest extends BaseIntegrationTest {
 
     @Test

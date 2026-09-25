@@ -32,7 +32,8 @@ import static org.hamcrest.Matchers.*;
  * 7. Revoke access (client admin)
  * 8. Subsequent vendor requests rejected (FL_2105)
  */
-@DisplayName("Vendor Support Workflow Integration Tests")
+@Order(60)
+@DisplayName("Stage 06: Cryptographic Vendor Support (Zero Private Key Exposure)")
 @TestMethodOrder(OrderAnnotation.class)
 class SupportWorkflowIntegrationTest extends BaseIntegrationTest {
 

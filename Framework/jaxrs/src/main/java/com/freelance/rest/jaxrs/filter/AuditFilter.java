@@ -50,6 +50,7 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
 
     private static final String TRACE_ID_MDC_KEY = "traceId";
     private static final String TRACE_ID_HEADER = "X-Trace-ID";
+    private static final Pattern TRACE_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]{1,64}$");
     private static final int MAX_REQUEST_DATA_LENGTH = 10000;
 
     private static final Pattern JSON_SENSITIVE_STRING_PATTERN = Pattern.compile(
@@ -239,7 +240,10 @@ public class AuditFilter implements ContainerRequestFilter, ContainerResponseFil
     private String resolveTraceId(ContainerRequestContext requestContext) {
         String traceId = requestContext.getHeaderString(TRACE_ID_HEADER);
         if (traceId != null && !traceId.isBlank()) {
-            return traceId.trim();
+            String trimmed = traceId.trim();
+            if (TRACE_ID_PATTERN.matcher(trimmed).matches()) {
+                return trimmed;
+            }
         }
 
         return UUID.randomUUID().toString();

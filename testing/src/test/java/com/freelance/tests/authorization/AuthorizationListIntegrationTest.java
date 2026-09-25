@@ -5,11 +5,13 @@ import com.freelance.tests.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.*;
 
-@DisplayName("POST /authorizations/list Integration Tests")
+@Order(46)
+@DisplayName("Stage 04.6: Authorization Registry & Permission Discovery")
 class AuthorizationListIntegrationTest extends BaseIntegrationTest {
 
     @Test

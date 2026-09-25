@@ -15,7 +15,7 @@ public class LoginConstraint extends AbstractConstraint {
         UserReadRequestDTO userReadRequestDTO = new UserReadRequestDTO(null, request.username());
         UserReadResponseDTO userReadResponseDTO = userReadService.findByUsername(userReadRequestDTO);
 
-        if (userReadResponseDTO == null) {
+        if (userReadResponseDTO == null || userReadResponseDTO.userDTO() == null || userReadResponseDTO.userDTO().password() == null) {
             raiseConstraintError(AuthConstraintErrors.INVALID_CREDENTIALS);
         }
 

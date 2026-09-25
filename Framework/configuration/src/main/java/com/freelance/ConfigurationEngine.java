@@ -31,23 +31,42 @@ public final class ConfigurationEngine {
     public static int getInt(IConfig config) {
         String value = get(config);
         try {
-            return Integer.parseInt(value.trim());
-        } catch (NumberFormatException e) {
-            return Integer.parseInt(config.getDefaultValue().trim());
+            if (value != null && !value.isBlank()) {
+                return Integer.parseInt(value.trim());
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            return config != null && config.getDefaultValue() != null
+                    ? Integer.parseInt(config.getDefaultValue().trim())
+                    : 0;
+        } catch (Exception e) {
+            return 0;
         }
     }
 
     public static long getLong(IConfig config) {
         String value = get(config);
         try {
-            return Long.parseLong(value.trim());
-        } catch (NumberFormatException e) {
-            return Long.parseLong(config.getDefaultValue().trim());
+            if (value != null && !value.isBlank()) {
+                return Long.parseLong(value.trim());
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            return config != null && config.getDefaultValue() != null
+                    ? Long.parseLong(config.getDefaultValue().trim())
+                    : 0L;
+        } catch (Exception e) {
+            return 0L;
         }
     }
 
     public static boolean getBoolean(IConfig config) {
         String value = get(config);
+        if (value == null || value.isBlank()) {
+            return config != null && config.getDefaultValue() != null && Boolean.parseBoolean(config.getDefaultValue().trim());
+        }
         return Boolean.parseBoolean(value.trim());
     }
 

@@ -54,6 +54,13 @@ public class UserCreateService {
         User user = assembler.toEntity(request);
         userRepository.persist(user);
 
+        if (user.getContacts() != null) {
+            for (UserContactEntity contact : user.getContacts()) {
+                contact.setUserId(user.getId());
+                userContactRepository.persist(contact);
+            }
+        }
+
         List<UUID> assignedRoleIds = new ArrayList<>();
         if (request.roleIds() != null && !request.roleIds().isEmpty()) {
             for (UUID roleId : request.roleIds()) {

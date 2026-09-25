@@ -14,4 +14,12 @@ public class UserRoleRepository extends AbstractRepository<UserRoleEntity, UUID>
                 .setParameter("userId", userId)
                 .getResultList();
     }
+
+    public void deleteByUserId(UUID userId) {
+        if (userId != null) {
+            em().createQuery("DELETE FROM UserRoleEntity ur WHERE ur.userId = :userId")
+                    .setParameter("userId", userId)
+                    .executeUpdate();
+        }
+    }
 }

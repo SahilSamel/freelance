@@ -5,13 +5,15 @@ import com.freelance.tests.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 
-@DisplayName("X-Trace-ID Header & Telemetry Integration Tests")
+@Order(48)
+@DisplayName("Stage 04.8: Distributed Tracing (X-Trace-ID) Propagation")
 class TraceIdIntegrationTest extends BaseIntegrationTest {
 
     @Test

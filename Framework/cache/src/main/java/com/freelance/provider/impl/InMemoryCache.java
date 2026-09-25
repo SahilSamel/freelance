@@ -42,7 +42,10 @@ public final class InMemoryCache implements Cache {
     }
 
     private void evictIfExpired() {
-        store.entrySet().removeIf(entry -> entry.getValue().isExpired());
+        try {
+            store.entrySet().removeIf(entry -> entry.getValue().isExpired());
+        } catch (Throwable ignored) {
+        }
     }
 
     @Override

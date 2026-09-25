@@ -79,7 +79,9 @@ public class VerifyAuthConstraint extends AbstractConstraint {
                 }
             } catch (ConstraintException e) {
                 throw e;
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                logger.warn("Security rejection: Token parsing failed: {}", e.getMessage());
+                raiseConstraintError(SessionConstraintErrors.INVALID_SESSION);
             }
         }
     }

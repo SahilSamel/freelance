@@ -9,6 +9,7 @@ import com.freelance.user.create.UserCreateRequestDTO;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -17,7 +18,8 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 
-@DisplayName("Alert Emit, Chat Timeline & Webhook Integration Tests")
+@Order(47)
+@DisplayName("Stage 04.7: Alert Dispatch, Two-Way Chat & Meta Webhooks")
 class AlertEmitAndChatIntegrationTest extends BaseIntegrationTest {
 
     @Test
@@ -28,11 +30,12 @@ class AlertEmitAndChatIntegrationTest extends BaseIntegrationTest {
 
         // 1. Create a target user
         String targetUsername = "alert_target_" + System.currentTimeMillis();
+        String uniquePhone = "+9198" + (System.currentTimeMillis() % 100000000L);
         String targetUserIdStr = RestAssured
                 .given()
                 .header("Authorization", "Bearer " + userToken)
                 .contentType(ContentType.JSON)
-                .body(new UserCreateRequestDTO(targetUsername, "SecureTargetPass123!", AlertChannel.WHATSAPP, "+919876543210"))
+                .body(new UserCreateRequestDTO(targetUsername, "SecureTargetPass123!", AlertChannel.WHATSAPP, uniquePhone))
                 .when()
                 .post("/users/create")
                 .then()

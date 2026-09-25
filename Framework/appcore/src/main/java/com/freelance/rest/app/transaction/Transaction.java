@@ -24,7 +24,7 @@ public class Transaction implements AutoCloseable {
 
     private static final ThreadLocal<TransactionContext> contextHolder = new ThreadLocal<>();
 
-    private static EntityManagerFactory emf;
+    private static volatile EntityManagerFactory emf;
 
     static {
         registerTenantSupplier();
@@ -76,7 +76,7 @@ public class Transaction implements AutoCloseable {
 
         String schema = (tenantId != null && !tenantId.isBlank()) ? tenantId.trim().toLowerCase() : SystemHardcoding.DEFAULT_TENANT.asString();
         try {
-            em.createNativeQuery("SET search_path TO " + schema + ", public").executeUpdate();
+            em.createNativeQuery("SET search_path TO \"" + schema + "\", public").executeUpdate();
         } catch (Exception e) {
             logger.debug("Executing SET search_path skipped or unsupported on current connection: {}", e.getMessage());
         }
@@ -104,6 +104,19 @@ public class Transaction implements AutoCloseable {
 
     public static boolean hasActiveTransaction() {
         return contextHolder.get() != null;
+    }
+
+    /**
+     * Rebinds an existing transaction context to the current thread.
+     *
+     * @param context the transaction context to bind, or null to clear
+     */
+    public static void bind(TransactionContext context) {
+        if (context != null) {
+            contextHolder.set(context);
+        } else {
+            contextHolder.remove();
+        }
     }
 
     /**

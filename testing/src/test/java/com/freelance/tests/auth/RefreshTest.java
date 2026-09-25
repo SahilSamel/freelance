@@ -3,25 +3,22 @@ package com.freelance.tests.auth;
 import com.freelance.tests.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-/**
- * Integration tests for POST /auth/refresh
- * <p>
- * These tests also act as a regression suite for the session key rotation fix:
- * after a refresh, the OLD token must be dead even though its JWT signature
- * is still cryptographically valid.
- */
-@DisplayName("POST /auth/refresh")
+@Order(42)
+@DisplayName("Stage 04.2: Customer Session Key Rotation & Token Refresh")
+@TestMethodOrder(OrderAnnotation.class)
 class RefreshTest extends BaseIntegrationTest {
 
-    // ── Happy path ────────────────────────────────────────────────────────────
-
     @Test
-    @DisplayName("valid token → 200 with a new non-blank token")
+    @Order(1)
+    @DisplayName("1. Valid token → 200 with a new non-blank token")
     void refresh_validToken_returns200WithNewToken() {
         String token = getSuperAdminToken();
 
@@ -37,7 +34,8 @@ class RefreshTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("refreshed token differs from the original token")
+    @Order(2)
+    @DisplayName("2. Refreshed token differs from the original token")
     void refresh_newTokenDiffersFromOldToken() {
         String oldToken = getSuperAdminToken();
 
@@ -55,10 +53,9 @@ class RefreshTest extends BaseIntegrationTest {
         assertNotEquals(oldToken, newToken, "Refreshed token must be different from the original");
     }
 
-    // ── Regression: session key rotation ─────────────────────────────────────
-
     @Test
-    @DisplayName("[REGRESSION] old token is rejected after refresh (session key was rotated)")
+    @Order(3)
+    @DisplayName("3. [REGRESSION] Old token is rejected after refresh (session key was rotated)")
     void refresh_oldTokenRejectedAfterRefresh() {
         String oldToken = getSuperAdminToken();
 
@@ -77,13 +74,14 @@ class RefreshTest extends BaseIntegrationTest {
                 .given()
                 .header("Authorization", "Bearer " + oldToken)
                 .when()
-                .post("/auth/refresh")   // any protected endpoint works; using refresh again
+                .post("/auth/refresh")
                 .then()
-                .statusCode(400);        // INVALID_SESSION from VerifySessionConstraint
+                .statusCode(400);
     }
 
     @Test
-    @DisplayName("[REGRESSION] new token works after refresh")
+    @Order(4)
+    @DisplayName("4. [REGRESSION] New token is usable after refresh")
     void refresh_newTokenIsUsableAfterRefresh() {
         String oldToken = getSuperAdminToken();
 
@@ -108,10 +106,9 @@ class RefreshTest extends BaseIntegrationTest {
                 .statusCode(200);
     }
 
-    // ── Missing / invalid token ───────────────────────────────────────────────
-
     @Test
-    @DisplayName("no Authorization header → 400")
+    @Order(5)
+    @DisplayName("5. No Authorization header → 400")
     void refresh_noToken_returns400() {
         RestAssured
                 .given()
@@ -122,7 +119,8 @@ class RefreshTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("malformed JWT → 400")
+    @Order(6)
+    @DisplayName("6. Malformed JWT → 400")
     void refresh_malformedToken_returns400() {
         RestAssured
                 .given()
@@ -133,4 +131,3 @@ class RefreshTest extends BaseIntegrationTest {
                 .statusCode(400);
     }
 }
-

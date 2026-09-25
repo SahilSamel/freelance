@@ -20,7 +20,8 @@ import java.util.UUID;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Day-0 System Bootstrap & Persona Provisioning Journey")
+@Order(30)
+@DisplayName("Stage 03: Day-0 System Bootstrap & Persona Provisioning Journey")
 @TestMethodOrder(OrderAnnotation.class)
 class Day0BootstrapIntegrationTest extends BaseIntegrationTest {
 
@@ -62,7 +63,7 @@ class Day0BootstrapIntegrationTest extends BaseIntegrationTest {
                 try (java.sql.Connection conn = java.sql.DriverManager.getConnection(
                         "jdbc:postgresql://localhost:5432/freelance_db", "postgres", "welcome1");
                      java.sql.PreparedStatement ps = conn.prepareStatement(
-                        "SELECT config_value FROM freelance.FL_SYSTEM_CONFIGURATION WHERE config_key = 'platform.vendor.publicKey'");
+                        "SELECT config_value FROM freelance.FL_SYSTEM_CONFIGURATION WHERE config_id = 'control.platform.vendor.publicKey'");
                      java.sql.ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         pubKeyBase64 = rs.getString(1);

@@ -9,6 +9,7 @@ import com.freelance.tests.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -17,7 +18,8 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 
-@DisplayName("Authorization Role CRUD & Security Integration Tests")
+@Order(46)
+@DisplayName("Stage 04.6: Authorization Role CRUD & Security Integration Tests")
 class RoleCrudIntegrationTest extends BaseIntegrationTest {
 
     @Test

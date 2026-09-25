@@ -34,7 +34,7 @@ public class User extends AbstractAuditEntity {
     private String password;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private List<UserContactEntity> contacts = new ArrayList<>();
 
     public User() {

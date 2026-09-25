@@ -146,6 +146,13 @@ public class GenericConsumerWorker<T> implements Runnable {
 
             handleFailure(typedMessage != null ? typedMessage : rawMessage, ex);
         } finally {
+            if (Transaction.hasActiveTransaction()) {
+                try {
+                    Transaction.peek().markRollbackOnly();
+                    Transaction.finish();
+                } catch (Exception ignored) {
+                }
+            }
             MDC.remove(MDC_TRACE_ID);
         }
     }

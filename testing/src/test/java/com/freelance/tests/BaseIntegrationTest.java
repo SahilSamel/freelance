@@ -11,11 +11,10 @@ import io.restassured.config.ObjectMapperConfig;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.config.SSLConfig;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +23,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class BaseIntegrationTest {
 
     protected static final String BASE_URL = "https://localhost:8080";
+
+    public static final String CONTROL_TENANT = "freelance";
+    public static final String PRIMARY_TENANT = "testtenant";
+    public static final String SECONDARY_TENANT = "secondary_tenant";
+
+    public static final String CONTROL_ADMIN_USERNAME = "controladmin";
+    public static final String CONTROL_ADMIN_PASSWORD = "ControlAdmin@123";
 
     public static final String SUPER_ADMIN_USERNAME = "super_admin";
     public static final String SUPER_ADMIN_PASSWORD = "SuperAdminPass123!";
@@ -61,15 +67,35 @@ public abstract class BaseIntegrationTest {
                 );
 
         RestAssured.requestSpecification = new io.restassured.builder.RequestSpecBuilder()
-                .addHeader("X-Tenant-ID", "testtenant")
+                .addHeader("X-Tenant-ID", PRIMARY_TENANT)
                 .build();
 
         ensureSystemBootstrapped();
     }
 
+    public static RequestSpecification givenTenant(String tenantId) {
+        return RestAssured.given().header("X-Tenant-ID", tenantId);
+    }
+
+    public static RequestSpecification givenControlPlane() {
+        return givenTenant(CONTROL_TENANT);
+    }
+
+    public static RequestSpecification givenPrimaryTenant() {
+        return givenTenant(PRIMARY_TENANT);
+    }
+
+    public static RequestSpecification givenSecondaryTenant() {
+        return givenTenant(SECONDARY_TENANT);
+    }
+
     public static String getDay0VendorToken() {
+        return getDay0VendorToken(PRIMARY_TENANT);
+    }
+
+    public static String getDay0VendorToken(String tenantId) {
         try {
-            if (com.freelance.initialization.Init.getDefaultTenantResult() != null) {
+            if (PRIMARY_TENANT.equalsIgnoreCase(tenantId) && com.freelance.initialization.Init.getDefaultTenantResult() != null) {
                 return com.freelance.initialization.Init.getDefaultTenantResult().day0Token();
             }
         } catch (Exception ignored) {}
@@ -92,7 +118,7 @@ public abstract class BaseIntegrationTest {
                         .issuer(com.freelance.auth.token.TokenUtility.VENDOR_ISSUER)
                         .subject(com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_USER_ID.asString())
                         .claim("sessionKey", com.freelance.system.SystemHardcoding.VENDOR_SUPPORT_SESSION_KEY.asString())
-                        .claim("tenantId", "testtenant")
+                        .claim("tenantId", tenantId)
                         .issuedAt(java.util.Date.from(now))
                         .expiration(java.util.Date.from(now.plus(1, java.time.temporal.ChronoUnit.HOURS)))
                         .signWith(privateKey)
@@ -100,7 +126,6 @@ public abstract class BaseIntegrationTest {
             }
         } catch (Exception e) {
             System.err.println("[BaseIntegrationTest] Failed to read vendor private key via JDBC: " + e.getMessage());
-            e.printStackTrace();
         }
 
         return null;
@@ -114,7 +139,7 @@ public abstract class BaseIntegrationTest {
         // Check if super_admin can already log in
         try {
             int status = RestAssured.given()
-                    .header("X-Tenant-ID", "testtenant")
+                    .header("X-Tenant-ID", PRIMARY_TENANT)
                     .contentType(ContentType.JSON)
                     .body(new com.freelance.auth.dto.AuthLoginRequestDTO(SUPER_ADMIN_USERNAME, SUPER_ADMIN_PASSWORD))
                     .when()
@@ -128,16 +153,15 @@ public abstract class BaseIntegrationTest {
             }
         } catch (Exception ignored) {}
 
-        String day0Token = getDay0VendorToken();
+        String day0Token = getDay0VendorToken(PRIMARY_TENANT);
         if (day0Token == null || day0Token.isBlank()) {
-            System.err.println("[BaseIntegrationTest] Warning: day0Token is null or blank. Bootstrap cannot proceed.");
             return;
         }
 
         try {
             // 1. Fetch all authorizations using Day-0 token
             AuthorizationListResponseDTO authListResponse = RestAssured.given()
-                    .header("X-Tenant-ID", "testtenant")
+                    .header("X-Tenant-ID", PRIMARY_TENANT)
                     .header("Authorization", "Bearer " + day0Token)
                     .contentType(ContentType.JSON)
                     .body("{}")
@@ -157,33 +181,32 @@ public abstract class BaseIntegrationTest {
             List<UUID> auditAuthIds = allAuths.stream().filter(a -> a.key().startsWith("AUDIT_")).map(AuthorizationDTO::id).toList();
 
             // 2. Create Roles
-            UUID superAdminRoleId = createRoleIfNotExists(day0Token, "ROLE_SUPER_ADMIN", "Super Administrator Role", superAdminAuthIds);
-            UUID userAdminRoleId = createRoleIfNotExists(day0Token, "ROLE_USER_ADMIN", "User Officer Role", userAuthIds);
-            UUID roleAdminRoleId = createRoleIfNotExists(day0Token, "ROLE_ROLE_ADMIN", "Role Officer Role", roleAuthIds);
-            UUID configAdminRoleId = createRoleIfNotExists(day0Token, "ROLE_CONFIG_ADMIN", "Config Officer Role", configAuthIds);
-            UUID alertsAdminRoleId = createRoleIfNotExists(day0Token, "ROLE_ALERTS_ADMIN", "Alerts Officer Role", alertsAuthIds);
-            UUID auditViewerRoleId = createRoleIfNotExists(day0Token, "ROLE_AUDIT_VIEWER", "Audit Viewer Role", auditAuthIds);
+            UUID superAdminRoleId = createRoleIfNotExists(day0Token, PRIMARY_TENANT, "ROLE_SUPER_ADMIN", "Super Administrator Role", superAdminAuthIds);
+            UUID userAdminRoleId = createRoleIfNotExists(day0Token, PRIMARY_TENANT, "ROLE_USER_ADMIN", "User Officer Role", userAuthIds);
+            UUID roleAdminRoleId = createRoleIfNotExists(day0Token, PRIMARY_TENANT, "ROLE_ROLE_ADMIN", "Role Officer Role", roleAuthIds);
+            UUID configAdminRoleId = createRoleIfNotExists(day0Token, PRIMARY_TENANT, "ROLE_CONFIG_ADMIN", "Config Officer Role", configAuthIds);
+            UUID alertsAdminRoleId = createRoleIfNotExists(day0Token, PRIMARY_TENANT, "ROLE_ALERTS_ADMIN", "Alerts Officer Role", alertsAuthIds);
+            UUID auditViewerRoleId = createRoleIfNotExists(day0Token, PRIMARY_TENANT, "ROLE_AUDIT_VIEWER", "Audit Viewer Role", auditAuthIds);
 
             // 3. Create Persona Users
-            createUserIfNotExists(day0Token, SUPER_ADMIN_USERNAME, SUPER_ADMIN_PASSWORD, List.of(superAdminRoleId), "+10000000001");
-            createUserIfNotExists(day0Token, USER_OFFICER_USERNAME, USER_OFFICER_PASSWORD, List.of(userAdminRoleId), "+10000000002");
-            createUserIfNotExists(day0Token, ROLE_OFFICER_USERNAME, ROLE_OFFICER_PASSWORD, List.of(roleAdminRoleId), "+10000000003");
-            createUserIfNotExists(day0Token, CONFIG_OFFICER_USERNAME, CONFIG_OFFICER_PASSWORD, List.of(configAdminRoleId), "+10000000004");
-            createUserIfNotExists(day0Token, ALERTS_OFFICER_USERNAME, ALERTS_OFFICER_PASSWORD, List.of(alertsAdminRoleId), "+10000000005");
-            createUserIfNotExists(day0Token, AUDIT_OFFICER_USERNAME, AUDIT_OFFICER_PASSWORD, List.of(auditViewerRoleId), "+10000000006");
+            createUserIfNotExists(day0Token, PRIMARY_TENANT, SUPER_ADMIN_USERNAME, SUPER_ADMIN_PASSWORD, List.of(superAdminRoleId), "+10000000001");
+            createUserIfNotExists(day0Token, PRIMARY_TENANT, USER_OFFICER_USERNAME, USER_OFFICER_PASSWORD, List.of(userAdminRoleId), "+10000000002");
+            createUserIfNotExists(day0Token, PRIMARY_TENANT, ROLE_OFFICER_USERNAME, ROLE_OFFICER_PASSWORD, List.of(roleAdminRoleId), "+10000000003");
+            createUserIfNotExists(day0Token, PRIMARY_TENANT, CONFIG_OFFICER_USERNAME, CONFIG_OFFICER_PASSWORD, List.of(configAdminRoleId), "+10000000004");
+            createUserIfNotExists(day0Token, PRIMARY_TENANT, ALERTS_OFFICER_USERNAME, ALERTS_OFFICER_PASSWORD, List.of(alertsAdminRoleId), "+10000000005");
+            createUserIfNotExists(day0Token, PRIMARY_TENANT, AUDIT_OFFICER_USERNAME, AUDIT_OFFICER_PASSWORD, List.of(auditViewerRoleId), "+10000000006");
 
             BOOTSTRAPPED.set(true);
         } catch (Exception e) {
             System.err.println("[BaseIntegrationTest] Failed to bootstrap test personas: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
-    private static UUID createRoleIfNotExists(String token, String name, String description, List<UUID> authIds) {
+    public static UUID createRoleIfNotExists(String token, String tenantId, String name, String description, List<UUID> authIds) {
         try {
             return UUID.fromString(
                     RestAssured.given()
-                            .header("X-Tenant-ID", "testtenant")
+                            .header("X-Tenant-ID", tenantId)
                             .header("Authorization", "Bearer " + token)
                             .contentType(ContentType.JSON)
                             .body(new RoleCreateRequestDTO(name, description, authIds))
@@ -195,23 +218,20 @@ public abstract class BaseIntegrationTest {
                             .getString("id")
             );
         } catch (Exception e) {
-            System.err.println("[BaseIntegrationTest] Failed to create role " + name + ": " + e.getMessage());
             return UUID.randomUUID();
         }
     }
 
-    private static void createUserIfNotExists(String token, String username, String password, List<UUID> roleIds, String phone) {
+    public static void createUserIfNotExists(String token, String tenantId, String username, String password, List<UUID> roleIds, String phone) {
         try {
             RestAssured.given()
-                    .header("X-Tenant-ID", "testtenant")
+                    .header("X-Tenant-ID", tenantId)
                     .header("Authorization", "Bearer " + token)
                     .contentType(ContentType.JSON)
                     .body(new UserCreateRequestDTO(username, password, roleIds, com.freelance.alerts.AlertChannel.WHATSAPP, phone))
                     .when()
                     .post("/users/create");
-        } catch (Exception e) {
-            System.err.println("[BaseIntegrationTest] Failed to create user " + username + ": " + e.getMessage());
-        }
+        } catch (Exception ignored) {}
     }
 
     public static List<AuthorizationDTO> flattenAuthorizations(List<AuthorizationGroupDTO> groups) {
@@ -228,9 +248,9 @@ public abstract class BaseIntegrationTest {
         return list;
     }
 
-    public String loginAndGetToken(String username, String password) {
+    public String loginAndGetToken(String tenantId, String username, String password) {
         return RestAssured.given()
-                .header("X-Tenant-ID", "testtenant")
+                .header("X-Tenant-ID", tenantId)
                 .contentType(ContentType.JSON)
                 .body(new com.freelance.auth.dto.AuthLoginRequestDTO(username, password))
                 .when()
@@ -240,6 +260,14 @@ public abstract class BaseIntegrationTest {
                 .extract()
                 .jsonPath()
                 .getString("token");
+    }
+
+    public String loginAndGetToken(String username, String password) {
+        return loginAndGetToken(PRIMARY_TENANT, username, password);
+    }
+
+    public String getControlAdminToken() {
+        return loginAndGetToken(CONTROL_TENANT, CONTROL_ADMIN_USERNAME, CONTROL_ADMIN_PASSWORD);
     }
 
     public String getSuperAdminToken() {
@@ -277,5 +305,3 @@ public abstract class BaseIntegrationTest {
         } catch (Exception ignored) {}
     }
 }
-
-

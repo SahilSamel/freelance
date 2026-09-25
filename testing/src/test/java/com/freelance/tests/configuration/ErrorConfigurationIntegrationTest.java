@@ -6,15 +6,21 @@ import com.freelance.tests.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.hamcrest.Matchers.*;
 
-@DisplayName("Error Configuration Integration & RBAC Tests")
+@Order(44)
+@DisplayName("Stage 04.4: Customer Error Configuration Management & RBAC")
+@TestMethodOrder(OrderAnnotation.class)
 class ErrorConfigurationIntegrationTest extends BaseIntegrationTest {
 
     @Test
-    @DisplayName("config_officer: list and update error configurations successfully")
+    @Order(1)
+    @DisplayName("1. config_officer: list and update error configurations successfully")
     void testErrorConfigurationLifecycle() {
         String token = getConfigOfficerToken();
 
@@ -49,7 +55,8 @@ class ErrorConfigurationIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("update non-existent error key returns 404 (FL_6102)")
+    @Order(2)
+    @DisplayName("2. Update non-existent error key returns 404 (FL_6102)")
     void updateErrorConfiguration_nonExistentKey_returns400() {
         String token = getConfigOfficerToken();
 
@@ -66,7 +73,8 @@ class ErrorConfigurationIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("update error config with blank key returns 400 validation error (FL_1001)")
+    @Order(3)
+    @DisplayName("3. Update error config with blank key returns 400 validation error (FL_1001)")
     void updateErrorConfiguration_blankKey_returns400() {
         String token = getConfigOfficerToken();
 
@@ -82,10 +90,9 @@ class ErrorConfigurationIntegrationTest extends BaseIntegrationTest {
                 .body("errorCode", equalTo("FL_1001"));
     }
 
-    // ── Cross-boundary RBAC Security Tests ────────────────────────────────────
-
     @Test
-    @DisplayName("cross-boundary RBAC: user_officer cannot update error configurations (403 FL_4101)")
+    @Order(4)
+    @DisplayName("4. Cross-boundary RBAC: user_officer cannot update error configurations (403 FL_4101)")
     void rbac_userOfficerCannotUpdateErrorConfig() {
         String token = getUserOfficerToken();
 
@@ -101,4 +108,3 @@ class ErrorConfigurationIntegrationTest extends BaseIntegrationTest {
                 .body("errorCode", equalTo("FL_4101"));
     }
 }
-

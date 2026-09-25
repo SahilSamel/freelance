@@ -5,20 +5,21 @@ import com.freelance.tests.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.hamcrest.Matchers.*;
 
-/**
- * Integration tests for POST /auth/login
- */
-@DisplayName("POST /auth/login")
+@Order(41)
+@DisplayName("Stage 04.1: Customer Authentication & Credential Validation")
+@TestMethodOrder(OrderAnnotation.class)
 class LoginTest extends BaseIntegrationTest {
 
-    // ── Happy path ────────────────────────────────────────────────────────────
-
     @Test
-    @DisplayName("valid superadmin credentials → 200 with a non-blank token")
+    @Order(1)
+    @DisplayName("1. Valid superadmin credentials → 200 with a non-blank token")
     void login_validCredentials_returns200WithToken() {
         RestAssured
                 .given()
@@ -32,10 +33,9 @@ class LoginTest extends BaseIntegrationTest {
                 .body("token", not(emptyString()));
     }
 
-    // ── Wrong credentials ─────────────────────────────────────────────────────
-
     @Test
-    @DisplayName("wrong password → 400 INVALID_CREDENTIALS (FL_2101)")
+    @Order(2)
+    @DisplayName("2. Wrong password → 400 INVALID_CREDENTIALS (FL_2101)")
     void login_wrongPassword_returns400() {
         RestAssured
                 .given()
@@ -49,7 +49,8 @@ class LoginTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("unknown username → 400 INVALID_CREDENTIALS (FL_2101)")
+    @Order(3)
+    @DisplayName("3. Unknown username → 400 INVALID_CREDENTIALS (FL_2101)")
     void login_unknownUsername_returns400() {
         RestAssured
                 .given()
@@ -62,10 +63,9 @@ class LoginTest extends BaseIntegrationTest {
                 .body("errorCode", equalTo("FL_2101"));
     }
 
-    // ── Validation errors (format) ────────────────────────────────────────────
-
     @Test
-    @DisplayName("blank username → 400 VALIDATION_ERROR (FL_1001) with item FL_2001")
+    @Order(4)
+    @DisplayName("4. Blank username → 400 VALIDATION_ERROR (FL_1001) with item FL_2001")
     void login_blankUsername_returns400ValidationError() {
         RestAssured
                 .given()
@@ -80,7 +80,8 @@ class LoginTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("blank password → 400 VALIDATION_ERROR (FL_1001) with item FL_2002")
+    @Order(5)
+    @DisplayName("5. Blank password → 400 VALIDATION_ERROR (FL_1001) with item FL_2002")
     void login_blankPassword_returns400ValidationError() {
         RestAssured
                 .given()
@@ -95,7 +96,8 @@ class LoginTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("username too short → 400 VALIDATION_ERROR (FL_1001) with item FL_2001")
+    @Order(6)
+    @DisplayName("6. Username too short → 400 VALIDATION_ERROR (FL_1001) with item FL_2001")
     void login_usernameTooShort_returns400ValidationError() {
         RestAssured
                 .given()
@@ -110,7 +112,8 @@ class LoginTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("null body → 400")
+    @Order(7)
+    @DisplayName("7. Null body → 400")
     void login_nullBody_returns400() {
         RestAssured
                 .given()
@@ -122,4 +125,3 @@ class LoginTest extends BaseIntegrationTest {
                 .statusCode(400);
     }
 }
-

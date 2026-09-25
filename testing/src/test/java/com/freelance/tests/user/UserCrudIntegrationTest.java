@@ -10,6 +10,7 @@ import com.freelance.user.update.UserUpdateRequestDTO;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -17,7 +18,8 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 
-@DisplayName("Identity Management User CRUD & Security Integration Tests")
+@Order(45)
+@DisplayName("Stage 04.5: Identity Management User CRUD & Security Integration Tests")
 class UserCrudIntegrationTest extends BaseIntegrationTest {
 
     @Test
