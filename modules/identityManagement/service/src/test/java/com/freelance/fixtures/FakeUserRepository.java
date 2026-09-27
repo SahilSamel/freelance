@@ -70,4 +70,11 @@ public class FakeUserRepository extends UserRepository {
             storage.remove(entity.getId());
         }
     }
+
+    @Override
+    public List<User> findByIds(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return ids.stream().map(storage::get).filter(Objects::nonNull).toList();
+    }
 }
+

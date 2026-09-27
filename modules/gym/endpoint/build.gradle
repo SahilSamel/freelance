@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+}
+
+group = 'gym'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(":Framework:appcore")
+    implementation project(":Framework:jaxrs")
+    implementation project(":Common:enum")
+    implementation project(":modules:gym:gym-dto")
+    implementation project(":modules:gym:gym-service")
+    implementation project(":modules:authentication:authentication-dto")
+    implementation("jakarta.ws.rs:jakarta.ws.rs-api:3.1.0")
+    implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
+    implementation 'ch.qos.logback:logback-classic:1.5.18'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}

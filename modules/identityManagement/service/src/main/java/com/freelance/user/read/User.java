@@ -27,6 +27,36 @@ public class User {
         return assembler.fromEntity(user);
     }
 
+    public boolean existsByUsername(String username) {
+        if (username == null || username.isBlank()) {
+            return false;
+        }
+        return userRepository.existsByUsername(username);
+    }
+
+    public boolean existsById(java.util.UUID id) {
+        if (id == null) {
+            return false;
+        }
+        return userRepository.findById(id).isPresent();
+    }
+
+    public java.util.Optional<com.freelance.user.UserDTO> findById(java.util.UUID id) {
+        if (id == null) {
+            return java.util.Optional.empty();
+        }
+        return userRepository.findById(id).map(u -> assembler.fromEntity(u).userDTO());
+    }
+
+    public java.util.List<com.freelance.user.UserDTO> readUsersByIds(java.util.List<java.util.UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return java.util.List.of();
+        }
+        return userRepository.findByIds(ids).stream()
+                .map(u -> assembler.fromEntity(u).userDTO())
+                .toList();
+    }
+
     public UserReadResponseDTO readUser(UserReadRequestDTO request) {
         new UserReadValidation().validateRequest(request);
 

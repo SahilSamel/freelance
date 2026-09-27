@@ -24,6 +24,14 @@ public class UserUpdateAssembler {
             user.setPassword(HashUtility.hash(request.password()));
         }
 
+        if (request.firstName() != null) {
+            user.setFirstName(request.firstName());
+        }
+
+        if (request.lastName() != null) {
+            user.setLastName(request.lastName());
+        }
+
         if (request.contacts() != null) {
             java.util.Map<com.freelance.alerts.AlertChannel, UserContactEntity> existingByChannel = new java.util.HashMap<>();
             for (UserContactEntity c : user.getContacts()) {
@@ -60,7 +68,7 @@ public class UserUpdateAssembler {
         List<UserContactResponseDTO> contacts = user.getContacts() != null
                 ? user.getContacts().stream().map(this::toContactResponseDTO).toList()
                 : List.of();
-        return new UserUpdateResponseDTO(user.getId(), user.getUsername(), contacts);
+        return new UserUpdateResponseDTO(user.getId(), user.getUsername(), user.getFirstName(), user.getLastName(), contacts);
     }
 
     public UserContactResponseDTO toContactResponseDTO(UserContactEntity entity) {

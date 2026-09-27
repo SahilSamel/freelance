@@ -23,6 +23,8 @@ public class UserReadAssembler {
                         user.getId(),
                         user.getUsername(),
                         user.getPassword(),
+                        user.getFirstName(),
+                        user.getLastName(),
                         user.getCreatedDate(),
                         user.getLastUpdatedDate()
                 )

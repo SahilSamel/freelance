@@ -34,4 +34,18 @@ public class UserRepository extends AbstractRepository<User, UUID> {
         Long count = em().createNamedQuery(User.QUERY_COUNT_ALL, Long.class).getSingleResult();
         return count != null ? count : 0L;
     }
+
+    public java.util.List<User> findAllUsers() {
+        return em().createQuery("SELECT u FROM User u ORDER BY u.createdDate DESC", User.class).getResultList();
+    }
+
+    public java.util.List<User> findByIds(java.util.List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return em().createQuery("SELECT u FROM User u WHERE u.id IN :ids ORDER BY u.createdDate DESC", User.class)
+                .setParameter("ids", ids)
+                .getResultList();
+    }
 }
+

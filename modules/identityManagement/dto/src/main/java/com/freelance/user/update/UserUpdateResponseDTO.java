@@ -8,9 +8,15 @@ import java.util.UUID;
 public record UserUpdateResponseDTO(
         UUID id,
         String username,
+        String firstName,
+        String lastName,
         List<UserContactResponseDTO> contacts
 ) {
     public UserUpdateResponseDTO(UUID id, String username) {
-        this(id, username, List.of());
+        this(id, username, null, null, List.of());
+    }
+
+    public UserUpdateResponseDTO(UUID id, String username, List<UserContactResponseDTO> contacts) {
+        this(id, username, null, null, contacts);
     }
 }

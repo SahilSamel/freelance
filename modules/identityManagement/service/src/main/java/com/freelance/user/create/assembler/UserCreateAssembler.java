@@ -15,7 +15,7 @@ public class UserCreateAssembler {
     public User toEntity(UserCreateRequestDTO request) {
         if (request == null) return null;
         String hashedPassword = HashUtility.hash(request.password());
-        User user = new User(request.username(), hashedPassword);
+        User user = new User(request.username(), hashedPassword, request.firstName(), request.lastName());
         if (request.contacts() != null) {
             for (var contactDto : request.contacts()) {
                 if (contactDto != null && contactDto.channel() != null && contactDto.contactValue() != null && !contactDto.contactValue().isBlank()) {
@@ -45,7 +45,7 @@ public class UserCreateAssembler {
         List<UserContactResponseDTO> contacts = user.getContacts() != null
                 ? user.getContacts().stream().map(this::toContactResponseDTO).toList()
                 : List.of();
-        return new UserCreateResponseDTO(user.getId(), user.getUsername(), roleIds != null ? roleIds : List.of(), contacts);
+        return new UserCreateResponseDTO(user.getId(), user.getUsername(), user.getFirstName(), user.getLastName(), roleIds != null ? roleIds : List.of(), contacts);
     }
 
     public UserCreateResponseDTO fromEntity(User user, List<UUID> roleIds, List<UserContactResponseDTO> contacts) {
@@ -53,6 +53,8 @@ public class UserCreateAssembler {
         return new UserCreateResponseDTO(
                 user.getId(),
                 user.getUsername(),
+                user.getFirstName(),
+                user.getLastName(),
                 roleIds != null ? roleIds : List.of(),
                 contacts != null ? contacts : List.of()
         );

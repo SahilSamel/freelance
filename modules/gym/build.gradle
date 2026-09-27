@@ -1,0 +1,10 @@
+plugins {
+    id 'java'
+}
+
+group = 'gym'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}

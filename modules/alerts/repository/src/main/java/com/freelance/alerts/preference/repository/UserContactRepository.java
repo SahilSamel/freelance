@@ -43,4 +43,15 @@ public class UserContactRepository extends AbstractRepository<UserContactEntity,
                 "userId", userId
         ));
     }
+
+    public java.util.List<UserContactEntity> findByUserIds(java.util.List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) return java.util.Collections.emptyList();
+        return em().createQuery("SELECT c FROM UserContactEntity c WHERE c.userId IN :userIds", UserContactEntity.class)
+                .setParameter("userIds", userIds)
+                .getResultList();
+    }
+
+    public java.util.List<UserContactEntity> findAllContacts() {
+        return em().createQuery("SELECT c FROM UserContactEntity c", UserContactEntity.class).getResultList();
+    }
 }

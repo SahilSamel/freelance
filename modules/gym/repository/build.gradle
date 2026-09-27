@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+}
+
+group = 'gym'
+version = 'unspecified'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+    implementation project(":Framework:appcore")
+    implementation project(":Common:enum")
+    implementation project(":modules:gym:gym-dto")
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}

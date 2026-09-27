@@ -24,6 +24,14 @@ subprojects {
         }
     }
 
+    jacocoTestReport {
+        reports {
+            xml.required = true
+            csv.required = true
+            html.required = true
+        }
+    }
+
     tasks.withType(JavaCompile) {
         options.release = 21
         options.compilerArgs += ["-Xlint:processing"]

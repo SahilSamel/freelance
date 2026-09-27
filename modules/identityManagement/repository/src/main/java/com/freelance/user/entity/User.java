@@ -33,6 +33,12 @@ public class User extends AbstractAuditEntity {
     @Column(name = "password", nullable = false, length = 255)
     private String password;
 
+    @Column(name = "first_name", length = 100)
+    private String firstName;
+
+    @Column(name = "last_name", length = 100)
+    private String lastName;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private List<UserContactEntity> contacts = new ArrayList<>();
@@ -45,10 +51,25 @@ public class User extends AbstractAuditEntity {
         this.password = password;
     }
 
+    public User(String username, String password, String firstName, String lastName) {
+        this.username = username;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
+
     public User(UUID id, String username, String password) {
         this.id = id;
         this.username = username;
         this.password = password;
+    }
+
+    public User(UUID id, String username, String password, String firstName, String lastName) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 
     public User(String username, String password, List<UserContactEntity> contacts) {
@@ -57,10 +78,27 @@ public class User extends AbstractAuditEntity {
         this.contacts = contacts != null ? contacts : new ArrayList<>();
     }
 
+    public User(String username, String password, String firstName, String lastName, List<UserContactEntity> contacts) {
+        this.username = username;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.contacts = contacts != null ? contacts : new ArrayList<>();
+    }
+
     public User(UUID id, String username, String password, List<UserContactEntity> contacts) {
         this.id = id;
         this.username = username;
         this.password = password;
+        this.contacts = contacts != null ? contacts : new ArrayList<>();
+    }
+
+    public User(UUID id, String username, String password, String firstName, String lastName, List<UserContactEntity> contacts) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.contacts = contacts != null ? contacts : new ArrayList<>();
     }
 
@@ -126,5 +164,21 @@ public class User extends AbstractAuditEntity {
         if (contact != null) {
             getContacts().remove(contact);
         }
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 }
