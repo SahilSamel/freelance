@@ -418,9 +418,10 @@ public class MemberServiceTest {
         verify(userUpdateService, times(1)).updateUser(any());
 
         // Verify Delete-Insert reconciliation
+        verify(paymentService, times(1)).findPaidPaymentsByUserPlanIds(List.of(oldPlanId));
         verify(paymentService, times(1)).deletePendingPaymentsByUserPlanIds(List.of(oldPlanId));
         verify(userPlanRepository, times(1)).deleteByUserId(userId);
-        verify(paymentService, times(1)).relinkPaidPayments(List.of(oldPlanId), List.of(updatedPlanResp));
+        verify(paymentService, times(1)).linkPaidPaymentsToNewPlans(anyList(), eq(List.of(updatedPlanResp)));
     }
 
     @Test

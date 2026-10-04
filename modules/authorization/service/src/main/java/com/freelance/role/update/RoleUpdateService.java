@@ -54,21 +54,21 @@ public class RoleUpdateService {
         if (request.description() != null) {
             role.setDescription(request.description());
         }
-        roleRepository.merge(role);
+        Role managedRole = roleRepository.merge(role);
 
         List<Authorization> effectiveAuthorizations;
         if (request.authorizationIds() != null) {
-            roleAuthorizationRepository.removeByRoleId(role.getId());
+            roleAuthorizationRepository.removeByRoleId(managedRole.getId());
             List<RoleAuthorization> mappings = new ArrayList<>();
             for (Authorization auth : newAuthorizations) {
-                mappings.add(new RoleAuthorization(role, auth));
+                mappings.add(new RoleAuthorization(managedRole, auth));
             }
             if (!mappings.isEmpty()) {
                 roleAuthorizationRepository.persistEntriesInBatch(mappings);
             }
             effectiveAuthorizations = newAuthorizations;
         } else {
-            List<RoleAuthorization> existingMappings = roleAuthorizationRepository.getRoleAuthorizationsByRoleId(role.getId());
+            List<RoleAuthorization> existingMappings = roleAuthorizationRepository.getRoleAuthorizationsByRoleId(managedRole.getId());
             effectiveAuthorizations = existingMappings.stream()
                     .map(RoleAuthorization::getAuthorization)
                     .filter(Objects::nonNull)

@@ -331,10 +331,13 @@ public class MemberService {
         List<UserPlanEntity> oldUserPlans = userPlanRepository.findByUserId(userId);
         List<UUID> oldUserPlanIds = oldUserPlans.stream().map(UserPlanEntity::getId).toList();
 
+        // Query existing PAID payments before deleting old user plans/mappings
+        List<PaymentEntity> paidPayments = paymentService.findPaidPaymentsByUserPlanIds(oldUserPlanIds);
+
         // Delete unpaid pending installments and mappings
         paymentService.deletePendingPaymentsByUserPlanIds(oldUserPlanIds);
 
-        // Clear active user plans
+        // Clear active user plans (cascades to delete old mappings in FL_USER_PLAN_PAYMENT)
         userPlanRepository.deleteByUserId(userId);
 
         List<UserPlanResponseDTO> newPlans = Collections.emptyList();
@@ -347,8 +350,8 @@ public class MemberService {
             newPayments = paymentService.createInstallments(newPlans, request.payments());
         }
 
-        // Relink existing PAID payments with the active plans
-        paymentService.relinkPaidPayments(oldUserPlanIds, newPlans);
+        // Relink existing PAID payments with the newly assigned plans
+        paymentService.linkPaidPaymentsToNewPlans(paidPayments, newPlans);
 
         return new MemberUpdateResponseDTO(userId, newPlans, newPayments);
     }

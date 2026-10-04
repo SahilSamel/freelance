@@ -196,4 +196,68 @@ public class PlanServiceTest {
         assertEquals(1, res3.size());
         assertEquals(LocalDate.now().plusDays(30), res3.get(0).endDate());
     }
+
+    @Test
+    void testUpdatePlanSuccess() {
+        UUID planId = UUID.randomUUID();
+        PlanEntity existing = new PlanEntity(planId, "Old Name", "Old Desc", BigDecimal.valueOf(1000), 30, true);
+        when(planRepository.get(planId)).thenReturn(existing);
+        when(planRepository.findByName("New Name")).thenReturn(Optional.empty());
+
+        com.freelance.gym.plan.dto.PlanUpdateRequestDTO request = new com.freelance.gym.plan.dto.PlanUpdateRequestDTO(
+                planId,
+                "New Name",
+                "New Desc",
+                BigDecimal.valueOf(1500),
+                45,
+                true
+        );
+
+        PlanResponseDTO response = planService.updatePlan(request);
+        assertNotNull(response);
+        assertEquals("New Name", response.name());
+        assertEquals("New Desc", response.description());
+        assertEquals(BigDecimal.valueOf(1500), response.defaultPrice());
+        assertEquals(45, response.defaultDuration());
+        assertTrue(response.isActive());
+        verify(planRepository, times(1)).merge(existing);
+    }
+
+    @Test
+    void testUpdatePlanDuplicateNameFails() {
+        UUID planId = UUID.randomUUID();
+        UUID otherPlanId = UUID.randomUUID();
+        PlanEntity existing = new PlanEntity(planId, "Old Name", "Old Desc", BigDecimal.valueOf(1000), 30, true);
+        PlanEntity other = new PlanEntity(otherPlanId, "Existing Name", "Desc", BigDecimal.valueOf(1000), 30, true);
+        when(planRepository.get(planId)).thenReturn(existing);
+        when(planRepository.findByName("Existing Name")).thenReturn(Optional.of(other));
+
+        com.freelance.gym.plan.dto.PlanUpdateRequestDTO request = new com.freelance.gym.plan.dto.PlanUpdateRequestDTO(
+                planId,
+                "Existing Name",
+                "New Desc",
+                BigDecimal.valueOf(1500),
+                45,
+                true
+        );
+
+        assertThrows(ConstraintException.class, () -> planService.updatePlan(request));
+    }
+
+    @Test
+    void testUpdatePlanNotFoundFails() {
+        UUID planId = UUID.randomUUID();
+        when(planRepository.get(planId)).thenReturn(null);
+
+        com.freelance.gym.plan.dto.PlanUpdateRequestDTO request = new com.freelance.gym.plan.dto.PlanUpdateRequestDTO(
+                planId,
+                "Some Name",
+                "New Desc",
+                BigDecimal.valueOf(1500),
+                45,
+                true
+        );
+
+        assertThrows(ConstraintException.class, () -> planService.updatePlan(request));
+    }
 }

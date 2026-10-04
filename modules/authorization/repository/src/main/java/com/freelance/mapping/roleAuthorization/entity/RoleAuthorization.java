@@ -22,6 +22,10 @@ import java.time.LocalDateTime;
         @NamedQuery(
                 name = RoleAuthorization.QUERY_DELETE_BY_SYSTEM_ROLES,
                 query = "DELETE FROM RoleAuthorization ra WHERE ra.role.id IN (SELECT r.id FROM Role r WHERE r.isSystem = TRUE)"
+        ),
+        @NamedQuery(
+                name = RoleAuthorization.QUERY_DELETE_BY_ROLE_ID,
+                query = "DELETE FROM RoleAuthorization ra WHERE ra.id.roleId = :roleId"
         )
 })
 @Table(name = "FL_ROLE_AUTHORIZATION")
@@ -31,6 +35,7 @@ public class RoleAuthorization {
     public static final String QUERY_FIND_BY_ROLE_ID = "RoleAuthorization.findByRoleId";
     public static final String QUERY_FIND_ALL_SYSTEM_ROLE_MAPPINGS = "RoleAuthorization.findAllSystemRoleMappings";
     public static final String QUERY_DELETE_BY_SYSTEM_ROLES = "RoleAuthorization.deleteBySystemRoles";
+    public static final String QUERY_DELETE_BY_ROLE_ID = "RoleAuthorization.deleteByRoleId";
 
     @EmbeddedId
     private RoleAuthorizationKey id = new RoleAuthorizationKey();

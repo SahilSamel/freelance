@@ -1,6 +1,7 @@
 package com.freelance.configuration.system;
 
 import com.freelance.cache.config.SystemConfigurationCache;
+import com.freelance.configuration.dto.system.get.SystemConfigurationGetResponseDTO;
 import com.freelance.configuration.dto.system.list.SystemConfigurationListRequestDTO;
 import com.freelance.configuration.dto.system.list.SystemConfigurationListResponseDTO;
 import com.freelance.configuration.dto.system.update.SystemConfigurationUpdateRequestDTO;
@@ -12,7 +13,7 @@ import com.freelance.configuration.system.constraint.SystemConfigurationConstrai
 import com.freelance.configuration.system.validation.SystemConfigurationValidation;
 import com.freelance.manager.CacheManager;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * Service managing database lookups and cache preloading for dynamic application configuration properties.
@@ -42,6 +43,36 @@ public class SystemConfigurationService {
     public String loadConfigValue(String configId) {
         SystemConfiguration entity = repository.get(configId);
         return entity != null ? entity.getConfigValue() : null;
+    }
+
+    public SystemConfigurationGetResponseDTO getConfigurations(List<String> keys) {
+        Map<String, String> result = new LinkedHashMap<>();
+        if (keys == null || keys.isEmpty()) {
+            return new SystemConfigurationGetResponseDTO(result);
+        }
+
+        List<String> normalizedKeys = new ArrayList<>();
+        for (String key : keys) {
+            if (key != null && !key.isBlank()) {
+                if (key.contains(",")) {
+                    for (String subKey : key.split(",")) {
+                        if (subKey != null && !subKey.trim().isBlank()) {
+                            normalizedKeys.add(subKey.trim());
+                        }
+                    }
+                } else {
+                    normalizedKeys.add(key.trim());
+                }
+            }
+        }
+
+        for (String key : normalizedKeys) {
+            String value = loadConfigValue(key);
+            if (value != null) {
+                result.put(key, value);
+            }
+        }
+        return new SystemConfigurationGetResponseDTO(result);
     }
 
     public SystemConfigurationListResponseDTO listConfigurations(SystemConfigurationListRequestDTO request) {

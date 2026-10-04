@@ -175,4 +175,25 @@ class SystemConfigurationServiceTest {
         assertThrows(ValidationException.class, () -> val.validateUpdateRequest(new SystemConfigurationUpdateRequestDTO("   ", "val", "desc")));
         assertThrows(ValidationException.class, () -> val.validateUpdateRequest(new SystemConfigurationUpdateRequestDTO("key", null, "desc")));
     }
+
+    @Test
+    @DisplayName("getConfigurations returns empty map when empty or null and stored values when present")
+    void testGetConfigurations() {
+        FakeSystemConfigurationRepository repo = new FakeSystemConfigurationRepository();
+        SystemConfigurationService service = new SystemConfigurationService(repo);
+
+        var emptyRes = service.getConfigurations(null);
+        assertNotNull(emptyRes);
+        assertTrue(emptyRes.values().isEmpty());
+
+        repo.storage.put("gym.brand.name", new SystemConfiguration("gym.brand.name", "Titan Fitness", "Name"));
+        repo.storage.put("gym.brand.logoUrl", new SystemConfiguration("gym.brand.logoUrl", "https://logo.png", "Logo"));
+
+        var result = service.getConfigurations(java.util.List.of("gym.brand.name", "gym.brand.logoUrl", "gym.brand.missing"));
+        assertNotNull(result);
+        assertEquals(2, result.values().size());
+        assertEquals("Titan Fitness", result.values().get("gym.brand.name"));
+        assertEquals("https://logo.png", result.values().get("gym.brand.logoUrl"));
+        assertNull(result.values().get("gym.brand.missing"));
+    }
 }

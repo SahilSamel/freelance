@@ -37,7 +37,6 @@ public class RoleAuthorizationRepository extends AbstractRepository<RoleAuthoriz
 
     public void removeByRoleId(UUID roleId) {
         if (roleId == null) return;
-        List<RoleAuthorization> list = getRoleAuthorizationsByRoleId(roleId);
-        removeEntriesInBatch(list);
+        executeUpdateQuery(RoleAuthorization.QUERY_DELETE_BY_ROLE_ID, Map.of("roleId", roleId));
     }
 }

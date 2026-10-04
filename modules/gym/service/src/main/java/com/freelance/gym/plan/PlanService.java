@@ -5,14 +5,17 @@ import com.freelance.gym.member.dto.UserPlanResponseDTO;
 import com.freelance.gym.plan.assembler.PlanAssembler;
 import com.freelance.gym.plan.constraint.PlanCreateConstraint;
 import com.freelance.gym.plan.constraint.PlanDeleteConstraint;
+import com.freelance.gym.plan.constraint.PlanUpdateConstraint;
 import com.freelance.gym.plan.dto.PlanCreateRequestDTO;
 import com.freelance.gym.plan.dto.PlanDeleteRequestDTO;
 import com.freelance.gym.plan.dto.PlanListResponseDTO;
 import com.freelance.gym.plan.dto.PlanResponseDTO;
+import com.freelance.gym.plan.dto.PlanUpdateRequestDTO;
 import com.freelance.gym.plan.entity.PlanEntity;
 import com.freelance.gym.plan.repository.PlanRepository;
 import com.freelance.gym.plan.validation.PlanCreateValidation;
 import com.freelance.gym.plan.validation.PlanDeleteValidation;
+import com.freelance.gym.plan.validation.PlanUpdateValidation;
 import com.freelance.gym.userplan.entity.UserPlanEntity;
 import com.freelance.gym.userplan.repository.UserPlanRepository;
 
@@ -50,6 +53,27 @@ public class PlanService {
         PlanEntity entity = assembler.toEntity(request);
         planRepository.persist(entity);
 
+        return assembler.fromEntity(entity);
+    }
+
+    public PlanResponseDTO updatePlan(PlanUpdateRequestDTO request) {
+        new PlanUpdateValidation().validateRequest(request);
+        new PlanUpdateConstraint(planRepository).checkConstraints(request);
+
+        PlanEntity entity = planRepository.get(request.planId());
+        entity.setName(request.name().trim());
+        entity.setDescription(request.description());
+        if (request.defaultPrice() != null) {
+            entity.setDefaultPrice(request.defaultPrice());
+        }
+        if (request.defaultDuration() != null) {
+            entity.setDefaultDuration(request.defaultDuration());
+        }
+        if (request.isActive() != null) {
+            entity.setActive(request.isActive());
+        }
+
+        planRepository.merge(entity);
         return assembler.fromEntity(entity);
     }
 

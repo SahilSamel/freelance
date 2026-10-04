@@ -88,24 +88,26 @@ public class PaymentService {
         }
     }
 
-    public void relinkPaidPayments(List<UUID> oldUserPlanIds, List<UserPlanResponseDTO> newUserPlans) {
-        if (oldUserPlanIds == null || oldUserPlanIds.isEmpty() || newUserPlans == null || newUserPlans.isEmpty()) {
-            return;
+    public List<PaymentEntity> findPaidPaymentsByUserPlanIds(List<UUID> userPlanIds) {
+        if (userPlanIds == null || userPlanIds.isEmpty()) {
+            return List.of();
         }
 
-        List<UserPlanPaymentEntity> mappings = userPlanPaymentRepository.findByUserPlanIds(oldUserPlanIds);
+        List<UserPlanPaymentEntity> mappings = userPlanPaymentRepository.findByUserPlanIds(userPlanIds);
         if (mappings.isEmpty()) {
-            return;
+            return List.of();
         }
 
         List<UUID> paymentIds = mappings.stream().map(UserPlanPaymentEntity::getPaymentId).distinct().toList();
         List<PaymentEntity> payments = paymentRepository.findByIds(paymentIds);
 
-        List<PaymentEntity> paidPayments = payments.stream()
+        return payments.stream()
                 .filter(p -> p.getTransactionId() != null && !p.getTransactionId().isBlank())
                 .toList();
+    }
 
-        if (paidPayments.isEmpty()) {
+    public void linkPaidPaymentsToNewPlans(List<PaymentEntity> paidPayments, List<UserPlanResponseDTO> newUserPlans) {
+        if (paidPayments == null || paidPayments.isEmpty() || newUserPlans == null || newUserPlans.isEmpty()) {
             return;
         }
 
@@ -115,5 +117,10 @@ public class PaymentService {
                 userPlanPaymentRepository.persist(mapping);
             }
         }
+    }
+
+    public void relinkPaidPayments(List<UUID> oldUserPlanIds, List<UserPlanResponseDTO> newUserPlans) {
+        List<PaymentEntity> paidPayments = findPaidPaymentsByUserPlanIds(oldUserPlanIds);
+        linkPaidPaymentsToNewPlans(paidPayments, newUserPlans);
     }
 }

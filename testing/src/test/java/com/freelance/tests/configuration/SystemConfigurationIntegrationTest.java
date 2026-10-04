@@ -129,4 +129,32 @@ class SystemConfigurationIntegrationTest extends BaseIntegrationTest {
                 .statusCode(403)
                 .body("errorCode", equalTo("FL_4101"));
     }
+
+    @Test
+    @Order(5)
+    @DisplayName("5. Anonymous get configurations via POST and GET /configurations/system/get")
+    void testGetConfigurationsAnonymous() {
+        // POST /configurations/system/get
+        RestAssured
+                .given()
+                .contentType(ContentType.JSON)
+                .body(new com.freelance.configuration.dto.system.get.SystemConfigurationGetRequestDTO(
+                        java.util.List.of("authentication.concurrentLoginAllowed", "non.existent.key")
+                ))
+                .when()
+                .post("/configurations/system/get")
+                .then()
+                .statusCode(200)
+                .body("values.'authentication.concurrentLoginAllowed'", notNullValue());
+
+        // GET /configurations/system/get?keys=...
+        RestAssured
+                .given()
+                .queryParam("keys", "authentication.concurrentLoginAllowed,non.existent.key")
+                .when()
+                .get("/configurations/system/get")
+                .then()
+                .statusCode(200)
+                .body("values.'authentication.concurrentLoginAllowed'", notNullValue());
+    }
 }

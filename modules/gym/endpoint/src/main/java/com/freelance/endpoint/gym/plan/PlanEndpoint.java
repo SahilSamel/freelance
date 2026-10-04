@@ -5,6 +5,7 @@ import com.freelance.gym.plan.dto.PlanCreateRequestDTO;
 import com.freelance.gym.plan.dto.PlanDeleteRequestDTO;
 import com.freelance.gym.plan.dto.PlanListResponseDTO;
 import com.freelance.gym.plan.dto.PlanResponseDTO;
+import com.freelance.gym.plan.dto.PlanUpdateRequestDTO;
 import com.freelance.rest.app.endpoint.AbstractEndpoint;
 import com.freelance.rest.app.endpoint.annotation.Authorization;
 import jakarta.ws.rs.*;
@@ -37,6 +38,19 @@ public class PlanEndpoint extends AbstractEndpoint {
     public Response createPlan(PlanCreateRequestDTO request) {
         PlanResponseDTO response = planService.createPlan(request);
         return buildResponse(response, 201);
+    }
+
+    @POST
+    @Path("/update")
+    @Authorization(
+            key = "PLAN_UPDATE",
+            name = "Update Plan",
+            description = "Updates an existing gym plan",
+            group = "Gym.Plan"
+    )
+    public Response updatePlan(PlanUpdateRequestDTO request) {
+        PlanResponseDTO response = planService.updatePlan(request);
+        return buildResponse(response, 200);
     }
 
     @POST

@@ -66,6 +66,7 @@ public class ControlPlaneBootstrap {
         logger.info("[ControlPlaneBootstrap] Initializing Control Plane ({})", controlTenant);
         logger.info("================================================================================");
 
+        List<TenantEntity> allTenants = Collections.emptyList();
         try (Transaction tx = Transaction.start(controlTenant)) {
             Transaction.getRequestContext().withUserId(SystemHardcoding.SYSTEM_USER_ID.asUuid());
 
@@ -94,7 +95,7 @@ public class ControlPlaneBootstrap {
             }
 
             // Sync all tenants from database into TenantRegistry cache
-            List<TenantEntity> allTenants = tenantRepo.findAllTenants();
+            allTenants = tenantRepo.findAllTenants();
             for (TenantEntity t : allTenants) {
                 TenantRegistry.registerTenant(t.getTenantId(), t.getStatus());
             }
@@ -157,6 +158,23 @@ public class ControlPlaneBootstrap {
 
             // 9. Preload role authorizations cache for freelance
             new RoleAuthorizationService().preloadRoleAuthorizationCacheEntries();
+        }
+
+        // 10. Synchronize configurations and authorizations in the database for all active customer tenants
+        for (TenantEntity tenant : allTenants) {
+            if (controlTenant.equalsIgnoreCase(tenant.getTenantId())) {
+                continue;
+            }
+            try (Transaction tenantTx = Transaction.start(tenant.getTenantId())) {
+                Transaction.getRequestContext().withUserId(SystemHardcoding.SYSTEM_USER_ID.asUuid());
+
+                new ConfigurationSeeder().seed();
+                new AuthorizationSeeder().seed();
+
+                logger.info("[ControlPlaneBootstrap] Synchronized configurations & authorizations for tenant '{}'.", tenant.getTenantId());
+            } catch (Exception e) {
+                logger.warn("[ControlPlaneBootstrap] Failed to sync tenant '{}': {}", tenant.getTenantId(), e.getMessage());
+            }
         }
 
         logger.info("================================================================================");
