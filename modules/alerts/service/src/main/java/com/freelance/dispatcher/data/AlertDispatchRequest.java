@@ -14,5 +14,20 @@ public record AlertDispatchRequest(
         String recipientContact,
         String renderedContent,
         Map<String, String> resolvedAttributes,
-        EventPriority priority
-) {}
+        EventPriority priority,
+        String mediaUrl,
+        String mediaId,
+        String mediaType
+) {
+    public AlertDispatchRequest(
+            UUID userId,
+            AlertTemplateEntity template,
+            AlertChannel channel,
+            String recipientContact,
+            String renderedContent,
+            Map<String, String> resolvedAttributes,
+            EventPriority priority
+    ) {
+        this(userId, template, channel, recipientContact, renderedContent, resolvedAttributes, priority, null, null, null);
+    }
+}

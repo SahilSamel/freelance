@@ -34,6 +34,15 @@ public class AlertTemplateRepository extends AbstractRepository<AlertTemplateEnt
         return executeSingleResultSearch("AlertTemplate.findByMetaTemplateId", Map.of("metaTemplateId", metaTemplateId.trim()));
     }
 
+    public List<AlertTemplateEntity> findSubmittableWhatsAppTemplates() {
+        return em().createQuery(
+                "SELECT t FROM AlertTemplateEntity t WHERE t.channel = :channel AND t.status IN (:statuses) ORDER BY t.templateKey ASC",
+                AlertTemplateEntity.class)
+                .setParameter("channel", com.freelance.alerts.AlertChannel.WHATSAPP)
+                .setParameter("statuses", List.of(TemplateStatus.DRAFT, TemplateStatus.REJECTED))
+                .getResultList();
+    }
+
     public void flush() {
         em().flush();
     }

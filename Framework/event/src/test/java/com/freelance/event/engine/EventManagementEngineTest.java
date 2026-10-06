@@ -106,4 +106,69 @@ class EventManagementEngineTest {
         assertTrue(latch.await(3, TimeUnit.SECONDS));
         assertEquals("tenant_custom_123", receivedTenant.get());
     }
+
+    @Test
+    @DisplayName("emitBatch publishes list of payloads successfully")
+    void testEmitBatch() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(3);
+        java.util.List<String> received = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+
+        EventRegistry.getInstance().registerConsumer(
+                TestConsumer.TEST_FIFO_TOPIC,
+                ConsumerConfig.builder().concurrency(1).build(),
+                String.class,
+                msg -> {
+                    received.add(msg.getPayload());
+                    latch.countDown();
+                }
+        );
+
+        EventManagementEngine.emitBatch(
+                TestConsumer.TEST_FIFO_TOPIC,
+                java.util.List.of("Batch-1", "Batch-2", "Batch-3"),
+                EventPriority.NORMAL
+        );
+
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+        assertEquals(3, received.size());
+        assertEquals("Batch-1", received.get(0));
+        assertEquals("Batch-2", received.get(1));
+        assertEquals("Batch-3", received.get(2));
+    }
+
+    @Test
+    @DisplayName("emitBatch with explicit tenantId populates tenantId in all messages")
+    void testEmitBatchWithTenantId() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(2);
+        java.util.List<String> tenants = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+
+        EventRegistry.getInstance().registerConsumer(
+                TestConsumer.TEST_FIFO_TOPIC,
+                ConsumerConfig.builder().concurrency(1).build(),
+                String.class,
+                msg -> {
+                    tenants.add(msg.getTenantId());
+                    latch.countDown();
+                }
+        );
+
+        EventManagementEngine.emitBatch(
+                TestConsumer.TEST_FIFO_TOPIC,
+                "tenant_batch_gym",
+                java.util.List.of("M1", "M2"),
+                EventPriority.HIGH
+        );
+
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+        assertEquals(2, tenants.size());
+        assertEquals("tenant_batch_gym", tenants.get(0));
+        assertEquals("tenant_batch_gym", tenants.get(1));
+    }
+
+    @Test
+    @DisplayName("emitBatch with null or empty list is a no-op")
+    void testEmitBatchNullOrEmpty() {
+        assertDoesNotThrow(() -> EventManagementEngine.emitBatch(TestConsumer.TEST_FIFO_TOPIC, (java.util.List<String>) null, EventPriority.NORMAL));
+        assertDoesNotThrow(() -> EventManagementEngine.emitBatch(TestConsumer.TEST_FIFO_TOPIC, java.util.Collections.emptyList(), EventPriority.NORMAL));
+    }
 }

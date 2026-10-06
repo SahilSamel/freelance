@@ -11,6 +11,8 @@ import com.freelance.event.model.EventPriority;
 
 import com.freelance.alerts.template.repository.AlertTemplateCategoryRepository;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class AlertEmitService {
@@ -34,10 +36,11 @@ public class AlertEmitService {
         EventPriority priority = resolvePriority(template);
 
         AlertConsumer destination = AlertConsumer.fromChannel(template.getChannel());
+        List<AlertEventPayloadDTO> payloads = new ArrayList<>(request.userIds().size());
         for (UUID userId : request.userIds()) {
-            AlertEventPayloadDTO eventPayload = new AlertEventPayloadDTO(template.getId(), userId);
-            EventManagementEngine.emit(destination, eventPayload, priority);
+            payloads.add(new AlertEventPayloadDTO(template.getId(), userId));
         }
+        EventManagementEngine.emitBatch(destination, payloads, priority);
     }
 
     public EventPriority resolvePriority(AlertTemplateEntity template) {

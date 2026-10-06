@@ -43,6 +43,12 @@ public class JpaFactory {
                         .applySetting("jakarta.persistence.jdbc.driver", "org.postgresql.Driver")
                         .applySetting("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect")
                         .applySetting("hibernate.hbm2ddl.auto", "none")
+                        .applySetting("hibernate.connection.provider_class", "org.hibernate.hikaricp.internal.HikariCPConnectionProvider")
+                        .applySetting("hibernate.hikari.maximumPoolSize", "60")
+                        .applySetting("hibernate.hikari.minimumIdle", "10")
+                        .applySetting("hibernate.hikari.idleTimeout", "30000")
+                        .applySetting("hibernate.hikari.connectionTimeout", "20000")
+                        .applySetting("hibernate.hikari.maxLifetime", "1800000")
                         .build();
 
         MetadataSources metadataSources = new MetadataSources(serviceRegistry);

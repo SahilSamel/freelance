@@ -45,6 +45,10 @@ public class TemplateSeeder {
 
             if (existingOpt.isEmpty()) {
                 UUID templateId = UUID.nameUUIDFromBytes(("tpl:" + tpl.getTemplateKey()).getBytes());
+                TemplateStatus initialStatus = (channel == AlertChannel.WHATSAPP && (tpl.getMetaTemplateId() == null || tpl.getMetaTemplateId().isBlank()))
+                        ? TemplateStatus.DRAFT
+                        : TemplateStatus.APPROVED;
+
                 AlertTemplateEntity entity = new AlertTemplateEntity(
                         templateId,
                         tpl.getTemplateKey(),
@@ -55,7 +59,7 @@ public class TemplateSeeder {
                         tpl.getMediaUrl(),
                         tpl.getMediaType(),
                         channel,
-                        TemplateStatus.APPROVED,
+                        initialStatus,
                         true,
                         attrs,
                         tpl.getMetaTemplateId(),

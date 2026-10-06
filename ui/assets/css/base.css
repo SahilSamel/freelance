@@ -1,0 +1,497 @@
+/* ==========================================================================
+   Freelance Frontend Framework - Core Base Styles & Design Tokens
+   ========================================================================== */
+
+:root {
+  /* Dynamic Branding Palette (Red, Blue, White & Orange Theme) */
+  --fl-primary: #dc2626;
+  --fl-primary-hover: #b91c1c;
+  --fl-primary-light: #fef2f2;
+  --fl-primary-subtle: #fee2e2;
+  --fl-primary-dark: #991b1b;
+
+  /* Navy Blue (Secondary / Navigation / Tabs / Links) */
+  --fl-secondary: #232256;
+  --fl-secondary-hover: #1a1945;
+  --fl-secondary-light: #ececf6;
+  --fl-secondary-subtle: #d2d1e8;
+  --fl-secondary-dark: #121133;
+
+  /* Orange (Accent / Highlights / Alerts) */
+  --fl-accent: #f97316;
+  --fl-accent-hover: #ea580c;
+  --fl-accent-light: #fff7ed;
+  --fl-accent-subtle: #ffedd5;
+  --fl-accent-dark: #c2410c;
+
+  /* Backgrounds & Surfaces (White & Crisp Canvas) */
+  --fl-bg: #f8fafc;
+  --fl-surface: #ffffff;
+  --fl-surface-hover: #f8fafc;
+  --fl-surface-active: #f1f5f9;
+  --fl-surface-card: #ffffff;
+  --fl-chat-bg: #f0f4f8;
+
+  /* Typography & Text Colors */
+  --fl-text: #0f172a;
+  --fl-text-secondary: #475569;
+  --fl-text-muted: #64748b;
+  --fl-text-light: #94a3b8;
+  --fl-text-inverse: #ffffff;
+
+  /* Border & Dividers */
+  --fl-border: #e2e8f0;
+  --fl-border-light: #f1f5f9;
+  --fl-border-dark: #cbd5e1;
+  --fl-border-focus: #dc2626;
+
+  /* Semantic Status Colors (Matching Folder Tab Colors) */
+  --fl-status-active-bg: #f0fdf4;
+  --fl-status-active-text: #15803d;
+  --fl-status-active-border: #bbf7d0;
+
+  --fl-status-expiring-bg: #fefce8;
+  --fl-status-expiring-text: #854d0e;
+  --fl-status-expiring-border: #fef08a;
+
+  --fl-status-overdue-bg: #fef2f2;
+  --fl-status-overdue-text: #dc2626;
+  --fl-status-overdue-border: #fecaca;
+
+  --fl-status-expired-bg: #f8fafc;
+  --fl-status-expired-text: #475569;
+  --fl-status-expired-border: #cbd5e1;
+
+  --fl-status-prospect-bg: #eff6ff;
+  --fl-status-prospect-text: #1d4ed8;
+  --fl-status-prospect-border: #bfdbfe;
+
+  /* Alert / Message Bubble Colors */
+  --fl-chat-incoming-bg: #ffffff;
+  --fl-chat-incoming-text: #0f172a;
+  --fl-chat-outgoing-bg: #eff6ff;
+  --fl-chat-outgoing-text: #0f172a;
+  --fl-chat-date-bg: #e2e8f0;
+
+  /* Spacing & Radii */
+  --fl-radius-xs: 4px;
+  --fl-radius-sm: 6px;
+  --fl-radius-md: 8px;
+  --fl-radius-lg: 12px;
+  --fl-radius-xl: 16px;
+  --fl-radius-full: 9999px;
+
+  /* Shadows */
+  --fl-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --fl-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.07);
+  --fl-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  --fl-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --fl-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  --fl-shadow-floating: 0 12px 28px 0 rgba(15, 23, 42, 0.16), 0 2px 4px 0 rgba(15, 23, 42, 0.08);
+
+  /* Typography */
+  --fl-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --fl-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Transitions */
+  --fl-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --fl-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --fl-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-Index Scale */
+  --fl-z-base: 1;
+  --fl-z-dropdown: 100;
+  --fl-z-sticky: 200;
+  --fl-z-floating-bar: 500;
+  --fl-z-drawer: 800;
+  --fl-z-modal: 1000;
+  --fl-z-toast: 2000;
+}
+
+/* CSS Reset & Defaults */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  font-family: var(--fl-font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fl-text);
+  background-color: var(--fl-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fl-border-dark);
+  border-radius: var(--fl-radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fl-text-light);
+}
+
+/* Common Layout Helpers */
+.fl-app-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.fl-page-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 20px 24px 80px;
+  width: 100%;
+}
+
+/* Typography Helpers */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--fl-text);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 { font-size: 24px; }
+h2 { font-size: 20px; }
+h3 { font-size: 16px; }
+h4 { font-size: 14px; }
+
+p {
+  color: var(--fl-text-secondary);
+}
+
+a {
+  color: var(--fl-primary);
+  text-decoration: none;
+  transition: color var(--fl-transition-fast);
+}
+
+a:hover {
+  color: var(--fl-primary-hover);
+  text-decoration: underline;
+}
+
+/* Utility Flex & Grid Classes */
+.fl-flex { display: flex; }
+.fl-flex-col { display: flex; flex-direction: column; }
+.fl-items-center { align-items: center; }
+.fl-justify-between { justify-content: space-between; }
+.fl-justify-center { justify-content: center; }
+.fl-gap-2 { gap: 8px; }
+.fl-gap-3 { gap: 12px; }
+.fl-gap-4 { gap: 16px; }
+.fl-gap-6 { gap: 24px; }
+
+/* Interactive Cursor */
+.fl-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Global Hidden & Transition Helpers */
+[hidden] {
+  display: none !important;
+}
+
+.fl-fade-in {
+  animation: flFadeIn 200ms ease-out forwards;
+}
+
+@keyframes flFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Physical Folder Index Tabs */
+.fl-folder-tabs-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 2;
+  padding-left: 0;
+}
+
+.fl-folder-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 0;
+  border: 1px solid var(--fl-border, #e2e8f0);
+  background: #f1f5f9;
+  color: var(--fl-text-secondary, #64748b);
+  cursor: pointer;
+  user-select: none;
+  transition: all 120ms ease;
+  position: relative;
+  margin-left: -1px;
+}
+
+.fl-folder-tab-btn:first-child {
+  margin-left: 0;
+}
+
+.fl-folder-tab-btn:hover {
+  background: #e2e8f0;
+  color: var(--fl-text, #0f172a);
+}
+
+.fl-folder-tab-btn.active {
+  background: #ffffff;
+  color: #000000;
+  font-weight: 700;
+  border-color: var(--fl-border, #e2e8f0);
+  border-bottom-color: #ffffff;
+  border-top: 3px solid #000000;
+  border-radius: 0;
+  padding: 10px 22px 9px;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.03);
+  z-index: 3;
+}
+
+/* Active tab: Faded green tint with green highlight & dark green text */
+.fl-folder-tab-btn[data-tab="active"] {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+.fl-folder-tab-btn[data-tab="active"]:hover {
+  background: #dcfce7;
+  color: #14532d;
+}
+.fl-folder-tab-btn[data-tab="active"].active {
+  background: #f0fdf4;
+  color: #14532d;
+  border-top: 3px solid #16a34a;
+  border-color: #bbf7d0;
+  border-bottom-color: #ffffff;
+}
+
+/* Renewals tab: Faded yellow tint with yellow highlight & dark amber text */
+.fl-folder-tab-btn[data-tab="expiring"] {
+  background: #fefce8;
+  color: #854d0e;
+  border-color: #fef08a;
+}
+.fl-folder-tab-btn[data-tab="expiring"]:hover {
+  background: #fef9c3;
+  color: #713f12;
+}
+.fl-folder-tab-btn[data-tab="expiring"].active {
+  background: #fefce8;
+  color: #713f12;
+  border-top: 3px solid #eab308;
+  border-color: #fef08a;
+  border-bottom-color: #ffffff;
+}
+
+/* Expired tab: Clean neutral grey */
+.fl-folder-tab-btn[data-tab="expired"] {
+  background: #f8fafc;
+  color: #64748b;
+  border-color: var(--fl-border, #e2e8f0);
+}
+.fl-folder-tab-btn[data-tab="expired"]:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+.fl-folder-tab-btn[data-tab="expired"].active {
+  background: #ffffff;
+  color: #1e293b;
+  border-top: 3px solid #64748b;
+  border-color: var(--fl-border, #e2e8f0);
+  border-bottom-color: #ffffff;
+}
+
+/* Prospect tab: Faded blue tint with blue highlight & dark blue text */
+.fl-folder-tab-btn[data-tab="prospect"] {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+.fl-folder-tab-btn[data-tab="prospect"]:hover {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.fl-folder-tab-btn[data-tab="prospect"].active {
+  background: #eff6ff;
+  color: #1e3a8a;
+  border-top: 3px solid #2563eb;
+  border-color: #bfdbfe;
+  border-bottom-color: #ffffff;
+}
+
+.fl-folder-card-body {
+  background: #ffffff;
+  border: 1px solid var(--fl-border, #e2e8f0);
+  border-radius: 0 12px 12px 12px;
+  box-shadow: var(--fl-shadow-sm);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   Error States & Top-Center Error Window
+   ========================================================================== */
+
+/* Validation error: Red line/border on offending field */
+.fl-input--error,
+input.fl-input--error,
+select.fl-input--error,
+textarea.fl-input--error,
+.fl-input-wrapper.fl-input--error {
+  border: 1.5px solid var(--fl-danger, #ef4444) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+  background-color: #fffafa !important;
+}
+
+.fl-field-error-msg {
+  color: var(--fl-danger, #ef4444);
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Top-Center Floating Error Window */
+.fl-error-window-container {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--fl-z-modal, 1000);
+  width: 90%;
+  max-width: 540px;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fl-error-window {
+  pointer-events: auto;
+  background: #fff5f5;
+  border: 1.5px solid #feb2b2;
+  border-left: 5px solid var(--fl-danger, #e53e3e);
+  border-radius: var(--fl-radius-md, 8px);
+  padding: 14px 18px;
+  box-shadow: 0 10px 25px -5px rgba(229, 62, 62, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  animation: flSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes flSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+/* ==========================================================================
+   Semantic Status Pill Badges (<fl-badge>)
+   ========================================================================== */
+
+fl-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: var(--fl-radius-full, 9999px);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  user-select: none;
+  background-color: var(--fl-status-active-bg, #f0fdf4);
+  color: var(--fl-status-active-text, #15803d);
+  border: 1px solid var(--fl-status-active-border, #bbf7d0);
+}
+
+fl-badge[variant='active'],
+fl-badge[variant='paid'],
+fl-badge[variant='success'],
+fl-badge[variant='cash'] {
+  background-color: var(--fl-status-active-bg, #f0fdf4);
+  color: var(--fl-status-active-text, #15803d);
+  border: 1px solid var(--fl-status-active-border, #bbf7d0);
+}
+
+fl-badge[variant='expiring'],
+fl-badge[variant='renewals'],
+fl-badge[variant='warning'],
+fl-badge[variant='upcoming'] {
+  background-color: var(--fl-status-expiring-bg, #fefce8);
+  color: var(--fl-status-expiring-text, #854d0e);
+  border: 1px solid var(--fl-status-expiring-border, #fef08a);
+}
+
+fl-badge[variant='overdue'],
+fl-badge[variant='danger'] {
+  background-color: var(--fl-status-overdue-bg, #fef2f2);
+  color: var(--fl-status-overdue-text, #dc2626);
+  border: 1px solid var(--fl-status-overdue-border, #fecaca);
+}
+
+fl-badge[variant='critical'],
+fl-badge[variant='critical-overdue'] {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #f87171;
+}
+
+fl-badge[variant='expired'],
+fl-badge[variant='unpaid'] {
+  background-color: var(--fl-status-expired-bg, #f8fafc);
+  color: var(--fl-status-expired-text, #475569);
+  border: 1px solid var(--fl-status-expired-border, #cbd5e1);
+}
+
+fl-badge[variant='prospect'],
+fl-badge[variant='card'] {
+  background-color: var(--fl-status-prospect-bg, #eff6ff);
+  color: var(--fl-status-prospect-text, #1d4ed8);
+  border: 1px solid var(--fl-status-prospect-border, #bfdbfe);
+}
+
+fl-badge[variant='upi'] {
+  background-color: #f0fdfa;
+  color: #0d9488;
+  border: 1px solid #99f6e4;
+}
+
+fl-badge[variant='neutral'] {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}

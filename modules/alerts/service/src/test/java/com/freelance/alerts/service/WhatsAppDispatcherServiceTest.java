@@ -302,4 +302,122 @@ public class WhatsAppDispatcherServiceTest {
             com.freelance.ConfigurationEngine.invalidateConfig(com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN);
         }
     }
+
+    @Test
+    @DisplayName("Should build valid direct media payload with mediaId and caption using Jackson")
+    void testDirectMediaPayloadWithIdAndCaption() throws Exception {
+        WhatsAppTemplateServiceTest.FakeHttpClient fakeClient = new WhatsAppTemplateServiceTest.FakeHttpClient(
+                200, "{\"messages\":[{\"id\":\"wamid.MEDIA_ID_1\"}]}"
+        );
+        WhatsAppDispatcherService dispatcher = new WhatsAppDispatcherService(fakeClient, new com.freelance.alerts.message.repository.AlertMessageRepository());
+
+        com.freelance.manager.CacheManager.put(
+                "cache_SystemConfig",
+                com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN.getKey(),
+                "EAAB_LIVE_SECRET_TOKEN"
+        );
+
+        try {
+            com.freelance.dispatcher.data.AlertDispatchRequest request = new com.freelance.dispatcher.data.AlertDispatchRequest(
+                    UUID.randomUUID(),
+                    null,
+                    AlertChannel.WHATSAPP,
+                    "+919876543210",
+                    "Here is your \"invoice\" document: special / escaped!",
+                    Map.of(),
+                    com.freelance.event.model.EventPriority.NORMAL,
+                    null,
+                    "media_abc_999",
+                    "IMAGE"
+            );
+
+            com.freelance.dispatcher.data.AlertDispatchResult result = dispatcher.dispatch(request);
+            assertTrue(result.isSuccess());
+            assertEquals("wamid.MEDIA_ID_1", result.externalMessageId());
+
+            assertNotNull(fakeClient.lastRequest);
+            String body = extractRequestBody(fakeClient.lastRequest);
+            com.fasterxml.jackson.databind.JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(body);
+
+            assertEquals("whatsapp", root.path("messaging_product").asText());
+            assertEquals("individual", root.path("recipient_type").asText());
+            assertEquals("919876543210", root.path("to").asText());
+            assertEquals("image", root.path("type").asText());
+            assertEquals("media_abc_999", root.path("image").path("id").asText());
+            assertEquals("Here is your \"invoice\" document: special / escaped!", root.path("image").path("caption").asText());
+        } finally {
+            com.freelance.ConfigurationEngine.invalidateConfig(com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN);
+        }
+    }
+
+    @Test
+    @DisplayName("Should build valid template payload with media header component using Jackson")
+    void testTemplatePayloadWithMediaHeader() throws Exception {
+        WhatsAppTemplateServiceTest.FakeHttpClient fakeClient = new WhatsAppTemplateServiceTest.FakeHttpClient(
+                200, "{\"messages\":[{\"id\":\"wamid.TPL_MEDIA_1\"}]}"
+        );
+        WhatsAppDispatcherService dispatcher = new WhatsAppDispatcherService(fakeClient, new com.freelance.alerts.message.repository.AlertMessageRepository());
+
+        com.freelance.manager.CacheManager.put(
+                "cache_SystemConfig",
+                com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN.getKey(),
+                "EAAB_LIVE_SECRET_TOKEN"
+        );
+
+        try {
+            AlertTemplateEntity template = new AlertTemplateEntity(
+                    UUID.randomUUID(), "monthly_invoice_report", "Report", "UTILITY", "en_US",
+                    "Monthly summary", "https://cdn.example.com/invoices/report.pdf", "DOCUMENT",
+                    AlertChannel.WHATSAPP, TemplateStatus.APPROVED, true, null, null
+            );
+
+            com.freelance.dispatcher.data.AlertDispatchRequest request = new com.freelance.dispatcher.data.AlertDispatchRequest(
+                    UUID.randomUUID(),
+                    template,
+                    AlertChannel.WHATSAPP,
+                    "+919876543210",
+                    "Monthly summary",
+                    Map.of(),
+                    com.freelance.event.model.EventPriority.NORMAL
+            );
+
+            com.freelance.dispatcher.data.AlertDispatchResult result = dispatcher.dispatch(request);
+            assertTrue(result.isSuccess());
+            assertEquals("wamid.TPL_MEDIA_1", result.externalMessageId());
+
+            assertNotNull(fakeClient.lastRequest);
+            String body = extractRequestBody(fakeClient.lastRequest);
+            com.fasterxml.jackson.databind.JsonNode root = new com.fasterxml.jackson.databind.ObjectMapper().readTree(body);
+
+            assertEquals("template", root.path("type").asText());
+            assertEquals("monthly_invoice_report", root.path("template").path("name").asText());
+            assertEquals("en_US", root.path("template").path("language").path("code").asText());
+
+            com.fasterxml.jackson.databind.JsonNode components = root.path("template").path("components");
+            assertTrue(components.isArray());
+            assertEquals(1, components.size());
+            assertEquals("header", components.get(0).path("type").asText());
+            assertEquals("document", components.get(0).path("parameters").get(0).path("type").asText());
+            assertEquals("https://cdn.example.com/invoices/report.pdf",
+                    components.get(0).path("parameters").get(0).path("document").path("link").asText());
+        } finally {
+            com.freelance.ConfigurationEngine.invalidateConfig(com.freelance.keys.alerts.webhook.WebhookConfigKeys.WHATSAPP_ACCESS_TOKEN);
+        }
+    }
+
+    private String extractRequestBody(java.net.http.HttpRequest request) {
+        if (request.bodyPublisher().isEmpty()) return "";
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        request.bodyPublisher().get().subscribe(new java.util.concurrent.Flow.Subscriber<java.nio.ByteBuffer>() {
+            @Override public void onSubscribe(java.util.concurrent.Flow.Subscription subscription) { subscription.request(Long.MAX_VALUE); }
+            @Override public void onNext(java.nio.ByteBuffer item) {
+                byte[] bytes = new byte[item.remaining()];
+                item.get(bytes);
+                baos.writeBytes(bytes);
+            }
+            @Override public void onError(Throwable throwable) {}
+            @Override public void onComplete() {}
+        });
+        return baos.toString(java.nio.charset.StandardCharsets.UTF_8);
+    }
 }

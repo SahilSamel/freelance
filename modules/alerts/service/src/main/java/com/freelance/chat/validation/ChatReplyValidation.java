@@ -23,7 +23,11 @@ public class ChatReplyValidation extends AbstractValidation {
             raiseValidationError(AlertEmitValidationErrors.INVALID_CHANNEL, "channel");
         }
 
-        if (request.message() == null || request.message().isBlank()) {
+        boolean hasText = request.message() != null && !request.message().isBlank();
+        boolean hasMedia = (request.mediaId() != null && !request.mediaId().isBlank())
+                || (request.mediaUrl() != null && !request.mediaUrl().isBlank());
+
+        if (!hasText && !hasMedia) {
             raiseValidationError(ChatValidationErrors.INVALID_CHAT_REPLY, "message");
         }
 

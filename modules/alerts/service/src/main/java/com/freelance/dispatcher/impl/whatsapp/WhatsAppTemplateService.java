@@ -254,9 +254,16 @@ public class WhatsAppTemplateService {
         if (forceLiveMode) {
             return false;
         }
-        return accessToken == null
-                || accessToken.contains("placeholder")
-                || accessToken.contains("default")
+        String trimmedToken = accessToken != null ? accessToken.trim() : null;
+        boolean tokenIsMock = trimmedToken == null
+                || trimmedToken.isBlank()
+                || trimmedToken.equalsIgnoreCase("default")
+                || trimmedToken.equalsIgnoreCase("placeholder")
+                || trimmedToken.startsWith("default_placeholder")
+                || trimmedToken.startsWith("placeholder")
+                || trimmedToken.startsWith("mock_");
+
+        return tokenIsMock
                 || businessAccountId == null
                 || businessAccountId.contains("placeholder");
     }

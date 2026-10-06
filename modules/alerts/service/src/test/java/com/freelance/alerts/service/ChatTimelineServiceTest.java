@@ -302,6 +302,22 @@ class ChatTimelineServiceTest {
     }
 
     @Test
+    @DisplayName("sendStaffReply sends staff media reply and populates media fields")
+    void testSendStaffReply_withMedia() {
+        UUID userId = UUID.randomUUID();
+        AdminChatReplyRequestDTO req = new AdminChatReplyRequestDTO(
+                userId, AlertChannel.WHATSAPP, "Invoice copy", "/alerts/media/inv_99", "inv_99", "DOCUMENT"
+        );
+        ChatMessageDTO dto = timelineService.sendStaffReply(req);
+
+        assertNotNull(dto);
+        assertEquals("DOCUMENT", dto.messageType());
+        assertEquals("/alerts/media/inv_99", dto.mediaUrl());
+        assertEquals("inv_99", dto.mediaId());
+        assertEquals("Invoice copy", dto.content());
+    }
+
+    @Test
     @DisplayName("Should filter out READ messages when unreadOnly is true")
     void testGetTimeline_unreadOnlyFilter() {
         UUID userId = UUID.randomUUID();

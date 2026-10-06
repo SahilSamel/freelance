@@ -691,4 +691,79 @@ class WhatsAppAlertProcessorTest {
 
         assertTrue(contact.isHumanSessionActive());
     }
+
+    @Test
+    @DisplayName("processInbound processes inbound image and document media and extends human session")
+    void testInboundImageAndDocumentMedia() {
+        String phone = "+919876543210";
+        UUID userId = UUID.randomUUID();
+        UserContactEntity contact = new UserContactEntity(UUID.randomUUID(), userId, AlertChannel.WHATSAPP, phone, false, true);
+        contactRepo.persist(contact);
+
+        // 1. Inbound Image
+        WebhookMediaDTO imageDto = new WebhookMediaDTO("media_img_99", "image/jpeg", "sha256img", "Here is my photo", null);
+        WebhookMessageDTO imgMsg = new WebhookMessageDTO(phone, "wamid.inbound.img1", "1700000000", "image", null, null, null, imageDto, null);
+        WebhookValueDTO valImg = new WebhookValueDTO("whatsapp", null, null, List.of(imgMsg), null);
+        processor.processInbound(EventMessage.of(() -> "inbound", new WhatsAppWebhookPayloadDTO("object", List.of(new WebhookEntryDTO("id", List.of(new WebhookChangeDTO("messages", valImg)))))));
+
+        Optional<AlertMessageEntity> savedImg = messageRepo.findByMetaMessageId("wamid.inbound.img1");
+        assertTrue(savedImg.isPresent());
+        assertEquals("IMAGE", savedImg.get().getMessageType());
+        assertEquals("media_img_99", savedImg.get().getMediaId());
+        assertEquals("/alerts/media/media_img_99", savedImg.get().getMediaUrl());
+        assertEquals("Here is my photo", savedImg.get().getContent());
+        assertTrue(contact.isHumanSessionActive());
+
+        // 2. Inbound Document
+        WebhookMediaDTO docDto = new WebhookMediaDTO("media_doc_88", "application/pdf", "sha256doc", null, "my_report.pdf");
+        WebhookMessageDTO docMsg = new WebhookMessageDTO(phone, "wamid.inbound.doc1", "1700000010", "document", null, null, null, null, docDto);
+        WebhookValueDTO valDoc = new WebhookValueDTO("whatsapp", null, null, List.of(docMsg), null);
+        processor.processInbound(EventMessage.of(() -> "inbound", new WhatsAppWebhookPayloadDTO("object", List.of(new WebhookEntryDTO("id", List.of(new WebhookChangeDTO("messages", valDoc)))))));
+
+        Optional<AlertMessageEntity> savedDoc = messageRepo.findByMetaMessageId("wamid.inbound.doc1");
+        assertTrue(savedDoc.isPresent());
+        assertEquals("DOCUMENT", savedDoc.get().getMessageType());
+        assertEquals("media_doc_88", savedDoc.get().getMediaId());
+        assertEquals("/alerts/media/media_doc_88", savedDoc.get().getMediaUrl());
+        assertEquals("my_report.pdf", savedDoc.get().getContent());
+    }
+
+    @Test
+    @DisplayName("processOutbound records outbound media fields when present")
+    void testOutboundMediaDispatch() {
+        String phone = "+919876543210";
+        UUID userId = UUID.randomUUID();
+        userReadService.validUsers.add(userId);
+        UserContactEntity contact = new UserContactEntity(UUID.randomUUID(), userId, AlertChannel.WHATSAPP, phone, false, true);
+        contactRepo.persist(contact);
+
+        dispatcherFactory.customDispatcher = new IAlertDispatcher() {
+            @Override public AlertChannel getChannel() { return AlertChannel.WHATSAPP; }
+            @Override public AlertDispatchResult dispatch(AlertDispatchRequest req) {
+                return AlertDispatchResult.success("wamid.media.123", "{\"status\":\"ok\"}");
+            }
+        };
+
+        UUID messageId = UUID.randomUUID();
+        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(
+                null,
+                userId,
+                "Check this invoice",
+                messageId,
+                "/alerts/media/inv_123",
+                "inv_123",
+                "DOCUMENT"
+        );
+
+        EventMessage<AlertEventPayloadDTO> msg = EventMessage.of(() -> "test.queue", payload);
+        processor.processOutbound(msg);
+
+        assertEquals(1, messageRepo.messages.size());
+        AlertMessageEntity recorded = messageRepo.messages.get(0);
+        assertEquals("DOCUMENT", recorded.getMessageType());
+        assertEquals("inv_123", recorded.getMediaId());
+        assertEquals("/alerts/media/inv_123", recorded.getMediaUrl());
+        assertEquals("Check this invoice", recorded.getContent());
+        assertEquals(AlertMessageStatus.SENT, recorded.getStatus());
+    }
 }

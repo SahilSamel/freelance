@@ -4,5 +4,10 @@ import com.freelance.alerts.TemplateStatus;
 
 public record TemplateListRequestDTO(
         String category,
-        TemplateStatus status
-) {}
+        TemplateStatus status,
+        Boolean all
+) {
+    public TemplateListRequestDTO(String category, TemplateStatus status) {
+        this(category, status, false);
+    }
+}

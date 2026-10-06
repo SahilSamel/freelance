@@ -10,6 +10,8 @@ import com.freelance.alerts.dto.TemplateListRequestDTO;
 import com.freelance.alerts.dto.TemplateListResponseDTO;
 import com.freelance.alerts.dto.TemplateCategoryDTO;
 import com.freelance.alerts.dto.TemplateCategoryListResponseDTO;
+import com.freelance.alerts.dto.TemplateSubmitResponseDTO;
+import com.freelance.alerts.dto.TemplateBatchSubmitResponseDTO;
 import com.freelance.alerts.dto.TemplateUpdateRequestDTO;
 import com.freelance.alerts.template.entity.AlertButtonEntity;
 import com.freelance.alerts.template.entity.AlertButtonReplyEntity;
@@ -170,9 +172,26 @@ public class TemplateService {
     }
 
     public TemplateListResponseDTO listTemplates(TemplateListRequestDTO request) {
-        List<AlertTemplateEntity> entities = (request != null && request.status() != null)
-                ? templateRepository.findByStatus(request.status())
-                : templateRepository.findAllTemplates();
+        if (request != null && Boolean.TRUE.equals(request.all())) {
+            List<AlertTemplateEntity> entities = templateRepository.findAllTemplates();
+            if (request.category() != null && !request.category().isBlank()) {
+                entities = entities.stream()
+                        .filter(e -> request.category().equalsIgnoreCase(e.getCategory()))
+                        .toList();
+            }
+            return templateAssembler.toListResponse(entities);
+        }
+
+        TemplateStatus targetStatus = (request != null && request.status() != null)
+                ? request.status()
+                : TemplateStatus.APPROVED;
+
+        List<AlertTemplateEntity> entities = templateRepository.findByStatus(targetStatus);
+        if (request != null && request.category() != null && !request.category().isBlank()) {
+            entities = entities.stream()
+                    .filter(e -> request.category().equalsIgnoreCase(e.getCategory()))
+                    .toList();
+        }
 
         return templateAssembler.toListResponse(entities);
     }
@@ -281,5 +300,83 @@ public class TemplateService {
                 ))
                 .toList();
         return new TemplateCategoryListResponseDTO(dtoList);
+    }
+
+    public TemplateSubmitResponseDTO submitTemplateForApproval(UUID id) {
+        if (id == null) {
+            return new TemplateSubmitResponseDTO(null, null, false, null, null, "Template ID cannot be null");
+        }
+        AlertTemplateEntity entity = templateRepository.get(id);
+        if (entity == null) {
+            return new TemplateSubmitResponseDTO(id, null, false, null, null, "Template not found: " + id);
+        }
+        if (entity.getChannel() != AlertChannel.WHATSAPP) {
+            return new TemplateSubmitResponseDTO(
+                    entity.getId(),
+                    entity.getTemplateKey(),
+                    false,
+                    entity.getStatus(),
+                    entity.getMetaTemplateId(),
+                    "Only WHATSAPP channel templates can be submitted to Meta Graph API"
+            );
+        }
+        return submitSingleEntity(entity);
+    }
+
+    public TemplateBatchSubmitResponseDTO submitAllPendingTemplates() {
+        List<AlertTemplateEntity> submittable = templateRepository.findSubmittableWhatsAppTemplates();
+        List<TemplateSubmitResponseDTO> results = new ArrayList<>();
+        int submitted = 0;
+        int failed = 0;
+
+        for (AlertTemplateEntity entity : submittable) {
+            TemplateSubmitResponseDTO result = submitSingleEntity(entity);
+            results.add(result);
+            if (result.successful()) {
+                submitted++;
+            } else {
+                failed++;
+            }
+        }
+
+        return new TemplateBatchSubmitResponseDTO(submittable.size(), submitted, failed, results);
+    }
+
+    private TemplateSubmitResponseDTO submitSingleEntity(AlertTemplateEntity entity) {
+        List<TemplateButtonDTO> btnDtos = entity.getButtons().stream()
+                .map(b -> new TemplateButtonDTO(
+                        b.getButtonText(),
+                        b.getButtonType(),
+                        b.getPayload(),
+                        b.getReply() != null && b.getReply().getReplyTemplate() != null
+                                ? b.getReply().getReplyTemplate().getTemplateKey() : null,
+                        b.getReply() != null && b.getReply().isRequiresHumanAgent(),
+                        b.getSequenceOrder()
+                ))
+                .toList();
+
+        TemplateSubmissionResult submissionResult = whatsAppTemplateService.submitTemplate(entity, btnDtos);
+        if (submissionResult.successful()) {
+            entity.setMetaTemplateId(submissionResult.metaTemplateId());
+            entity.setStatus(submissionResult.status());
+            templateRepository.merge(entity);
+            return new TemplateSubmitResponseDTO(
+                    entity.getId(),
+                    entity.getTemplateKey(),
+                    true,
+                    entity.getStatus(),
+                    entity.getMetaTemplateId(),
+                    null
+            );
+        } else {
+            return new TemplateSubmitResponseDTO(
+                    entity.getId(),
+                    entity.getTemplateKey(),
+                    false,
+                    entity.getStatus(),
+                    entity.getMetaTemplateId(),
+                    submissionResult.errorMessage()
+            );
+        }
     }
 }

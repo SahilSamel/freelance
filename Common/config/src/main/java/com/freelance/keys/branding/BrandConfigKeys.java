@@ -9,7 +9,7 @@ public enum BrandConfigKeys implements IConfig {
 
     GYM_NAME(
             "gym.brand.name",
-            "FitPulse",
+            "Fitness Center",
             "Display name of the gym or fitness brand"
     ),
 
@@ -23,30 +23,6 @@ public enum BrandConfigKeys implements IConfig {
             "gym.brand.logoUrl",
             "",
             "Custom logo image URL or SVG for gym branding"
-    ),
-
-    THEME_PRIMARY_COLOR(
-            "gym.theme.primaryColor",
-            "#dc2626",
-            "Primary brand accent color (HEX format)"
-    ),
-
-    THEME_SECONDARY_COLOR(
-            "gym.theme.secondaryColor",
-            "#2563eb",
-            "Secondary accent and active navigation color (HEX format)"
-    ),
-
-    THEME_ACCENT_COLOR(
-            "gym.theme.accentColor",
-            "#f97316",
-            "Tertiary and attention badge color (HEX format)"
-    ),
-
-    THEME_FONT_FAMILY(
-            "gym.theme.fontFamily",
-            "Inter, sans-serif",
-            "Custom typography font family"
     );
 
     private final String key;

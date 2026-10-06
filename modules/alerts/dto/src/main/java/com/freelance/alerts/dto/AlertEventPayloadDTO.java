@@ -7,14 +7,21 @@ public record AlertEventPayloadDTO(
         UUID templateId,
         UUID userId,
         String rawContent,
-        UUID messageId
+        UUID messageId,
+        String mediaUrl,
+        String mediaId,
+        String mediaType
 ) implements Serializable {
 
     public AlertEventPayloadDTO(UUID templateId, UUID userId) {
-        this(templateId, userId, null, null);
+        this(templateId, userId, null, null, null, null, null);
     }
 
     public AlertEventPayloadDTO(UUID templateId, UUID userId, String rawContent) {
-        this(templateId, userId, rawContent, null);
+        this(templateId, userId, rawContent, null, null, null, null);
+    }
+
+    public AlertEventPayloadDTO(UUID templateId, UUID userId, String rawContent, UUID messageId) {
+        this(templateId, userId, rawContent, messageId, null, null, null);
     }
 }

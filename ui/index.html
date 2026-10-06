@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitness Management Console</title>
+  
+  <!-- Inter Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Base Framework Design Tokens & Resets -->
+  <link rel="stylesheet" href="./assets/css/base.css" />
+</head>
+<body>
+  <!-- Top-Center Floating Error Window Stack -->
+  <fl-error-window-container></fl-error-window-container>
+
+  <!-- Global Notification Toast Stack -->
+  <fl-toast-container></fl-toast-container>
+
+  <!-- SPA Router Main Outlet -->
+  <div id="app-outlet" class="fl-app-root"></div>
+
+  <!-- Framework Core Bootstrap & Page Registration -->
+  <script type="module">
+    import { fl } from './core/fl.js';
+    import './core/components/feedback/fl-toast.js';
+    import './core/components/feedback/fl-error-window.js';
+    import './core/components/feedback/fl-access-denied.js';
+    import './core/components/feedback/fl-not-found.js';
+    import './pages/login/login-page.js';
+    import './pages/home/home-page.js';
+
+    // Configure Routes & Launch Application
+    fl.init({
+      outlet: '#app-outlet',
+      baseUrl: '',
+      routes: [
+        { path: '/', component: 'fl-home-page', requiresAuth: true, title: 'Home Console' },
+        { path: '/home', component: 'fl-home-page', requiresAuth: true, title: 'Home Console' },
+        { path: '/members', component: 'fl-home-page', requiresAuth: true, title: 'Members' },
+        { path: '/payments', component: 'fl-home-page', requiresAuth: true, title: 'Payments' },
+        { path: '/plans', component: 'fl-home-page', requiresAuth: true, title: 'Plans' },
+        { path: '/chats', component: 'fl-home-page', requiresAuth: true, title: 'Chats' },
+        { path: '/chat', component: 'fl-home-page', requiresAuth: true, title: 'Chats' },
+        { path: '/login', component: 'fl-login-page', requiresAuth: false, title: 'Sign In' },
+        { path: '*', component: 'fl-not-found', requiresAuth: false, title: 'Not Found' }
+      ]
+    });
+  </script>
+</body>
+</html>

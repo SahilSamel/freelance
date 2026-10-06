@@ -379,7 +379,10 @@ public class WhatsAppAlertProcessor {
                 recipientContact,
                 content,
                 resolvedAttributes,
-                message.getPriority()
+                message.getPriority(),
+                payload.mediaUrl(),
+                payload.mediaId(),
+                payload.mediaType()
         );
         AlertDispatchResult result = dispatcher.dispatch(dispatchRequest);
 
@@ -394,7 +397,10 @@ public class WhatsAppAlertProcessor {
                     result.externalMessageId(),
                     AlertMessageStatus.SENT,
                     null,
-                    result.rawResponse()
+                    result.rawResponse(),
+                    payload.mediaUrl(),
+                    payload.mediaId(),
+                    payload.mediaType()
             );
         } else if (result.isFailure()) {
             String failReason = result.rawResponse() != null ? result.rawResponse() : ("Downstream dispatch failure: " + result.errorMessage());
@@ -407,7 +413,10 @@ public class WhatsAppAlertProcessor {
                     null,
                     AlertMessageStatus.FAILED,
                     result.errorCode() != null ? result.errorCode() : AlertErrorCode.ERR_DISPATCH_FAILED,
-                    failReason
+                    failReason,
+                    payload.mediaUrl(),
+                    payload.mediaId(),
+                    payload.mediaType()
             );
         } else if (result.isDelayed()) {
             throw new EventDelayedException(result.errorMessage() != null ? result.errorMessage() : "Message dispatch delayed");
@@ -667,24 +676,49 @@ public class WhatsAppAlertProcessor {
                             contact.setActive(true);
                         }
 
-                        // 2C. Freeform Inbound Message
+                        // 2C. Inbound Message (Media or Freeform Text)
+                        WebhookMediaDTO media = msg.extractMedia();
+                        String inMsgType = "TEXT";
+                        String mediaId = null;
+                        String mediaUrl = null;
+                        if ("image".equalsIgnoreCase(msg.type()) || msg.image() != null) {
+                            inMsgType = "IMAGE";
+                            if (media != null && media.id() != null) {
+                                mediaId = media.id();
+                                mediaUrl = "/alerts/media/" + mediaId;
+                            }
+                        } else if ("document".equalsIgnoreCase(msg.type()) || msg.document() != null) {
+                            inMsgType = "DOCUMENT";
+                            if (media != null && media.id() != null) {
+                                mediaId = media.id();
+                                mediaUrl = "/alerts/media/" + mediaId;
+                            }
+                        }
+
                         AlertMessageEntity inboundMsg = new AlertMessageEntity(
                                 UUID.randomUUID(),
                                 userId,
                                 AlertChannel.WHATSAPP,
                                 AlertDirection.INBOUND,
-                                "TEXT",
+                                inMsgType,
                                 textContent,
+                                null,
                                 msg.id(),
                                 AlertMessageStatus.DELIVERED,
                                 null,
                                 null,
-                                messageTime
+                                messageTime,
+                                mediaUrl,
+                                mediaId,
+                                inMsgType
                         );
                         messageRepository.persist(inboundMsg);
 
-                        // If not a consent keyword, dispatch the automated welcome menu template (fallback to triage)
-                        if (!isOptOut && !isOptIn) {
+                        // If media is sent, extend human session so staff can view and assist
+                        if (mediaId != null) {
+                            WhatsAppUtility.extendHumanSession(contact, contactRepository, Duration.ofHours(24));
+                        } else if (!isOptOut && !isOptIn) {
+                            // If plain text and not consent keyword, dispatch the automated welcome menu template (fallback to triage)
                             templateRepository.findByKey(InboundWelcomeTemplate.TEMPLATE_KEY)
                                     .ifPresent(welcomeTpl -> alertsEngine.emitAlert(welcomeTpl.getId(), userId));
                         }
@@ -829,7 +863,26 @@ public class WhatsAppAlertProcessor {
             String errorCode,
             String rawDetails
     ) {
-        String messageType = template != null ? "TEMPLATE" : "TEXT";
+        recordOutboundMessage(messageId, userId, channel, template, content, externalMessageId, status, errorCode, rawDetails, null, null, null);
+    }
+
+    private void recordOutboundMessage(
+            UUID messageId,
+            UUID userId,
+            AlertChannel channel,
+            AlertTemplateEntity template,
+            String content,
+            String externalMessageId,
+            AlertMessageStatus status,
+            String errorCode,
+            String rawDetails,
+            String mediaUrl,
+            String mediaId,
+            String mediaType
+    ) {
+        String msgType = mediaType != null && !mediaType.isBlank()
+                ? mediaType
+                : (template != null ? "TEMPLATE" : "TEXT");
         UUID id = messageId != null ? messageId : UUID.randomUUID();
         String resolvedContent = content != null ? content : (template != null ? template.getContent() : "[Unknown content]");
         AlertMessageEntity messageEntity = new AlertMessageEntity(
@@ -837,14 +890,17 @@ public class WhatsAppAlertProcessor {
                 userId,
                 channel != null ? channel : AlertChannel.WHATSAPP,
                 AlertDirection.OUTBOUND,
-                messageType,
+                msgType,
                 resolvedContent,
                 template,
                 externalMessageId,
                 status,
                 errorCode,
                 rawDetails,
-                Instant.now()
+                Instant.now(),
+                mediaUrl,
+                mediaId,
+                msgType
         );
         messageRepository.persist(messageEntity);
     }

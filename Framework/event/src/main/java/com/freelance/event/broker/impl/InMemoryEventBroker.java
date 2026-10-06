@@ -129,6 +129,14 @@ public class InMemoryEventBroker implements EventBroker {
     }
 
     @Override
+    public <T> void publishBatch(List<EventMessage<T>> messages) {
+        if (messages == null || messages.isEmpty()) return;
+        for (EventMessage<T> msg : messages) {
+            publish(msg);
+        }
+    }
+
+    @Override
     public <T> void publishDelayed(EventMessage<T> message, long delayMillis) {
         if (!running.get()) return;
 

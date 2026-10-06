@@ -89,7 +89,10 @@ public class ChatTimelineService {
                     e.getContent(),
                     buttons,
                     e.getStatus(),
-                    e.getTimestamp()
+                    e.getTimestamp(),
+                    e.getMediaUrl(),
+                    e.getMediaId(),
+                    e.getMediaType()
             ));
         }
 
@@ -111,7 +114,24 @@ public class ChatTimelineService {
         });
 
         UUID messageId = UUID.randomUUID();
-        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(null, userId, request.message(), messageId);
+        String msgType = (request.mediaType() != null && !request.mediaType().isBlank())
+                ? request.mediaType().toUpperCase()
+                : ((request.mediaId() != null || request.mediaUrl() != null) ? "IMAGE" : "TEXT");
+
+        String content = request.message();
+        if (content == null || content.isBlank()) {
+            content = "IMAGE".equalsIgnoreCase(msgType) ? "[Image]" : "[Document]";
+        }
+
+        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(
+                null,
+                userId,
+                content,
+                messageId,
+                request.mediaUrl(),
+                request.mediaId(),
+                msgType
+        );
         AlertConsumer destination = AlertConsumer.fromChannel(channel);
         EventManagementEngine.emit(destination, payload, EventPriority.HIGH);
 
@@ -120,10 +140,13 @@ public class ChatTimelineService {
                 userId,
                 channel,
                 AlertDirection.OUTBOUND,
-                "TEXT",
-                request.message(),
+                msgType,
+                content,
                 AlertMessageStatus.PENDING,
-                Instant.now()
+                Instant.now(),
+                request.mediaUrl(),
+                request.mediaId(),
+                msgType
         );
     }
 }

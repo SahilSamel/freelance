@@ -11,8 +11,32 @@ public record WebhookMessageDTO(
         String type,
         WebhookTextMessageDTO text,
         WebhookInteractiveDTO interactive,
-        WebhookButtonDTO button
+        WebhookButtonDTO button,
+        WebhookMediaDTO image,
+        WebhookMediaDTO document
 ) {
+    public WebhookMessageDTO(
+            String from,
+            String id,
+            String timestamp,
+            String type,
+            WebhookTextMessageDTO text,
+            WebhookInteractiveDTO interactive,
+            WebhookButtonDTO button
+    ) {
+        this(from, id, timestamp, type, text, interactive, button, null, null);
+    }
+
+    public WebhookMediaDTO extractMedia() {
+        if (image != null) {
+            return image;
+        }
+        if (document != null) {
+            return document;
+        }
+        return null;
+    }
+
     public String extractButtonPayload() {
         if (interactive != null) {
             if (interactive.buttonReply() != null) {
@@ -42,6 +66,21 @@ public record WebhookMessageDTO(
         }
         if (button != null && button.text() != null) {
             return button.text();
+        }
+        if (image != null) {
+            if (image.caption() != null && !image.caption().isBlank()) {
+                return image.caption();
+            }
+            return "[Image]";
+        }
+        if (document != null) {
+            if (document.caption() != null && !document.caption().isBlank()) {
+                return document.caption();
+            }
+            if (document.filename() != null && !document.filename().isBlank()) {
+                return document.filename();
+            }
+            return "[Document]";
         }
         return type != null ? "[" + type + "]" : "[unknown]";
     }

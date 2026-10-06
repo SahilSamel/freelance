@@ -4,6 +4,7 @@ import com.freelance.ConfigurationEngine;
 import com.freelance.authorization.service.AuthorizationService;
 import com.freelance.keys.authorization.permission.PermissionConfigKeys;
 import com.freelance.rest.app.endpoint.annotation.Anonymous;
+import com.freelance.rest.app.endpoint.annotation.Authenticated;
 import com.freelance.rest.app.endpoint.annotation.Authorization;
 import com.freelance.rest.app.transaction.Transaction;
 import jakarta.annotation.Priority;
@@ -19,9 +20,14 @@ import org.slf4j.LoggerFactory;
  * Global JAX-RS request filter enforcing Role-Based Access Control (RBAC) authorization.
  * <p>
  * Configured with {@code @Priority(4)} because it requires the caller's identity to have already been
- * authenticated and resolved in the request context. For endpoints marked {@link Anonymous}, no authorization
- * checks are required and the request is permitted through. Consequently, all endpoints must be annotated with
- * either {@link Anonymous} or {@link Authorization}, or authorization verification will fail.
+ * authenticated and resolved in the request context.
+ * <ul>
+ *   <li>Endpoints marked {@link Anonymous} require no authentication or authorization checks.</li>
+ *   <li>Endpoints marked {@link Authenticated} require valid caller authentication but skip RBAC checks.</li>
+ *   <li>Endpoints marked {@link Authorization} require both authentication and specific role permissions.</li>
+ * </ul>
+ * Consequently, all endpoints must be annotated with either {@link Anonymous}, {@link Authenticated},
+ * or {@link Authorization}, or authorization verification will fail.
  * </p>
  */
 @Provider
@@ -48,6 +54,10 @@ public class AuthorizationFilter implements ContainerRequestFilter {
             return;
         }
 
+        if (isResourceAuthenticated()) {
+            return;
+        }
+
         if (!ConfigurationEngine.getBoolean(PermissionConfigKeys.AUTHORIZATION_ENABLED)) {
             return;
         }
@@ -61,6 +71,17 @@ public class AuthorizationFilter implements ContainerRequestFilter {
             return true;
         }
         if (resourceInfo.getResourceClass() != null && resourceInfo.getResourceClass().isAnnotationPresent(Anonymous.class)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isResourceAuthenticated() {
+        if (resourceInfo == null) return false;
+        if (resourceInfo.getResourceMethod() != null && resourceInfo.getResourceMethod().isAnnotationPresent(Authenticated.class)) {
+            return true;
+        }
+        if (resourceInfo.getResourceClass() != null && resourceInfo.getResourceClass().isAnnotationPresent(Authenticated.class)) {
             return true;
         }
         return false;

@@ -57,6 +57,7 @@ public class TemplateSeederTest {
         assertEquals("TPL_NEW", persisted.getTemplateKey());
         assertEquals("Welcome", persisted.getName());
         assertEquals("Welcome to {{user.username}}", persisted.getContent());
+        assertEquals(TemplateStatus.DRAFT, persisted.getStatus());
         assertTrue(persisted.isSystem());
     }
 

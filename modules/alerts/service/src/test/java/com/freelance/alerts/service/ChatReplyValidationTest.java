@@ -54,13 +54,29 @@ public class ChatReplyValidationTest {
     }
 
     @Test
-    @DisplayName("Should throw ValidationException when message is blank")
+    @DisplayName("Should throw ValidationException when message is blank and no media")
     void testBlankMessage() {
         AdminChatReplyRequestDTO request = new AdminChatReplyRequestDTO(UUID.randomUUID(), AlertChannel.WHATSAPP, "   ");
 
         assertThrows(ValidationException.class, () -> validation.validateRequest(request));
         assertTrue(context.getValidationErrors().containsKey("message"));
         assertTrue(context.getValidationErrors().get("message").contains(ChatValidationErrors.INVALID_CHAT_REPLY));
+    }
+
+    @Test
+    @DisplayName("Should pass validation when message is blank but media is present")
+    void testBlankMessageWithMedia() {
+        AdminChatReplyRequestDTO request = new AdminChatReplyRequestDTO(
+                UUID.randomUUID(),
+                AlertChannel.WHATSAPP,
+                "",
+                "/alerts/media/123",
+                "123",
+                "IMAGE"
+        );
+
+        assertDoesNotThrow(() -> validation.validateRequest(request));
+        assertTrue(context.getValidationErrors().isEmpty());
     }
 
     @Test

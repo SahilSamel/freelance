@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.resps.Tuple;
 
 import java.time.Duration;
@@ -122,8 +123,8 @@ public class RedisEventBroker implements EventBroker {
 
     public RedisEventBroker(String host, int port, String password, int database) {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
-        poolConfig.setMaxTotal(64);
-        poolConfig.setMaxIdle(16);
+        poolConfig.setMaxTotal(128);
+        poolConfig.setMaxIdle(32);
         poolConfig.setMinIdle(4);
         poolConfig.setTestOnBorrow(true);
         poolConfig.setTestWhileIdle(true);
@@ -170,6 +171,38 @@ public class RedisEventBroker implements EventBroker {
             logger.error("[RedisEventBroker] Failed to publish message {} to destination '{}'",
                     message.getId(), message.getDestination(), e);
             throw new RuntimeException("Redis event publication failed", e);
+        }
+    }
+
+    @Override
+    public <T> void publishBatch(List<EventMessage<T>> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return;
+        }
+        if (!running.get()) {
+            throw new IllegalStateException("Cannot publish event; RedisEventBroker has been shut down.");
+        }
+
+        try (Jedis jedis = jedisPool.getResource()) {
+            Pipeline pipeline = jedis.pipelined();
+            for (EventMessage<T> message : messages) {
+                String jsonPayload = objectMapper.writeValueAsString(message);
+                double score = (message.getPriority().getLevel() * PRIORITY_MULTIPLIER) + message.getTimestamp().toEpochMilli();
+                String tenantId = (message.getTenantId() != null && !message.getTenantId().isBlank())
+                        ? message.getTenantId()
+                        : SystemHardcoding.DEFAULT_TENANT.asString();
+                String queueKey = QUEUE_PREFIX + message.getDestination() + ":" + tenantId;
+                String tenantsSetKey = TENANTS_PREFIX + message.getDestination();
+
+                pipeline.zadd(queueKey, score, jsonPayload);
+                pipeline.sadd(tenantsSetKey, tenantId);
+            }
+            pipeline.sync();
+
+            logger.debug("[RedisEventBroker] Batch published {} messages to Redis", messages.size());
+        } catch (Exception e) {
+            logger.error("[RedisEventBroker] Failed to batch publish {} messages", messages.size(), e);
+            throw new RuntimeException("Redis event batch publication failed", e);
         }
     }
 

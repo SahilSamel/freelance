@@ -125,6 +125,22 @@ class AuthorizationFilterTest {
     }
 
     @Test
+    @DisplayName("filter allows request when method is annotated with @Authenticated")
+    void testMethodAuthenticated() throws Exception {
+        CacheManager.put("cache_SystemConfig", PermissionConfigKeys.AUTHORIZATION_ENABLED.getKey(), "true");
+        setResourceInfo(TestEndpoint.class, "authenticatedMethod");
+        assertDoesNotThrow(() -> filter.filter(createMockRequestContext()));
+    }
+
+    @Test
+    @DisplayName("filter allows request when class is annotated with @Authenticated")
+    void testClassAuthenticated() throws Exception {
+        CacheManager.put("cache_SystemConfig", PermissionConfigKeys.AUTHORIZATION_ENABLED.getKey(), "true");
+        setResourceInfo(TestAuthClassEndpoint.class, "regularMethod");
+        assertDoesNotThrow(() -> filter.filter(createMockRequestContext()));
+    }
+
+    @Test
     @DisplayName("filter returns early when authorization is disabled in configuration")
     void testAuthorizationDisabled() throws Exception {
         CacheManager.put("cache_SystemConfig", PermissionConfigKeys.AUTHORIZATION_ENABLED.getKey(), "false");
@@ -138,6 +154,9 @@ class AuthorizationFilterTest {
         @Anonymous
         public void anonymousMethod() {}
 
+        @com.freelance.rest.app.endpoint.annotation.Authenticated
+        public void authenticatedMethod() {}
+
         @Authorization(key = "test.auth.key", name = "Test Auth", group = "Test Group", description = "Test Desc")
         public void authorizedMethod() {}
 
@@ -146,6 +165,11 @@ class AuthorizationFilterTest {
 
     @Anonymous
     private static class TestAnonClassEndpoint {
+        public void regularMethod() {}
+    }
+
+    @com.freelance.rest.app.endpoint.annotation.Authenticated
+    private static class TestAuthClassEndpoint {
         public void regularMethod() {}
     }
 }

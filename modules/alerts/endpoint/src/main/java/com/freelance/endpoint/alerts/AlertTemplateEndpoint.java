@@ -8,9 +8,11 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.UUID;
 
 @Path("/alerts/templates")
 @Produces(MediaType.APPLICATION_JSON)
@@ -84,6 +86,34 @@ public class AlertTemplateEndpoint extends AbstractEndpoint {
     public Response listCategories() {
         TemplateService service = new TemplateService();
         TemplateCategoryListResponseDTO response = service.listCategories();
+        return buildResponse(response, 200);
+    }
+
+    @POST
+    @Path("/{id}/submit")
+    @Authorization(
+            key = "ALERT_TEMPLATE_SUBMIT",
+            name = "Submit Alert Template",
+            description = "Submits a draft or rejected alert template to Meta Graph API for approval",
+            group = "Alerts.Templates"
+    )
+    public Response submitTemplate(@PathParam("id") UUID id) {
+        TemplateService service = new TemplateService();
+        TemplateSubmitResponseDTO response = service.submitTemplateForApproval(id);
+        return buildResponse(response, 200);
+    }
+
+    @POST
+    @Path("/submit-all")
+    @Authorization(
+            key = "ALERT_TEMPLATE_SUBMIT_ALL",
+            name = "Submit All Alert Templates",
+            description = "Submits all unapproved alert templates to Meta Graph API for approval",
+            group = "Alerts.Templates"
+    )
+    public Response submitAllTemplates() {
+        TemplateService service = new TemplateService();
+        TemplateBatchSubmitResponseDTO response = service.submitAllPendingTemplates();
         return buildResponse(response, 200);
     }
 }

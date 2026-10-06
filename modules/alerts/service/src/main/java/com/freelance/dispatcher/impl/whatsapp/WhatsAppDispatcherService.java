@@ -1,5 +1,10 @@
 package com.freelance.dispatcher.impl.whatsapp;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.freelance.ConfigurationEngine;
 import com.freelance.alerts.AlertChannel;
 import com.freelance.alerts.message.entity.AlertMessageEntity;
@@ -32,6 +37,7 @@ public class WhatsAppDispatcherService implements IAlertDispatcher {
 
     private final HttpClient httpClient;
     private final AlertMessageRepository messageRepository;
+    private final ObjectMapper objectMapper;
 
     /**
      * Legacy DispatchResult kept for backward compatibility with existing tests.
@@ -47,14 +53,16 @@ public class WhatsAppDispatcherService implements IAlertDispatcher {
     public WhatsAppDispatcherService() {
         this(
                 HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(),
-                new AlertMessageRepository()
+                new AlertMessageRepository(),
+                new ObjectMapper()
         );
     }
 
     public WhatsAppDispatcherService(AlertMessageRepository messageRepository) {
         this(
                 HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(),
-                messageRepository
+                messageRepository,
+                new ObjectMapper()
         );
     }
 
@@ -62,8 +70,17 @@ public class WhatsAppDispatcherService implements IAlertDispatcher {
             HttpClient httpClient,
             AlertMessageRepository messageRepository
     ) {
+        this(httpClient, messageRepository, new ObjectMapper());
+    }
+
+    public WhatsAppDispatcherService(
+            HttpClient httpClient,
+            AlertMessageRepository messageRepository,
+            ObjectMapper objectMapper
+    ) {
         this.httpClient = httpClient;
         this.messageRepository = messageRepository;
+        this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
     }
 
     @Override
@@ -86,10 +103,17 @@ public class WhatsAppDispatcherService implements IAlertDispatcher {
         String phoneNumberId = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_PHONE_NUMBER_ID);
         String baseUrl = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_API_BASE_URL);
 
-        if (accessToken == null || accessToken.contains("placeholder") || accessToken.contains("default")) {
+        if (accessToken == null || accessToken.isBlank()
+                || accessToken.trim().equalsIgnoreCase("default")
+                || accessToken.trim().equalsIgnoreCase("placeholder")
+                || accessToken.trim().startsWith("default_placeholder")
+                || accessToken.trim().startsWith("placeholder")
+                || accessToken.trim().startsWith("mock_")) {
             String mockWamid = "wamid.HBgL" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
             logger.info("[WhatsAppDispatcherService] (Mock Mode) Dispatched to {}: wamid={}", recipientPhone, mockWamid);
-            return AlertDispatchResult.success(mockWamid, "{\"messages\":[{\"id\":\"" + mockWamid + "\"}]}");
+            ObjectNode mockResponse = objectMapper.createObjectNode();
+            mockResponse.putArray("messages").addObject().put("id", mockWamid);
+            return AlertDispatchResult.success(mockWamid, mockResponse.toString());
         }
 
         try {
@@ -99,21 +123,12 @@ public class WhatsAppDispatcherService implements IAlertDispatcher {
                 if (buttons != null && buttons.size() > 3) {
                     jsonPayload = buildInteractiveListPayload(recipientPhone, renderedText, buttons);
                 } else {
-                    String templateName = request.template().getTemplateKey().toLowerCase();
-                    String langCode = request.template().getLanguage() != null ? request.template().getLanguage() : "en_US";
-                    jsonPayload = String.format(
-                            "{\"messaging_product\":\"whatsapp\",\"recipient_type\":\"individual\",\"to\":\"%s\",\"type\":\"template\",\"template\":{\"name\":\"%s\",\"language\":{\"code\":\"%s\"}}}",
-                            recipientPhone.replace("+", ""),
-                            templateName,
-                            langCode
-                    );
+                    jsonPayload = buildTemplatePayload(recipientPhone, request);
                 }
+            } else if (request.mediaId() != null || request.mediaUrl() != null) {
+                jsonPayload = buildDirectMediaPayload(recipientPhone, request, renderedText);
             } else {
-                jsonPayload = String.format(
-                        "{\"messaging_product\":\"whatsapp\",\"recipient_type\":\"individual\",\"to\":\"%s\",\"type\":\"text\",\"text\":{\"preview_url\":false,\"body\":\"%s\"}}",
-                        recipientPhone.replace("+", ""),
-                        escapeJson(renderedText)
-                );
+                jsonPayload = buildTextPayload(recipientPhone, renderedText);
             }
 
             HttpRequest httpRequest = HttpRequest.newBuilder()
@@ -140,6 +155,82 @@ public class WhatsAppDispatcherService implements IAlertDispatcher {
             logger.error("[WhatsAppDispatcherService] Dispatch HTTP call failed to recipient {}", recipientPhone, e);
             return AlertDispatchResult.failure(WhatsAppErrorCode.CODE_DISPATCH_FAILED, e.getMessage(), e.toString());
         }
+    }
+
+    private String buildTemplatePayload(String recipientPhone, AlertDispatchRequest request) throws JsonProcessingException {
+        ObjectNode root = objectMapper.createObjectNode();
+        root.put("messaging_product", "whatsapp");
+        root.put("recipient_type", "individual");
+        root.put("to", cleanPhone(recipientPhone));
+        root.put("type", "template");
+
+        ObjectNode templateNode = root.putObject("template");
+        templateNode.put("name", request.template().getTemplateKey().toLowerCase());
+        String langCode = request.template().getLanguage() != null ? request.template().getLanguage() : "en_US";
+        templateNode.putObject("language").put("code", langCode);
+
+        String mediaUrl = request.template().getMediaUrl() != null && !request.template().getMediaUrl().isBlank()
+                ? request.template().getMediaUrl()
+                : request.mediaUrl();
+
+        if (mediaUrl != null && !mediaUrl.isBlank()) {
+            String mediaParamType = "DOCUMENT".equalsIgnoreCase(request.template().getMediaType()) || mediaUrl.toLowerCase().endsWith(".pdf")
+                    ? "document"
+                    : "image";
+
+            ArrayNode components = templateNode.putArray("components");
+            ObjectNode header = components.addObject();
+            header.put("type", "header");
+            ArrayNode parameters = header.putArray("parameters");
+            ObjectNode param = parameters.addObject();
+            param.put("type", mediaParamType);
+            param.putObject(mediaParamType).put("link", mediaUrl);
+        }
+
+        return objectMapper.writeValueAsString(root);
+    }
+
+    private String buildDirectMediaPayload(String recipientPhone, AlertDispatchRequest request, String renderedText) throws JsonProcessingException {
+        ObjectNode root = objectMapper.createObjectNode();
+        root.put("messaging_product", "whatsapp");
+        root.put("recipient_type", "individual");
+        root.put("to", cleanPhone(recipientPhone));
+
+        boolean isDoc = "DOCUMENT".equalsIgnoreCase(request.mediaType())
+                || (request.mediaUrl() != null && request.mediaUrl().toLowerCase().endsWith(".pdf"));
+        String mediaField = isDoc ? "document" : "image";
+        root.put("type", mediaField);
+
+        ObjectNode mediaNode = root.putObject(mediaField);
+        if (request.mediaId() != null && !request.mediaId().isBlank()) {
+            mediaNode.put("id", request.mediaId());
+        } else {
+            mediaNode.put("link", request.mediaUrl());
+        }
+
+        if (renderedText != null && !renderedText.equals("[Image]") && !renderedText.equals("[Document]") && !renderedText.isBlank()) {
+            mediaNode.put("caption", renderedText);
+        }
+
+        return objectMapper.writeValueAsString(root);
+    }
+
+    private String buildTextPayload(String recipientPhone, String renderedText) throws JsonProcessingException {
+        ObjectNode root = objectMapper.createObjectNode();
+        root.put("messaging_product", "whatsapp");
+        root.put("recipient_type", "individual");
+        root.put("to", cleanPhone(recipientPhone));
+        root.put("type", "text");
+
+        ObjectNode textNode = root.putObject("text");
+        textNode.put("preview_url", false);
+        textNode.put("body", renderedText != null ? renderedText : "");
+
+        return objectMapper.writeValueAsString(root);
+    }
+
+    private String cleanPhone(String phone) {
+        return phone != null ? phone.replace("+", "").trim() : "";
     }
 
     /**
@@ -174,47 +265,58 @@ public class WhatsAppDispatcherService implements IAlertDispatcher {
         return TemplateRenderUtility.render(templateContent, resolvedAttributes);
     }
 
-    private String escapeJson(String text) {
-        if (text == null) return "";
-        return text.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\b", "\\b")
-                .replace("\f", "\\f")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
-    }
-
     private String extractWamid(String json) {
-        if (json != null && json.contains("\"id\":")) {
-            int start = json.indexOf("\"id\":\"") + 6;
-            int end = json.indexOf("\"", start);
-            if (start > 5 && end > start) {
-                return json.substring(start, end);
+        if (json != null && !json.isBlank()) {
+            try {
+                JsonNode root = objectMapper.readTree(json);
+                JsonNode messagesNode = root.path("messages");
+                if (messagesNode.isArray() && !messagesNode.isEmpty()) {
+                    JsonNode firstMsg = messagesNode.get(0);
+                    if (firstMsg.hasNonNull("id")) {
+                        return firstMsg.get("id").asText();
+                    }
+                }
+                if (root.hasNonNull("id")) {
+                    return root.get("id").asText();
+                }
+            } catch (Exception e) {
+                logger.warn("[WhatsAppDispatcherService] Could not parse WAMID from response JSON: {}", json, e);
             }
         }
         return "wamid.HBgL" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
     public String buildInteractiveListPayload(String recipientPhone, String bodyText, List<AlertButtonEntity> buttons) {
-        StringBuilder rowsJson = new StringBuilder();
+        ObjectNode root = objectMapper.createObjectNode();
+        root.put("messaging_product", "whatsapp");
+        root.put("recipient_type", "individual");
+        root.put("to", cleanPhone(recipientPhone));
+        root.put("type", "interactive");
+
+        ObjectNode interactive = root.putObject("interactive");
+        interactive.put("type", "list");
+        interactive.putObject("body").put("text", (bodyText != null && !bodyText.isBlank()) ? bodyText : "Please select an option:");
+
+        ObjectNode action = interactive.putObject("action");
+        action.put("button", "Select Option");
+        ArrayNode sections = action.putArray("sections");
+        ObjectNode section = sections.addObject();
+        section.put("title", "Options");
+        ArrayNode rows = section.putArray("rows");
+
         if (buttons != null) {
             for (int i = 0; i < buttons.size(); i++) {
                 AlertButtonEntity b = buttons.get(i);
-                if (i > 0) rowsJson.append(",");
-                rowsJson.append(String.format(
-                        "{\"id\":\"%s\",\"title\":\"%s\"}",
-                        escapeJson(b.getPayload() != null ? b.getPayload() : "opt_" + b.getSequenceOrder()),
-                        escapeJson(b.getButtonText() != null ? b.getButtonText() : "Option " + (i + 1))
-                ));
+                ObjectNode row = rows.addObject();
+                row.put("id", b.getPayload() != null ? b.getPayload() : "opt_" + b.getSequenceOrder());
+                row.put("title", b.getButtonText() != null ? b.getButtonText() : "Option " + (i + 1));
             }
         }
 
-        return String.format(
-                "{\"messaging_product\":\"whatsapp\",\"recipient_type\":\"individual\",\"to\":\"%s\",\"type\":\"interactive\",\"interactive\":{\"type\":\"list\",\"body\":{\"text\":\"%s\"},\"action\":{\"button\":\"Select Option\",\"sections\":[{\"title\":\"Options\",\"rows\":[%s]}]}}}",
-                recipientPhone.replace("+", ""),
-                escapeJson(bodyText != null && !bodyText.isBlank() ? bodyText : "Please select an option:"),
-                rowsJson.toString()
-        );
+        try {
+            return objectMapper.writeValueAsString(root);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize interactive list payload", e);
+        }
     }
 }

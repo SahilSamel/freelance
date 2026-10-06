@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS FL_ALERT_MESSAGE
     error_code        VARCHAR(100),
     raw_error_details TEXT,
     timestamp         TIMESTAMPTZ  NOT NULL,
+    media_url         TEXT,
+    media_id          VARCHAR(255),
+    media_type        VARCHAR(50),
     created_by        UUID         NOT NULL,
     created_date      TIMESTAMPTZ  NOT NULL,
     last_updated_by   UUID,
@@ -22,3 +25,4 @@ CREATE TABLE IF NOT EXISTS FL_ALERT_MESSAGE
 CREATE INDEX IF NOT EXISTS idx_alert_message_user ON FL_ALERT_MESSAGE (user_id, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_alert_message_wamid ON FL_ALERT_MESSAGE (meta_message_id);
 CREATE INDEX IF NOT EXISTS idx_alert_message_template_id ON FL_ALERT_MESSAGE (template_id);
+CREATE INDEX IF NOT EXISTS idx_alert_message_media_id ON FL_ALERT_MESSAGE (media_id);

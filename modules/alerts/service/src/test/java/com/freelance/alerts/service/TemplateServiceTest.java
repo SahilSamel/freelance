@@ -8,6 +8,8 @@ import com.freelance.alerts.dto.TemplateCreateRequestDTO;
 import com.freelance.alerts.dto.TemplateDTO;
 import com.freelance.alerts.dto.TemplateListRequestDTO;
 import com.freelance.alerts.dto.TemplateListResponseDTO;
+import com.freelance.alerts.dto.TemplateSubmitResponseDTO;
+import com.freelance.alerts.dto.TemplateBatchSubmitResponseDTO;
 import com.freelance.alerts.template.entity.AlertButtonEntity;
 import com.freelance.alerts.template.entity.AlertTemplateEntity;
 import com.freelance.alerts.template.repository.AlertButtonRepository;
@@ -72,6 +74,13 @@ class TemplateServiceTest {
         @Override
         public List<AlertTemplateEntity> findByStatus(TemplateStatus status) {
             return byKey.values().stream().filter(e -> e.getStatus() == status).toList();
+        }
+
+        @Override
+        public List<AlertTemplateEntity> findSubmittableWhatsAppTemplates() {
+            return byKey.values().stream()
+                    .filter(e -> e.getChannel() == AlertChannel.WHATSAPP && (e.getStatus() == TemplateStatus.DRAFT || e.getStatus() == TemplateStatus.REJECTED))
+                    .toList();
         }
     }
 
@@ -241,7 +250,11 @@ class TemplateServiceTest {
         templateRepo.persist(entity1);
         templateRepo.persist(entity2);
 
-        TemplateListResponseDTO allResp = service.listTemplates(null);
+        TemplateListResponseDTO defaultApprovedResp = service.listTemplates(null);
+        assertEquals(1, defaultApprovedResp.templates().size());
+        assertEquals("TPL_1", defaultApprovedResp.templates().get(0).templateKey());
+
+        TemplateListResponseDTO allResp = service.listTemplates(new TemplateListRequestDTO(null, null, true));
         assertEquals(2, allResp.templates().size());
 
         TemplateListResponseDTO approvedResp = service.listTemplates(new TemplateListRequestDTO(null, TemplateStatus.APPROVED));
@@ -505,6 +518,93 @@ class TemplateServiceTest {
         assertNull(updated.priority());
         assertNull(tpl.getPriority());
         assertEquals(1, updated.buttons().size());
+    }
+
+    @Test
+    @DisplayName("Should submit single WhatsApp draft template for approval and transition to SUBMITTED")
+    void testSubmitTemplateForApproval_success() {
+        UUID id = UUID.randomUUID();
+        AlertTemplateEntity draftTpl = new AlertTemplateEntity(
+                id, "TPL_DRAFT_SUBMIT", "Draft Template", "UTILITY", "en", "Hello {{name}}",
+                null, null, AlertChannel.WHATSAPP, TemplateStatus.DRAFT, false, null, null, "NORMAL"
+        );
+        templateRepo.persist(draftTpl);
+
+        TemplateSubmitResponseDTO resp = service.submitTemplateForApproval(id);
+        assertNotNull(resp);
+        assertTrue(resp.successful());
+        assertEquals("TPL_DRAFT_SUBMIT", resp.templateKey());
+        assertEquals(TemplateStatus.SUBMITTED, resp.status());
+        assertNotNull(resp.metaTemplateId());
+        assertNull(resp.errorMessage());
+
+        AlertTemplateEntity saved = templateRepo.get(id);
+        assertEquals(TemplateStatus.SUBMITTED, saved.getStatus());
+        assertEquals(resp.metaTemplateId(), saved.getMetaTemplateId());
+    }
+
+    @Test
+    @DisplayName("Should return failure response when submitting non-existent or null template ID")
+    void testSubmitTemplateForApproval_notFound() {
+        TemplateSubmitResponseDTO nullResp = service.submitTemplateForApproval(null);
+        assertNotNull(nullResp);
+        assertFalse(nullResp.successful());
+        assertTrue(nullResp.errorMessage().contains("null"));
+
+        TemplateSubmitResponseDTO notFoundResp = service.submitTemplateForApproval(UUID.randomUUID());
+        assertNotNull(notFoundResp);
+        assertFalse(notFoundResp.successful());
+        assertTrue(notFoundResp.errorMessage().contains("not found"));
+    }
+
+    @Test
+    @DisplayName("Should reject submission for non-WhatsApp channel templates")
+    void testSubmitTemplateForApproval_nonWhatsAppChannel() {
+        UUID id = UUID.randomUUID();
+        AlertTemplateEntity pushTpl = new AlertTemplateEntity(
+                id, "TPL_PUSH", "Push Template", "UTILITY", "en", "Push message",
+                null, null, AlertChannel.PUSH, TemplateStatus.DRAFT, false, null, null, "NORMAL"
+        );
+        templateRepo.persist(pushTpl);
+
+        TemplateSubmitResponseDTO resp = service.submitTemplateForApproval(id);
+        assertNotNull(resp);
+        assertFalse(resp.successful());
+        assertTrue(resp.errorMessage().contains("Only WHATSAPP channel"));
+    }
+
+    @Test
+    @DisplayName("Should submit all draft and rejected WhatsApp templates via submitAllPendingTemplates")
+    void testSubmitAllPendingTemplates_bestEffort() {
+        UUID id1 = UUID.randomUUID();
+        AlertTemplateEntity draftTpl = new AlertTemplateEntity(
+                id1, "BATCH_DRAFT", "Draft", "UTILITY", "en", "Message 1",
+                null, null, AlertChannel.WHATSAPP, TemplateStatus.DRAFT, false, null, null
+        );
+        UUID id2 = UUID.randomUUID();
+        AlertTemplateEntity rejTpl = new AlertTemplateEntity(
+                id2, "BATCH_REJECTED", "Rejected", "UTILITY", "en", "Message 2",
+                null, null, AlertChannel.WHATSAPP, TemplateStatus.REJECTED, false, null, null
+        );
+        UUID id3 = UUID.randomUUID();
+        AlertTemplateEntity appTpl = new AlertTemplateEntity(
+                id3, "BATCH_APPROVED", "Approved", "UTILITY", "en", "Message 3",
+                null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED, false, null, null
+        );
+        templateRepo.persist(draftTpl);
+        templateRepo.persist(rejTpl);
+        templateRepo.persist(appTpl);
+
+        TemplateBatchSubmitResponseDTO batchResp = service.submitAllPendingTemplates();
+        assertNotNull(batchResp);
+        assertEquals(2, batchResp.totalEvaluated());
+        assertEquals(2, batchResp.totalSubmitted());
+        assertEquals(0, batchResp.totalFailed());
+        assertEquals(2, batchResp.results().size());
+
+        assertEquals(TemplateStatus.SUBMITTED, templateRepo.get(id1).getStatus());
+        assertEquals(TemplateStatus.SUBMITTED, templateRepo.get(id2).getStatus());
+        assertEquals(TemplateStatus.APPROVED, templateRepo.get(id3).getStatus());
     }
 }
 

@@ -6,6 +6,8 @@ import com.freelance.event.consumer.EventHandler;
 import com.freelance.event.engine.GenericConsumerWorker;
 import com.freelance.event.model.EventMessage;
 
+import java.util.List;
+
 /**
  * Pluggable message transport and storage driver interface for the asynchronous event management framework.
  * <p>
@@ -55,6 +57,25 @@ public interface EventBroker {
      * @throws IllegalStateException if the broker has been shut down
      */
     <T> void publish(EventMessage<T> message);
+
+    /**
+     * Publishes a collection of event message envelopes to their destination topics.
+     * <p>
+     * Enables underlying broker drivers to apply batch transport optimizations such as network pipelining.
+     * </p>
+     *
+     * @param <T>      the payload type
+     * @param messages collection of event message envelopes; must not be null
+     * @throws IllegalStateException if the broker has been shut down
+     */
+    default <T> void publishBatch(List<EventMessage<T>> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return;
+        }
+        for (EventMessage<T> message : messages) {
+            publish(message);
+        }
+    }
 
     /**
      * Publishes an event message envelope with a scheduled delivery delay.

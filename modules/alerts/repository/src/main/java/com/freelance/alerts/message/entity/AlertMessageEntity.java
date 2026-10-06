@@ -84,6 +84,15 @@ public class AlertMessageEntity extends AbstractAuditEntity {
     @Column(name = "timestamp", nullable = false)
     private Instant timestamp;
 
+    @Column(name = "media_url", columnDefinition = "TEXT")
+    private String mediaUrl;
+
+    @Column(name = "media_id", length = 255)
+    private String mediaId;
+
+    @Column(name = "media_type", length = 50)
+    private String mediaType;
+
     public AlertMessageEntity() {}
 
     public AlertMessageEntity(
@@ -99,7 +108,7 @@ public class AlertMessageEntity extends AbstractAuditEntity {
             String rawErrorDetails,
             Instant timestamp
     ) {
-        this(id, userId, channel, direction, messageType, content, null, metaMessageId, status, errorCode, rawErrorDetails, timestamp);
+        this(id, userId, channel, direction, messageType, content, null, metaMessageId, status, errorCode, rawErrorDetails, timestamp, null, null, null);
     }
 
     public AlertMessageEntity(
@@ -116,6 +125,26 @@ public class AlertMessageEntity extends AbstractAuditEntity {
             String rawErrorDetails,
             Instant timestamp
     ) {
+        this(id, userId, channel, direction, messageType, content, template, metaMessageId, status, errorCode, rawErrorDetails, timestamp, null, null, null);
+    }
+
+    public AlertMessageEntity(
+            UUID id,
+            UUID userId,
+            AlertChannel channel,
+            AlertDirection direction,
+            String messageType,
+            String content,
+            AlertTemplateEntity template,
+            String metaMessageId,
+            AlertMessageStatus status,
+            String errorCode,
+            String rawErrorDetails,
+            Instant timestamp,
+            String mediaUrl,
+            String mediaId,
+            String mediaType
+    ) {
         this.id = id;
         this.userId = userId;
         this.channel = channel;
@@ -128,6 +157,9 @@ public class AlertMessageEntity extends AbstractAuditEntity {
         this.errorCode = errorCode;
         this.rawErrorDetails = rawErrorDetails;
         this.timestamp = timestamp;
+        this.mediaUrl = mediaUrl;
+        this.mediaId = mediaId;
+        this.mediaType = mediaType;
     }
 
     public UUID getId() { return id; }
@@ -154,4 +186,10 @@ public class AlertMessageEntity extends AbstractAuditEntity {
     public void setRawErrorDetails(String rawErrorDetails) { this.rawErrorDetails = rawErrorDetails; }
     public Instant getTimestamp() { return timestamp; }
     public void setTimestamp(Instant timestamp) { this.timestamp = timestamp; }
+    public String getMediaUrl() { return mediaUrl; }
+    public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
+    public String getMediaId() { return mediaId; }
+    public void setMediaId(String mediaId) { this.mediaId = mediaId; }
+    public String getMediaType() { return mediaType; }
+    public void setMediaType(String mediaType) { this.mediaType = mediaType; }
 }
