@@ -26,9 +26,19 @@ public final class AttributeResolutionEngine {
     }
 
     public void register(IDomainAttributeResolver resolver) {
-        if (resolver != null && resolver.getDomain() != null) {
-            resolvers.put(resolver.getDomain().toUpperCase(), resolver);
-            logger.info("[AttributeResolutionEngine] Registered attribute resolver for domain: {}", resolver.getDomain());
+        if (resolver != null) {
+            if (resolver.getDomain() != null) {
+                resolvers.put(resolver.getDomain().toUpperCase(), resolver);
+                logger.info("[AttributeResolutionEngine] Registered attribute resolver for domain: {}", resolver.getDomain());
+            }
+            if (resolver.getSupportedAttributes() != null) {
+                for (String attr : resolver.getSupportedAttributes()) {
+                    try {
+                        String domain = extractDomain(attr);
+                        resolvers.putIfAbsent(domain.toUpperCase(), resolver);
+                    } catch (Exception ignored) {}
+                }
+            }
         }
     }
 

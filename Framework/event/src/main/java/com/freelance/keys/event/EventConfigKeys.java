@@ -37,6 +37,30 @@ public enum EventConfigKeys implements IConfig {
             "10",
             "Graceful shutdown timeout in seconds for in-flight event tasks",
             "^[1-9][0-9]*$"
+    ),
+    RATE_LIMIT_OUTBOUND_WHATSAPP(
+            "event.consumer.alert.outbound.whatsapp.rate_limit",
+            "50.0",
+            "Maximum rate limit per second per tenant for alert.outbound.whatsapp consumer",
+            "^[0-9]+(\\.[0-9]+)?$"
+    ),
+    RATE_LIMIT_INBOUND_WHATSAPP(
+            "event.consumer.alert.inbound.whatsapp.rate_limit",
+            "50.0",
+            "Maximum rate limit per second per tenant for alert.inbound.whatsapp consumer",
+            "^[0-9]+(\\.[0-9]+)?$"
+    ),
+    RATE_LIMIT_OUTBOUND_PUSH(
+            "event.consumer.alert.outbound.push.rate_limit",
+            "100.0",
+            "Maximum rate limit per second per tenant for alert.outbound.push consumer",
+            "^[0-9]+(\\.[0-9]+)?$"
+    ),
+    RATE_LIMIT_INBOUND_PUSH(
+            "event.consumer.alert.inbound.push.rate_limit",
+            "100.0",
+            "Maximum rate limit per second per tenant for alert.inbound.push consumer",
+            "^[0-9]+(\\.[0-9]+)?$"
     );
 
     private final String key;

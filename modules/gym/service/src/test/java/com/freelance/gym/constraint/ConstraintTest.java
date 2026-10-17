@@ -405,4 +405,79 @@ public class ConstraintTest {
                 new MemberUpdateRequestDTO(userId, null, null, null)
         ));
     }
+
+    // ==========================================
+    // PaymentCollectConstraint Tests
+    // ==========================================
+    @Test
+    void testPaymentCollectConstraint_DefaultConstructor() {
+        assertDoesNotThrow(() -> new com.freelance.gym.payment.constraint.PaymentCollectConstraint());
+    }
+
+    @Test
+    void testPaymentCollectConstraint_NullRequestOrPaymentId() {
+        com.freelance.gym.payment.constraint.PaymentCollectConstraint constraint =
+                new com.freelance.gym.payment.constraint.PaymentCollectConstraint(paymentRepository);
+
+        assertDoesNotThrow(() -> constraint.checkConstraints(null));
+        assertDoesNotThrow(() -> constraint.checkConstraints(new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                null, BigDecimal.valueOf(100), LocalDate.now(), com.freelance.gym.enums.PaymentMethod.UPI, "TXN", null
+        )));
+        verifyNoInteractions(paymentRepository);
+    }
+
+    @Test
+    void testPaymentCollectConstraint_PaymentNotFound() {
+        com.freelance.gym.payment.constraint.PaymentCollectConstraint constraint =
+                new com.freelance.gym.payment.constraint.PaymentCollectConstraint(paymentRepository);
+
+        UUID paymentId = UUID.randomUUID();
+        when(paymentRepository.get(paymentId)).thenReturn(null);
+
+        assertThrows(ConstraintException.class, () -> constraint.checkConstraints(
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        paymentId, BigDecimal.valueOf(100), LocalDate.now(), com.freelance.gym.enums.PaymentMethod.UPI, "TXN", null
+                )
+        ));
+    }
+
+    @Test
+    void testPaymentCollectConstraint_AlreadyFullyPaidFails() {
+        com.freelance.gym.payment.constraint.PaymentCollectConstraint constraint =
+                new com.freelance.gym.payment.constraint.PaymentCollectConstraint(paymentRepository);
+
+        UUID paymentId = UUID.randomUUID();
+        PaymentEntity paid = new PaymentEntity();
+        paid.setId(paymentId);
+        paid.setAmount(BigDecimal.valueOf(1000));
+        paid.setPaidAmount(BigDecimal.valueOf(1000));
+        paid.setTransactionId("EXISTING_TXN");
+        when(paymentRepository.get(paymentId)).thenReturn(paid);
+
+        assertThrows(ConstraintException.class, () -> constraint.checkConstraints(
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        paymentId, BigDecimal.valueOf(1000), LocalDate.now(), com.freelance.gym.enums.PaymentMethod.UPI, "TXN2", null
+                )
+        ));
+    }
+
+    @Test
+    void testPaymentCollectConstraint_ValidPendingPayment() {
+        com.freelance.gym.payment.constraint.PaymentCollectConstraint constraint =
+                new com.freelance.gym.payment.constraint.PaymentCollectConstraint(paymentRepository);
+
+        UUID paymentId = UUID.randomUUID();
+        PaymentEntity pending = new PaymentEntity();
+        pending.setId(paymentId);
+        pending.setAmount(BigDecimal.valueOf(1000));
+        pending.setPaidAmount(BigDecimal.ZERO);
+        pending.setTransactionId(null);
+        when(paymentRepository.get(paymentId)).thenReturn(pending);
+
+        assertDoesNotThrow(() -> constraint.checkConstraints(
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        paymentId, BigDecimal.valueOf(1000), LocalDate.now(), com.freelance.gym.enums.PaymentMethod.UPI, "TXN2", null
+                )
+        ));
+    }
 }

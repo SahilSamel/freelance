@@ -15,7 +15,6 @@ import com.freelance.alerts.template.repository.AlertButtonRepository;
 import com.freelance.alerts.template.repository.AlertTemplateCategoryRepository;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
 import com.freelance.alerts.push.PushAlertProcessor;
-import com.freelance.alerts.templates.HumanSupportRequiredTemplate;
 import com.freelance.alerts.templates.SupportAccessRequestedTemplate;
 import com.freelance.chat.ChatTimelineService;
 import com.freelance.dispatcher.impl.whatsapp.WhatsAppDispatcherService;
@@ -275,17 +274,10 @@ class PushTemplateIntegrationTest {
     void testSeedPushTemplates() {
         TemplateSeeder seeder = new TemplateSeeder(templateRepository);
         seeder.seed(List.of(
-                new HumanSupportRequiredTemplate(),
                 new SupportAccessRequestedTemplate()
         ));
 
-        assertEquals(2, templateRepository.storage.size());
-
-        Optional<AlertTemplateEntity> humanReq = templateRepository.findByKey("human_support_required");
-        assertTrue(humanReq.isPresent());
-        assertEquals(AlertChannel.PUSH, humanReq.get().getChannel());
-        assertEquals(TemplateStatus.APPROVED, humanReq.get().getStatus());
-        assertEquals("HIGH", humanReq.get().getPriority());
+        assertEquals(1, templateRepository.storage.size());
 
         Optional<AlertTemplateEntity> supportReq = templateRepository.findByKey("support_access_requested");
         assertTrue(supportReq.isPresent());
@@ -388,8 +380,8 @@ class PushTemplateIntegrationTest {
 
         // 1. Seed Push templates
         TemplateSeeder seeder = new TemplateSeeder(templateRepository);
-        seeder.seed(List.of(new HumanSupportRequiredTemplate()));
-        AlertTemplateEntity template = templateRepository.findByKey("human_support_required").orElseThrow();
+        seeder.seed(List.of(new SupportAccessRequestedTemplate()));
+        AlertTemplateEntity template = templateRepository.findByKey("support_access_requested").orElseThrow();
 
         // 2. Deliver notification via PushAlertProcessor
         UUID msgId = UUID.randomUUID();

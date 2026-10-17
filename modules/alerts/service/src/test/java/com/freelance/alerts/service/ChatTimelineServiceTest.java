@@ -123,8 +123,8 @@ class ChatTimelineServiceTest {
     }
 
     @Test
-    @DisplayName("Should clear human support session on user contact when staff sends a reply")
-    void testSendStaffReply_clearsHumanSession() {
+    @DisplayName("Should maintain human support session on user contact when staff sends a reply until explicitly resolved")
+    void testSendStaffReply_maintainsHumanSessionUntilResolved() {
         UUID userId = UUID.randomUUID();
         UserContactEntity contact = new UserContactEntity(
                 UUID.randomUUID(), userId, AlertChannel.WHATSAPP, "+919876543210", false, true, Instant.now().plusSeconds(3600)
@@ -139,11 +139,15 @@ class ChatTimelineServiceTest {
         assertEquals("Hello, how can I help you?", sent.content());
         assertEquals(AlertMessageStatus.PENDING, sent.status());
 
-        // Verify that contact's human session was cleared
+        // Verify that contact's human session remains ACTIVE so live chat stays open
         Optional<UserContactEntity> updatedContact = contactRepo.findByUserAndChannel(userId, AlertChannel.WHATSAPP);
         assertTrue(updatedContact.isPresent());
-        assertNull(updatedContact.get().getHumanSessionExpiresAt(), "Staff reply should clear humanSessionExpiresAt");
-        assertFalse(updatedContact.get().isHumanSessionActive(), "Human session should no longer be active");
+        assertTrue(updatedContact.get().isHumanSessionActive(), "Staff reply should maintain human support session");
+
+        // Now explicitly resolve the session
+        boolean resolved = timelineService.resolveChatSession(userId, AlertChannel.WHATSAPP);
+        assertTrue(resolved);
+        assertFalse(updatedContact.get().isHumanSessionActive(), "Explicit resolveChatSession should close human support");
     }
 
     @Test
@@ -273,7 +277,7 @@ class ChatTimelineServiceTest {
     }
 
     @Test
-    @DisplayName("sendStaffReply sends staff message and clears active human session")
+    @DisplayName("sendStaffReply sends staff message and preserves active human session")
     void testSendStaffReply_success() {
         UUID userId = UUID.randomUUID();
         UserContactEntity contact = new UserContactEntity(
@@ -287,7 +291,8 @@ class ChatTimelineServiceTest {
         assertNotNull(dto);
         assertEquals(AlertChannel.WHATSAPP, dto.channel());
         assertEquals("Staff response text", dto.content());
-        assertNull(contact.getHumanSessionExpiresAt());
+        assertNotNull(contact.getHumanSessionExpiresAt(), "Staff reply should maintain human session");
+        assertTrue(contact.isHumanSessionActive());
     }
 
     @Test

@@ -214,4 +214,85 @@ public class PaymentServiceTest {
 
         assertDoesNotThrow(() -> paymentService.relinkPaidPayments(List.of(oldPlanId), newPlans));
     }
+
+    @Test
+    void testCollectPaymentSuccess() {
+        UUID paymentId = UUID.randomUUID();
+        PaymentEntity pending = new PaymentEntity(paymentId, BigDecimal.valueOf(1000), BigDecimal.ZERO, LocalDate.now(), null, PaymentMethod.NONE, null, "Pending");
+        when(paymentRepository.get(paymentId)).thenReturn(pending);
+        when(userPlanPaymentRepository.findByPaymentId(paymentId)).thenReturn(List.of());
+
+        com.freelance.gym.payment.dto.PaymentCollectRequestDTO request = new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                paymentId,
+                BigDecimal.valueOf(1000),
+                LocalDate.now(),
+                PaymentMethod.UPI,
+                "TXN_COLLECTED_01",
+                "Collected at front desk"
+        );
+
+        PaymentResponseDTO response = paymentService.collectPayment(request);
+
+        assertNotNull(response);
+        assertEquals(paymentId, response.id());
+        assertEquals(BigDecimal.valueOf(1000), response.paidAmount());
+        assertEquals(PaymentMethod.UPI, response.paymentMethod());
+        assertEquals("TXN_COLLECTED_01", response.transactionId());
+        assertEquals("Collected at front desk", response.notes());
+
+        verify(paymentRepository, times(1)).merge(pending);
+    }
+
+    @Test
+    void testCreateInstallmentsWithPlanIndices() {
+        UUID planId1 = UUID.randomUUID();
+        UUID planId2 = UUID.randomUUID();
+        List<UserPlanResponseDTO> userPlans = List.of(
+                new UserPlanResponseDTO(planId1, UUID.randomUUID(), UUID.randomUUID(), "Gym", LocalDate.now(), LocalDate.now().plusMonths(1)),
+                new UserPlanResponseDTO(planId2, UUID.randomUUID(), UUID.randomUUID(), "Zumba", LocalDate.now(), LocalDate.now().plusMonths(1))
+        );
+
+        PaymentScheduleDTO sched1 = new PaymentScheduleDTO(
+                BigDecimal.valueOf(500),
+                BigDecimal.ZERO,
+                LocalDate.now(),
+                null,
+                PaymentMethod.UPI,
+                null,
+                "Zumba only",
+                List.of(1)
+        );
+
+        List<PaymentResponseDTO> res = paymentService.createInstallments(userPlans, List.of(sched1));
+        assertEquals(1, res.size());
+        verify(paymentRepository, times(1)).persist(any(PaymentEntity.class));
+        verify(userPlanPaymentRepository, times(1)).persist(argThat(upp -> upp.getUserPlanId().equals(planId2)));
+    }
+
+    @Test
+    void testLinkPaidPaymentsPreciselyWithExplicitLinks() {
+        UUID newPlanId1 = UUID.randomUUID();
+        UUID newPlanId2 = UUID.randomUUID();
+        List<UserPlanResponseDTO> newPlans = List.of(
+                new UserPlanResponseDTO(newPlanId1, UUID.randomUUID(), UUID.randomUUID(), "Gym", LocalDate.now(), LocalDate.now().plusMonths(1)),
+                new UserPlanResponseDTO(newPlanId2, UUID.randomUUID(), UUID.randomUUID(), "Zumba", LocalDate.now(), LocalDate.now().plusMonths(1))
+        );
+
+        UUID paidId = UUID.randomUUID();
+        PaymentEntity paid = new PaymentEntity(paidId, BigDecimal.valueOf(1000), BigDecimal.valueOf(1000), LocalDate.now(), LocalDate.now(), PaymentMethod.UPI, "TXN_1", "Paid");
+
+        var explicitLink = new com.freelance.gym.payment.dto.PaidPaymentPlanLinkDTO(paidId, List.of(0, 1));
+
+        paymentService.linkPaidPaymentsPrecisely(
+                List.of(paid),
+                newPlans,
+                List.of(),
+                java.util.Map.of(),
+                java.util.Map.of(),
+                List.of(explicitLink)
+        );
+
+        verify(userPlanPaymentRepository, times(1)).persist(argThat(upp -> upp.getUserPlanId().equals(newPlanId1) && upp.getPaymentId().equals(paidId)));
+        verify(userPlanPaymentRepository, times(1)).persist(argThat(upp -> upp.getUserPlanId().equals(newPlanId2) && upp.getPaymentId().equals(paidId)));
+    }
 }

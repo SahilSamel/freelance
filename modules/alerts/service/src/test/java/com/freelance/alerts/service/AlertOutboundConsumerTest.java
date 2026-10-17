@@ -246,7 +246,24 @@ class AlertOutboundConsumerTest {
         UserContactEntity contact = new UserContactEntity(UUID.randomUUID(), validUserId, AlertChannel.WHATSAPP, "+1234567890", true, true, null);
         contactRepo.save(contact);
 
-        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(sampleTemplate.getId(), validUserId);
+        AlertTemplateEntity marketingTemplate = new AlertTemplateEntity(
+                UUID.randomUUID(),
+                "promo_msg",
+                "Promotional Offer",
+                "MARKETING",
+                "en",
+                "Special discount just for you!",
+                null,
+                null,
+                AlertChannel.WHATSAPP,
+                TemplateStatus.APPROVED,
+                true,
+                null,
+                null
+        );
+        templateRepo.persist(marketingTemplate);
+
+        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(marketingTemplate.getId(), validUserId);
         EventMessage<AlertEventPayloadDTO> message = EventMessage.of("alert.outbound.dispatch", payload);
 
         consumer.handle(message);
@@ -435,7 +452,24 @@ class AlertOutboundConsumerTest {
         );
         messageRepo.latestMessage = previousMessage;
 
-        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(sampleTemplate.getId(), validUserId);
+        AlertTemplateEntity marketingTemplate = new AlertTemplateEntity(
+                UUID.randomUUID(),
+                "promo_help",
+                "Promotional",
+                "MARKETING",
+                "en",
+                "Check out these deals!",
+                null,
+                null,
+                AlertChannel.WHATSAPP,
+                TemplateStatus.APPROVED,
+                true,
+                null,
+                null
+        );
+        templateRepo.persist(marketingTemplate);
+
+        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(marketingTemplate.getId(), validUserId);
         EventMessage<AlertEventPayloadDTO> message = EventMessage.of("alert.outbound.whatsapp", payload);
 
         EventDelayedException ex = assertThrows(EventDelayedException.class, () -> consumer.handle(message));

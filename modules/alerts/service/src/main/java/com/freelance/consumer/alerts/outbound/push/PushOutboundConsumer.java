@@ -19,8 +19,7 @@ import com.freelance.user.read.UserReadService;
 @EventConsumer(
         destination = "alert.outbound.push",
         payloadType = AlertEventPayloadDTO.class,
-        concurrency = 4,
-        rateLimitPerSecond = 100.0,
+        concurrency = 1,
         maxRetries = 3
 )
 public class PushOutboundConsumer implements EventHandler<AlertEventPayloadDTO> {

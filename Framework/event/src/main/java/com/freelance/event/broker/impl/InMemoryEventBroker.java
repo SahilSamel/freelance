@@ -1,5 +1,7 @@
 package com.freelance.event.broker.impl;
 
+import com.freelance.ConfigurationEngine;
+import com.freelance.config.IConfig;
 import com.freelance.event.IConsumer;
 import com.freelance.event.broker.EventBroker;
 import com.freelance.event.consumer.ConsumerConfig;
@@ -7,6 +9,7 @@ import com.freelance.event.consumer.EventHandler;
 import com.freelance.event.engine.GenericConsumerWorker;
 import com.freelance.event.limiter.TokenBucketRateLimiter;
 import com.freelance.event.model.EventMessage;
+import com.freelance.registry.ConfigurationRegistry;
 import com.freelance.system.SystemHardcoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -271,8 +274,22 @@ public class InMemoryEventBroker implements EventBroker {
             }).offer(msg);
         }
 
+        private double resolveRateLimitPerSecond(String tenantId) {
+            String configKey = "event.consumer." + destination + ".rate_limit";
+            IConfig registered = ConfigurationRegistry.getConfig(configKey);
+            if (registered != null) {
+                return ConfigurationEngine.getDouble(registered, config.rateLimitPerSecond(), tenantId);
+            }
+            return config.rateLimitPerSecond();
+        }
+
         private TokenBucketRateLimiter getOrCreateRateLimiter(String tenantId) {
-            return rateLimiters.computeIfAbsent(tenantId, t -> new TokenBucketRateLimiter(config.rateLimitPerSecond()));
+            double effectiveRate = resolveRateLimitPerSecond(tenantId);
+            TokenBucketRateLimiter limiter = rateLimiters.computeIfAbsent(tenantId, t -> new TokenBucketRateLimiter(effectiveRate));
+            if (limiter.getRatePerSecond() != effectiveRate) {
+                limiter.setRatePerSecond(effectiveRate);
+            }
+            return limiter;
         }
 
         void start() {

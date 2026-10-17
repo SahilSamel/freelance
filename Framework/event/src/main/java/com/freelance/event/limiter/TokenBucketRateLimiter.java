@@ -21,8 +21,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class TokenBucketRateLimiter {
 
-    private final double ratePerSecond;
-    private final double maxTokens;
+    private double ratePerSecond;
+    private double maxTokens;
     private double availableTokens;
     private long lastRefillNanos;
 
@@ -35,6 +35,22 @@ public class TokenBucketRateLimiter {
         this.maxTokens = Math.max(1.0, maxBurst);
         this.availableTokens = this.maxTokens;
         this.lastRefillNanos = System.nanoTime();
+    }
+
+    /**
+     * Updates the rate limit and max burst capacity dynamically.
+     *
+     * @param newRatePerSecond the new rate per second
+     */
+    public synchronized void setRatePerSecond(double newRatePerSecond) {
+        refill();
+        this.ratePerSecond = Math.max(0.0, newRatePerSecond);
+        this.maxTokens = Math.max(1.0, this.ratePerSecond);
+        this.availableTokens = Math.min(this.maxTokens, this.availableTokens);
+    }
+
+    public synchronized double getRatePerSecond() {
+        return ratePerSecond;
     }
 
     /**

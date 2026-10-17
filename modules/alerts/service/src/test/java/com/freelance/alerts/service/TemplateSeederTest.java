@@ -177,6 +177,8 @@ public class TemplateSeederTest {
             public Set<String> getRequiredAttributes() { return attrs != null ? attrs : Collections.emptySet(); }
             @Override
             public List<ITemplateButton> getButtons() { return Collections.emptyList(); }
+            @Override
+            public TemplateStatus getInitialStatus() { return TemplateStatus.DRAFT; }
         };
     }
 

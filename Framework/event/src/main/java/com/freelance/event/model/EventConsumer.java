@@ -51,17 +51,6 @@ public @interface EventConsumer {
     int concurrency() default 1;
 
     /**
-     * Maximum throughput rate limit (tasks per second) enforced across all worker threads via a Token Bucket limiter.
-     * <p>
-     * Prevents downstream third-party APIs (e.g. WhatsApp, Payment Gateways) from returning HTTP 429 rate limit errors.
-     * Defaults to {@code 0.0} (unlimited throughput).
-     * </p>
-     *
-     * @return maximum allowed tasks per second
-     */
-    double rateLimitPerSecond() default 0.0;
-
-    /**
      * Maximum number of retry attempts for transient failures before invoking {@link com.freelance.event.consumer.EventHandler#onDeadLetter}.
      * <p>
      * Defaults to {@code 3}. Set to {@code 0} to disable retries.

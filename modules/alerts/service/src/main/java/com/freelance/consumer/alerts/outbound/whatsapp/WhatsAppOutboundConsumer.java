@@ -22,7 +22,6 @@ import com.freelance.user.read.UserReadService;
         destination = "alert.outbound.whatsapp",
         payloadType = AlertEventPayloadDTO.class,
         concurrency = 35,
-        rateLimitPerSecond = 50.0,
         maxRetries = 3,
         backoffMillis = 86_400_000L,
         backoffMultiplier = 1.0

@@ -45,9 +45,11 @@ public class TemplateSeeder {
 
             if (existingOpt.isEmpty()) {
                 UUID templateId = UUID.nameUUIDFromBytes(("tpl:" + tpl.getTemplateKey()).getBytes());
-                TemplateStatus initialStatus = (channel == AlertChannel.WHATSAPP && (tpl.getMetaTemplateId() == null || tpl.getMetaTemplateId().isBlank()))
-                        ? TemplateStatus.DRAFT
-                        : TemplateStatus.APPROVED;
+                TemplateStatus initialStatus = tpl.getInitialStatus() != null
+                        ? tpl.getInitialStatus()
+                        : ((channel == AlertChannel.WHATSAPP && (tpl.getMetaTemplateId() == null || tpl.getMetaTemplateId().isBlank()))
+                                ? TemplateStatus.DRAFT
+                                : TemplateStatus.APPROVED);
 
                 AlertTemplateEntity entity = new AlertTemplateEntity(
                         templateId,
@@ -63,7 +65,8 @@ public class TemplateSeeder {
                         true,
                         attrs,
                         tpl.getMetaTemplateId(),
-                        tpl.getPriority()
+                        tpl.getPriority(),
+                        tpl.getDispatchScope()
                 );
 
                 if (tpl.getButtons() != null) {
@@ -139,6 +142,14 @@ public class TemplateSeeder {
                         entity.setPriority(tpl.getPriority());
                         changed = true;
                     }
+                    if (tpl.getInitialStatus() != null && entity.getStatus() != tpl.getInitialStatus()) {
+                        entity.setStatus(tpl.getInitialStatus());
+                        changed = true;
+                    }
+                    if (tpl.getDispatchScope() != null && entity.getDispatchScope() != tpl.getDispatchScope()) {
+                        entity.setDispatchScope(tpl.getDispatchScope());
+                        changed = true;
+                    }
 
                     if (buttonsChanged(entity.getButtons(), tpl.getButtons())) {
                         entity.getButtons().clear();
@@ -175,6 +186,41 @@ public class TemplateSeeder {
                     logger.debug("[TemplateSeeder] Skipping update for template '{}' - modified by custom user '{}'",
                             tpl.getTemplateKey(), entity.getLastUpdatedBy());
                 }
+            }
+        }
+
+        // Pass 2: Link reply templates on button replies where replyTemplateKey is present
+        for (ITemplate tpl : codeTemplates) {
+            if (tpl.getButtons() == null || tpl.getButtons().isEmpty()) {
+                continue;
+            }
+            Optional<AlertTemplateEntity> ownerTplOpt = templateRepository.findByKey(tpl.getTemplateKey());
+            if (ownerTplOpt.isEmpty()) {
+                continue;
+            }
+            AlertTemplateEntity ownerTpl = ownerTplOpt.get();
+            boolean updated = false;
+
+            for (ITemplateButton btn : tpl.getButtons()) {
+                if (btn.getReplyTemplateKey() != null && !btn.getReplyTemplateKey().isBlank()) {
+                    Optional<AlertTemplateEntity> replyTplOpt = templateRepository.findByKey(btn.getReplyTemplateKey());
+                    if (replyTplOpt.isPresent()) {
+                        AlertTemplateEntity replyTpl = replyTplOpt.get();
+                        for (AlertButtonEntity btnEntity : ownerTpl.getButtons()) {
+                            if (Objects.equals(btnEntity.getPayload(), btn.getPayload()) && btnEntity.getReply() != null) {
+                                if (btnEntity.getReply().getReplyTemplate() == null
+                                        || !Objects.equals(btnEntity.getReply().getReplyTemplate().getId(), replyTpl.getId())) {
+                                    btnEntity.getReply().setReplyTemplate(replyTpl);
+                                    updated = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (updated) {
+                templateRepository.merge(ownerTpl);
             }
         }
     }

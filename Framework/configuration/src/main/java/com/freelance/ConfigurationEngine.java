@@ -4,6 +4,7 @@ import com.freelance.config.IConfig;
 import com.freelance.config.IError;
 import com.freelance.configuration.dto.ErrorConfigEntry;
 import com.freelance.manager.CacheManager;
+import com.freelance.manager.TenantCacheKeyResolver;
 
 /**
  * Provides a unified static facade for retrieving runtime system configurations and error messages.
@@ -25,6 +26,24 @@ public final class ConfigurationEngine {
             return (value != null && !value.isBlank()) ? value : config.getDefaultValue();
         } catch (IllegalStateException e) {
             return config.getDefaultValue();
+        }
+    }
+
+    public static String get(IConfig config, String tenantId) {
+        if (config == null) return null;
+        if (tenantId == null || tenantId.isBlank()) {
+            return get(config);
+        }
+        String previousTenant = null;
+        try {
+            if (TenantCacheKeyResolver.getInstance().getTenantSupplier() != null) {
+                previousTenant = TenantCacheKeyResolver.getInstance().getTenantSupplier().get();
+            }
+            TenantCacheKeyResolver.getInstance().setTenantSupplier(() -> tenantId);
+            return get(config);
+        } finally {
+            final String restoreTenant = previousTenant;
+            TenantCacheKeyResolver.getInstance().setTenantSupplier(() -> restoreTenant);
         }
     }
 
@@ -59,6 +78,31 @@ public final class ConfigurationEngine {
                     : 0L;
         } catch (Exception e) {
             return 0L;
+        }
+    }
+
+    public static double getDouble(IConfig config) {
+        return getDouble(config, 0.0);
+    }
+
+    public static double getDouble(IConfig config, double fallback) {
+        return getDouble(config, fallback, null);
+    }
+
+    public static double getDouble(IConfig config, double fallback, String tenantId) {
+        String value = get(config, tenantId);
+        try {
+            if (value != null && !value.isBlank()) {
+                return Double.parseDouble(value.trim());
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            return config != null && config.getDefaultValue() != null
+                    ? Double.parseDouble(config.getDefaultValue().trim())
+                    : fallback;
+        } catch (Exception e) {
+            return fallback;
         }
     }
 

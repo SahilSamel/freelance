@@ -30,7 +30,12 @@ public enum SystemHardcoding {
     /**
      * Default fallback tenant identifier for single-tenant operations and default provisioning.
      */
-    DEFAULT_TENANT("freelance");
+    DEFAULT_TENANT("freelance"),
+
+    /**
+     * Well-known identifier for Meta WhatsApp provider.
+     */
+    META("META");
 
     private final Object value;
 

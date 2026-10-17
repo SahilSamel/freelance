@@ -52,7 +52,8 @@ public class TemplateAssembler {
                 entity.getStatus(),
                 entity.isSystem(),
                 attrs,
-                btnDtos
+                btnDtos,
+                entity.getDispatchScope()
         );
     }
 

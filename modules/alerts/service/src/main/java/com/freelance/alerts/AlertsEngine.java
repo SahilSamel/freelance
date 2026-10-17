@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.UUID;
 
-public final class AlertsEngine {
+public class AlertsEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(AlertsEngine.class);
 
@@ -51,13 +51,34 @@ public final class AlertsEngine {
     }
 
     public void emitAlert(ITemplate template, UUID userId) {
+        emitAlert(template, userId, null, null, null, null);
+    }
+
+    public void emitAlert(ITemplate template, UUID userId, java.util.Map<String, String> customParameters) {
+        emitAlert(template, userId, null, null, null, customParameters);
+    }
+
+    public void emitAlert(ITemplate template, UUID userId, String mediaUrl, String mediaId, String mediaType) {
+        emitAlert(template, userId, mediaUrl, mediaId, mediaType, null);
+    }
+
+    public void emitAlert(ITemplate template, UUID userId, String mediaUrl, String mediaId, String mediaType, java.util.Map<String, String> customParameters) {
         if (template == null || userId == null) return;
         EventPriority priority = template.getPriority() != null && !template.getPriority().isBlank()
                 ? AlertEmitService.parsePriority(template.getPriority())
                 : new AlertEmitService().resolvePriority(template.getCategory());
         UUID templateId = UUID.nameUUIDFromBytes(("tpl:" + template.getTemplateKey()).getBytes());
         AlertConsumer destination = AlertConsumer.fromChannel(template.getChannel());
-        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(templateId, userId);
+        AlertEventPayloadDTO payload = new AlertEventPayloadDTO(
+                templateId,
+                userId,
+                null,
+                null,
+                mediaUrl,
+                mediaId,
+                mediaType,
+                customParameters
+        );
         EventManagementEngine.emit(destination, payload, priority);
     }
 

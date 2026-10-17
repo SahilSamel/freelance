@@ -101,17 +101,44 @@ public class MediaStorageService {
 
         // Prefix match (e.g. mediaId without extension matching mediaId.jpg)
         try (Stream<Path> stream = Files.list(tenantDir)) {
-            return stream
+            Optional<Path> found = stream
                     .filter(Files::isRegularFile)
                     .filter(p -> {
                         String name = p.getFileName().toString();
                         return name.equalsIgnoreCase(safe) || name.startsWith(safe + ".");
                     })
                     .findFirst();
+            if (found.isPresent()) {
+                return found;
+            }
         } catch (IOException e) {
             logger.error("[MediaStorageService] Error listing directory {}", tenantDir, e);
-            return Optional.empty();
         }
+
+        // Cross-tenant fallback: only if tenantId is "default" or "freelance" (unauthenticated public media download)
+        if ("default".equalsIgnoreCase(tenantId) || "freelance".equalsIgnoreCase(tenantId)) {
+            try (Stream<Path> subDirs = Files.list(rootDir)) {
+                return subDirs
+                        .filter(Files::isDirectory)
+                        .flatMap(dir -> {
+                            try {
+                                return Files.list(dir);
+                            } catch (IOException ex) {
+                                return Stream.empty();
+                            }
+                        })
+                        .filter(Files::isRegularFile)
+                        .filter(p -> {
+                            String name = p.getFileName().toString();
+                            return name.equalsIgnoreCase(safe) || name.startsWith(safe + ".");
+                        })
+                        .findFirst();
+            } catch (IOException e) {
+                return Optional.empty();
+            }
+        }
+
+        return Optional.empty();
     }
 
     public boolean exists(String tenantId, String fileNameOrMediaId) {

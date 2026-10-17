@@ -1,34 +1,17 @@
 package com.freelance.alerts.templates;
 
 import com.freelance.alerts.AlertChannel;
-import com.freelance.alerts.ButtonType;
 import com.freelance.alerts.TemplateCategory;
 import com.freelance.alerts.template.ITemplate;
 import com.freelance.alerts.template.ITemplateButton;
+import com.freelance.alerts.template.TemplateButtonRecord;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 public class InboundWelcomeTemplate implements ITemplate {
 
     public static final String TEMPLATE_KEY = "inbound_welcome_menu";
-
-    public record WelcomeButton(
-            String text,
-            ButtonType type,
-            String payload,
-            String replyTemplateKey,
-            boolean requiresHumanAgent,
-            int sequenceOrder
-    ) implements ITemplateButton {
-        @Override public String getText() { return text; }
-        @Override public ButtonType getType() { return type; }
-        @Override public String getPayload() { return payload; }
-        @Override public String getReplyTemplateKey() { return replyTemplateKey; }
-        @Override public boolean requiresHumanAgent() { return requiresHumanAgent; }
-        @Override public int getSequenceOrder() { return sequenceOrder; }
-    }
 
     @Override
     public String getTemplateKey() {
@@ -52,7 +35,8 @@ public class InboundWelcomeTemplate implements ITemplate {
 
     @Override
     public String getContent() {
-        return "Hello! How can we assist you today? Please select an option below:";
+        return "Hello {{USER.first_name}}! Welcome to {{GYM.name}} assistant. 🤖\n\n"
+                + "How can we help you today? Please choose an option below:";
     }
 
     @Override
@@ -72,13 +56,16 @@ public class InboundWelcomeTemplate implements ITemplate {
 
     @Override
     public Set<String> getRequiredAttributes() {
-        return Collections.emptySet();
+        return Set.of("USER.first_name", "GYM.name");
     }
 
     @Override
     public List<ITemplateButton> getButtons() {
         return List.of(
-                new WelcomeButton("Need Human Support", ButtonType.QUICK_REPLY, "WELCOME_HUMAN", null, true, 1)
+                TemplateButtonRecord.quickReplyWithFollowup("Membership & Dues", "MENU_MEMBER_SUMMARY", InboundMemberSummaryTemplate.TEMPLATE_KEY, 1),
+                TemplateButtonRecord.quickReplyWithFollowup("Gym Hours & Info", "MENU_GYM_INFO", InboundGymInfoTemplate.TEMPLATE_KEY, 2),
+                TemplateButtonRecord.quickReplyWithFollowup("Plans & Pricing", "MENU_SERVICES", InboundServicesInfoTemplate.TEMPLATE_KEY, 3),
+                TemplateButtonRecord.humanSupport("Chat with Reception", 4)
         );
     }
 }

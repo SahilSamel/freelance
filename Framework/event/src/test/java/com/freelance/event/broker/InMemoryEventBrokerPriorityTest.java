@@ -182,4 +182,32 @@ class InMemoryEventBrokerPriorityTest {
         assertDoesNotThrow(() -> broker.shutdown(100));
         assertDoesNotThrow(() -> broker.shutdown(100));
     }
+
+    @Test
+    @DisplayName("Per-tenant rate limits are read dynamically from configuration")
+    void testDynamicTenantRateLimitingFromConfig() throws InterruptedException {
+        TestConsumer destination = TestConsumer.TEST_FIFO_TOPIC;
+        ConsumerConfig config = ConsumerConfig.builder()
+                .concurrency(1)
+                .rateLimitPerSecond(0.0) // consumer config fallback
+                .build();
+
+        CountDownLatch latch = new CountDownLatch(2);
+        List<String> executed = Collections.synchronizedList(new ArrayList<>());
+
+        broker.subscribe(destination, config, String.class, msg -> {
+            executed.add(msg.getPayload());
+            latch.countDown();
+        });
+
+        // Set dynamic rate limit for tenant_custom in cache
+        String configKey = "event.consumer." + destination.getDestination() + ".rate_limit";
+        com.freelance.manager.CacheManager.put("cache_SystemConfig", "tenant_fast:" + configKey, "0.0");
+
+        broker.publish(EventMessage.of(destination, "tenant_fast", "FAST_1", EventPriority.NORMAL));
+        broker.publish(EventMessage.of(destination, "tenant_fast", "FAST_2", EventPriority.NORMAL));
+
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+        assertEquals(2, executed.size());
+    }
 }

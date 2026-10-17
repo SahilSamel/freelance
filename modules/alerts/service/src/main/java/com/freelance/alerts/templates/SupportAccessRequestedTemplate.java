@@ -67,4 +67,9 @@ public class SupportAccessRequestedTemplate implements ITemplate {
     public String getPriority() {
         return "HIGH";
     }
+
+    @Override
+    public com.freelance.alerts.template.DispatchScope getDispatchScope() {
+        return com.freelance.alerts.template.DispatchScope.AUTO;
+    }
 }

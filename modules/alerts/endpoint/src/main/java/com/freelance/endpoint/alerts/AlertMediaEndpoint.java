@@ -5,6 +5,7 @@ import com.freelance.alerts.dto.MediaUploadRequestDTO;
 import com.freelance.alerts.dto.MediaUploadResponseDTO;
 import com.freelance.alerts.media.AlertMediaService;
 import com.freelance.rest.app.endpoint.AbstractEndpoint;
+import com.freelance.rest.app.endpoint.annotation.Anonymous;
 import com.freelance.rest.app.endpoint.annotation.Authorization;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -45,8 +46,11 @@ public class AlertMediaEndpoint extends AbstractEndpoint {
 
     @GET
     @Path("/{mediaId}")
+    @Anonymous
     public Response getMedia(@PathParam("mediaId") String mediaId) {
         MediaDownloadResponseDTO item = mediaService.getMedia(mediaId);
-        return Response.ok(item.data(), item.mimeType()).build();
+        return Response.ok(item.data(), item.mimeType())
+                .header("Content-Disposition", "inline; filename=\"" + item.fileName() + "\"")
+                .build();
     }
 }

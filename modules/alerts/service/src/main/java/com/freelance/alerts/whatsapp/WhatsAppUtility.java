@@ -170,14 +170,30 @@ public final class WhatsAppUtility {
     }
 
     /**
-     * Extends or initiates a sliding human support session for a contact.
+     * Initiates a 24-hour human support session for a contact if not already active.
+     * Subsequent messages from the customer do not extend or reset the timer.
      */
     public static void extendHumanSession(UserContactEntity contact, UserContactRepository contactRepo, Duration duration) {
         if (contact == null || contactRepo == null) return;
+        if (contact.isHumanSessionActive()) {
+            logger.debug("[WhatsAppUtility] Human session already active for contact {} until {}; not extending.",
+                    contact.getContactValue(), contact.getHumanSessionExpiresAt());
+            return;
+        }
         contact.setHumanSessionExpiresAt(Instant.now().plus(duration));
         contactRepo.merge(contact);
-        logger.info("[WhatsAppUtility] Extended human session for contact {} until {}",
+        logger.info("[WhatsAppUtility] Initiated human session for contact {} until {}",
                 contact.getContactValue(), contact.getHumanSessionExpiresAt());
+    }
+
+    /**
+     * Explicitly terminates an active human support session on query resolution.
+     */
+    public static void closeHumanSession(UserContactEntity contact, UserContactRepository contactRepo) {
+        if (contact == null || contactRepo == null) return;
+        contact.setHumanSessionExpiresAt(null);
+        contactRepo.merge(contact);
+        logger.info("[WhatsAppUtility] Closed human session for contact {}", contact.getContactValue());
     }
 
     // =========================================================================

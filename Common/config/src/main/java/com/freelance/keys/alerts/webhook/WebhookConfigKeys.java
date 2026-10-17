@@ -58,6 +58,34 @@ public enum WebhookConfigKeys implements IConfig {
             "START, UNSTOP, SUBSCRIBE, OPTIN, OPT IN, OPT-IN, RESUME, CONTINUE, RESTART, YES, ON",
             "Comma-separated list of inbound WhatsApp keywords that trigger user opt-in",
             "^.+$"
+    ),
+
+    WHATSAPP_PROVIDER(
+            "alerts.whatsapp.provider",
+            "MSG91",
+            "Active WhatsApp provider (MSG91 or META)",
+            "^(MSG91|META)$"
+    ),
+
+    MSG91_AUTH_KEY(
+            "alerts.msg91.authKey",
+            "default_placeholder_msg91_authkey",
+            "MSG91 API Authentication Key",
+            "^.+$"
+    ),
+
+    MSG91_INTEGRATED_NUMBER(
+            "alerts.msg91.integratedNumber",
+            "919876543210",
+            "MSG91 Registered WhatsApp Sender Number (with country code)",
+            "^[0-9]+$"
+    ),
+
+    MSG91_API_BASE_URL(
+            "alerts.msg91.apiBaseUrl",
+            "https://api.msg91.com/api/v5/whatsapp",
+            "Base URL for MSG91 WhatsApp REST API",
+            "^https?://.+$"
     );
 
     private final String key;

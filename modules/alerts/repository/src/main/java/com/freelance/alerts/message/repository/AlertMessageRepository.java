@@ -30,15 +30,17 @@ public class AlertMessageRepository extends AbstractRepository<AlertMessageEntit
 
     public Optional<AlertMessageEntity> findLatestByUserId(UUID userId) {
         if (userId == null) return Optional.empty();
-        return executeSingleResultSearch("AlertMessage.findLatestByUserId", Map.of("userId", userId));
+        return executeListResultSearch("AlertMessage.findLatestByUserId", Map.of("userId", userId))
+                .stream()
+                .findFirst();
     }
 
     public Optional<AlertMessageEntity> findLatestByUserAndChannel(UUID userId, AlertChannel channel) {
         if (userId == null || channel == null) return Optional.empty();
-        return executeSingleResultSearch("AlertMessage.findLatestByUserAndChannel", Map.of(
+        return executeListResultSearch("AlertMessage.findLatestByUserAndChannel", Map.of(
                 "userId", userId,
                 "channel", channel
-        ));
+        )).stream().findFirst();
     }
 
     public List<AlertMessageEntity> findUnreadByUserAndChannel(UUID userId, AlertChannel channel) {
@@ -52,5 +54,13 @@ public class AlertMessageRepository extends AbstractRepository<AlertMessageEntit
     public List<AlertMessageEntity> findUnreadByUserId(UUID userId) {
         if (userId == null) return List.of();
         return executeListResultSearch("AlertMessage.findUnreadByUserId", Map.of("userId", userId));
+    }
+
+    public List<AlertMessageEntity> findAllByChannel(AlertChannel channel) {
+        if (channel == null) return List.of();
+        return em().createQuery(
+                "SELECT m FROM AlertMessageEntity m WHERE m.channel = :channel ORDER BY m.timestamp ASC, m.createdDate ASC",
+                AlertMessageEntity.class
+        ).setParameter("channel", channel).getResultList();
     }
 }

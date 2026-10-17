@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS FL_ALERT_TEMPLATE
     required_attributes TEXT,
     meta_template_id    VARCHAR(255),
     priority            VARCHAR(20),
+    dispatch_scope      VARCHAR(20)  NOT NULL DEFAULT 'BOTH',
     created_by          UUID         NOT NULL,
     created_date        TIMESTAMPTZ  NOT NULL,
     last_updated_by     UUID,
@@ -22,3 +23,4 @@ CREATE TABLE IF NOT EXISTS FL_ALERT_TEMPLATE
 
 CREATE INDEX IF NOT EXISTS idx_alert_template_key ON FL_ALERT_TEMPLATE (template_key);
 CREATE INDEX IF NOT EXISTS idx_alert_template_status ON FL_ALERT_TEMPLATE (status);
+CREATE INDEX IF NOT EXISTS idx_alert_template_dispatch_scope ON FL_ALERT_TEMPLATE (dispatch_scope);

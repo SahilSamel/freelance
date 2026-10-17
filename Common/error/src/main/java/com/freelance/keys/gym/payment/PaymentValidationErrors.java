@@ -39,6 +39,18 @@ public enum PaymentValidationErrors implements IError {
             "Payment installment schedule cannot be empty when payments are specified.",
             "Empty payment list validation failed",
             400
+    ),
+    PAYMENT_ID_REQUIRED(
+            "FL_9107",
+            "Payment ID is required.",
+            "Payment ID validation failed",
+            400
+    ),
+    PAID_DATE_REQUIRED(
+            "FL_9108",
+            "Paid date is required.",
+            "Paid date validation failed",
+            400
     );
 
     private static final String CATEGORY = "gym.payment.validation";

@@ -31,6 +31,7 @@ class ConfigurationEngineTest {
         STR_CONFIG("test.str", "default_str", "Test string config"),
         INT_CONFIG("test.int", "10", "Test int config"),
         LONG_CONFIG("test.long", "3600", "Test long config"),
+        DOUBLE_CONFIG("test.double", "25.5", "Test double config"),
         BOOL_CONFIG("test.bool", "true", "Test bool config"),
         ENUM_CONFIG("test.enum", "BETA", "Test enum config");
 
@@ -168,6 +169,39 @@ class ConfigurationEngineTest {
         void fallbackOnInvalidNumber() {
             CacheManager.put("cache_SystemConfig", TestConfigs.LONG_CONFIG.getKey(), "invalid-long");
             assertEquals(3600L, ConfigurationEngine.getLong(TestConfigs.LONG_CONFIG));
+        }
+    }
+
+    // ── getDouble(IConfig) ───────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("getDouble(IConfig)")
+    class GetDoubleTests {
+
+        @Test
+        @DisplayName("parses cached double value when valid")
+        void parsesCachedDouble() {
+            CacheManager.put("cache_SystemConfig", TestConfigs.DOUBLE_CONFIG.getKey(), "50.75");
+            assertEquals(50.75, ConfigurationEngine.getDouble(TestConfigs.DOUBLE_CONFIG));
+        }
+
+        @Test
+        @DisplayName("falls back to default double when cache is empty")
+        void fallbackOnEmptyCache() {
+            assertEquals(25.5, ConfigurationEngine.getDouble(TestConfigs.DOUBLE_CONFIG));
+        }
+
+        @Test
+        @DisplayName("falls back to default double when cached value is non-numeric")
+        void fallbackOnInvalidNumber() {
+            CacheManager.put("cache_SystemConfig", TestConfigs.DOUBLE_CONFIG.getKey(), "not-a-double");
+            assertEquals(25.5, ConfigurationEngine.getDouble(TestConfigs.DOUBLE_CONFIG));
+        }
+
+        @Test
+        @DisplayName("returns fallback when config is null")
+        void returnsFallbackWhenNull() {
+            assertEquals(12.34, ConfigurationEngine.getDouble(null, 12.34));
         }
     }
 

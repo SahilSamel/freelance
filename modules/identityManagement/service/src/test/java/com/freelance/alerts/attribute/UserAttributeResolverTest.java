@@ -40,8 +40,8 @@ class UserAttributeResolverTest {
     @DisplayName("getSupportedAttributes returns valid attribute keys")
     void testGetSupportedAttributes() {
         Set<String> supported = resolver.getSupportedAttributes();
-        assertTrue(supported.contains("USER.username"));
-        assertTrue(supported.contains("USER.user_id"));
+        assertFalse(supported.contains("USER.username"));
+        assertFalse(supported.contains("USER.user_id"));
         assertTrue(supported.contains("USER.first_name"));
         assertTrue(supported.contains("USER.name"));
     }
@@ -49,34 +49,32 @@ class UserAttributeResolverTest {
     @Test
     @DisplayName("getAttributeDescription returns descriptions for known keys")
     void testGetAttributeDescription() {
-        assertNotNull(resolver.getAttributeDescription("USER.username"));
-        assertNotNull(resolver.getAttributeDescription("USER.user_id"));
+        assertNotNull(resolver.getAttributeDescription("USER.first_name"));
+        assertNotNull(resolver.getAttributeDescription("USER.name"));
         assertNull(resolver.getAttributeDescription("UNKNOWN.key"));
     }
 
     @Test
     @DisplayName("resolve with null or empty parameters returns empty map")
     void testResolveEmptyParameters() {
-        assertTrue(resolver.resolve(null, Set.of("USER.username")).isEmpty());
+        assertTrue(resolver.resolve(null, Set.of("USER.first_name")).isEmpty());
         assertTrue(resolver.resolve(UUID.randomUUID(), null).isEmpty());
         assertTrue(resolver.resolve(UUID.randomUUID(), Collections.emptySet()).isEmpty());
     }
 
     @Test
-    @DisplayName("resolve resolves USER.username, USER.first_name, and USER.user_id")
+    @DisplayName("resolve resolves USER.first_name and USER.name")
     void testResolveUserAttributes() {
         UUID userId = UUID.randomUUID();
         User user = new User("John Doe", "HashPassword123");
         user.setId(userId);
         userRepository.persist(user);
 
-        Set<String> requested = new HashSet<>(Arrays.asList("USER.username", "USER.first_name", "USER.name", "USER.user_id", "OTHER.ignored", null));
+        Set<String> requested = new HashSet<>(Arrays.asList("USER.first_name", "USER.name", "OTHER.ignored", null));
         Map<String, String> resolved = resolver.resolve(userId, requested);
 
-        assertEquals("John Doe", resolved.get("USER.username"));
         assertEquals("John", resolved.get("USER.first_name"));
         assertEquals("John Doe", resolved.get("USER.name"));
-        assertEquals(userId.toString(), resolved.get("USER.user_id"));
         assertNull(resolved.get("OTHER.ignored"));
     }
 
@@ -96,8 +94,23 @@ class UserAttributeResolverTest {
     @DisplayName("resolve when user not found in repository returns empty map")
     void testResolveUserNotFound() {
         UUID userId = UUID.randomUUID();
-        Map<String, String> resolved = resolver.resolve(userId, Set.of("USER.username", "USER.user_id"));
+        Map<String, String> resolved = resolver.resolve(userId, Set.of("USER.first_name", "USER.name"));
         assertTrue(resolved.isEmpty());
+    }
+
+    @Test
+    @DisplayName("resolve with member username starting with mem_ resolves first_name and name from User entity fields")
+    void testMemberUserWithDistinctFirstNameAndLastName() {
+        UUID userId = UUID.randomUUID();
+        User user = new User("mem_8693850666", "HashPassword123", "Tanisha", "Sharma");
+        user.setId(userId);
+        userRepository.persist(user);
+
+        Set<String> requested = Set.of("USER.first_name", "USER.name");
+        Map<String, String> resolved = resolver.resolve(userId, requested);
+
+        assertEquals("Tanisha", resolved.get("USER.first_name"));
+        assertEquals("Tanisha Sharma", resolved.get("USER.name"));
     }
 
     @Test

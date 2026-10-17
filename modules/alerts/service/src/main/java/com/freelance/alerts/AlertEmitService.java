@@ -38,7 +38,16 @@ public class AlertEmitService {
         AlertConsumer destination = AlertConsumer.fromChannel(template.getChannel());
         List<AlertEventPayloadDTO> payloads = new ArrayList<>(request.userIds().size());
         for (UUID userId : request.userIds()) {
-            payloads.add(new AlertEventPayloadDTO(template.getId(), userId));
+            payloads.add(new AlertEventPayloadDTO(
+                    template.getId(),
+                    userId,
+                    request.rawContent(),
+                    null,
+                    template.getMediaUrl(),
+                    null,
+                    template.getMediaType(),
+                    request.customParameters()
+            ));
         }
         EventManagementEngine.emitBatch(destination, payloads, priority);
     }

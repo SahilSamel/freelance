@@ -15,6 +15,7 @@ public record MemberRecordDTO(
         String lastName,
         PhoneNumber phoneNumber,
         LocalDateTime createdDate,
+        List<UserPlanResponseDTO> plans,
         List<PaymentResponseDTO> payments
 ) implements Serializable {
 }

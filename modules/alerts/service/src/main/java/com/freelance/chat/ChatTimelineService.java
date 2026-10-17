@@ -56,8 +56,55 @@ public class ChatTimelineService {
                 .map(UserContactEntity::isHumanSessionActive)
                 .orElse(false);
 
+        List<ChatMessageDTO> dtos = mapEntitiesToDTOs(entities, request.limit());
+        return new ChatTimelineResponseDTO(request.userId(), isHumanRequired, dtos);
+    }
+
+    public List<ChatTimelineResponseDTO> getActiveConversations() {
+        return getActiveConversations(AlertChannel.WHATSAPP);
+    }
+
+    public List<ChatTimelineResponseDTO> getActiveConversations(AlertChannel channel) {
+        AlertChannel targetChannel = channel != null ? channel : AlertChannel.WHATSAPP;
+        List<AlertMessageEntity> allMessages = messageRepository.findAllByChannel(targetChannel);
+
+        Map<UUID, List<AlertMessageEntity>> messagesByUser = new LinkedHashMap<>();
+        for (AlertMessageEntity m : allMessages) {
+            if (m.getUserId() != null) {
+                messagesByUser.computeIfAbsent(m.getUserId(), k -> new ArrayList<>()).add(m);
+            }
+        }
+
+        List<UserContactEntity> contacts = contactRepository.findAllContacts();
+        Map<UUID, Boolean> humanSessions = new HashMap<>();
+        for (UserContactEntity c : contacts) {
+            if (c.getUserId() != null && c.getChannel() == targetChannel) {
+                humanSessions.put(c.getUserId(), c.isHumanSessionActive());
+            }
+        }
+
+        Set<UUID> allUserIds = new LinkedHashSet<>();
+        allUserIds.addAll(messagesByUser.keySet());
+        for (Map.Entry<UUID, Boolean> entry : humanSessions.entrySet()) {
+            if (Boolean.TRUE.equals(entry.getValue())) {
+                allUserIds.add(entry.getKey());
+            }
+        }
+
+        List<ChatTimelineResponseDTO> result = new ArrayList<>();
+        for (UUID userId : allUserIds) {
+            List<AlertMessageEntity> entities = messagesByUser.getOrDefault(userId, Collections.emptyList());
+            boolean isHumanRequired = humanSessions.getOrDefault(userId, false);
+            List<ChatMessageDTO> dtos = mapEntitiesToDTOs(entities, null);
+            result.add(new ChatTimelineResponseDTO(userId, isHumanRequired, dtos));
+        }
+
+        return result;
+    }
+
+    private List<ChatMessageDTO> mapEntitiesToDTOs(List<AlertMessageEntity> entities, Integer limit) {
         List<ChatMessageDTO> dtos = new ArrayList<>();
-        int max = (request.limit() != null && request.limit() > 0) ? request.limit() : Integer.MAX_VALUE;
+        int max = (limit != null && limit > 0) ? limit : Integer.MAX_VALUE;
         for (int i = 0; i < entities.size() && i < max; i++) {
             AlertMessageEntity e = entities.get(i);
             List<TemplateButtonDTO> buttons = null;
@@ -95,8 +142,7 @@ public class ChatTimelineService {
                     e.getMediaType()
             ));
         }
-
-        return new ChatTimelineResponseDTO(request.userId(), isHumanRequired, dtos);
+        return dtos;
     }
 
     public ChatMessageDTO sendStaffReply(AdminChatReplyRequestDTO request) {
@@ -107,11 +153,8 @@ public class ChatTimelineService {
                 ? request.channel()
                 : ConfigurationEngine.getEnum(AlertEmitConfigKeys.DEFAULT_ALERT_CHANNEL, AlertChannel.class, AlertChannel.WHATSAPP);
 
-        // Clear active human support session on contact since staff has replied
-        contactRepository.findByUserAndChannel(userId, channel).ifPresent(contact -> {
-            contact.setHumanSessionExpiresAt(null);
-            contactRepository.merge(contact);
-        });
+        // Staff replies do NOT clear the human support session; the live session remains active
+        // so staff and customer can continue interacting until explicitly resolved.
 
         UUID messageId = UUID.randomUUID();
         String msgType = (request.mediaType() != null && !request.mediaType().isBlank())
@@ -148,5 +191,21 @@ public class ChatTimelineService {
                 request.mediaId(),
                 msgType
         );
+    }
+
+    /**
+     * Resolves and terminates an active human support session for a user.
+     */
+    public boolean resolveChatSession(UUID userId, AlertChannel channel) {
+        if (userId == null) return false;
+        AlertChannel targetChannel = channel != null ? channel : AlertChannel.WHATSAPP;
+        Optional<UserContactEntity> contactOpt = contactRepository.findByUserAndChannel(userId, targetChannel);
+        if (contactOpt.isPresent()) {
+            UserContactEntity contact = contactOpt.get();
+            contact.setHumanSessionExpiresAt(null);
+            contactRepository.merge(contact);
+            return true;
+        }
+        return false;
     }
 }

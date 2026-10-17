@@ -2,6 +2,7 @@ package com.freelance.alerts.template.entity;
 
 import com.freelance.alerts.AlertChannel;
 import com.freelance.alerts.TemplateStatus;
+import com.freelance.alerts.template.DispatchScope;
 import com.freelance.rest.app.repository.entity.AbstractAuditEntity;
 import jakarta.persistence.*;
 import java.util.ArrayList;
@@ -79,6 +80,10 @@ public class AlertTemplateEntity extends AbstractAuditEntity {
     @Column(name = "priority", length = 20)
     private String priority;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "dispatch_scope", nullable = false, length = 20)
+    private DispatchScope dispatchScope = DispatchScope.BOTH;
+
     @OneToMany(mappedBy = "template", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<AlertButtonEntity> buttons = new ArrayList<>();
 
@@ -99,7 +104,7 @@ public class AlertTemplateEntity extends AbstractAuditEntity {
             String requiredAttributes,
             String metaTemplateId
     ) {
-        this(id, templateKey, name, category, language, content, mediaUrl, mediaType, channel, status, isSystem, requiredAttributes, metaTemplateId, null);
+        this(id, templateKey, name, category, language, content, mediaUrl, mediaType, channel, status, isSystem, requiredAttributes, metaTemplateId, null, DispatchScope.BOTH);
     }
 
     public AlertTemplateEntity(
@@ -118,6 +123,26 @@ public class AlertTemplateEntity extends AbstractAuditEntity {
             String metaTemplateId,
             String priority
     ) {
+        this(id, templateKey, name, category, language, content, mediaUrl, mediaType, channel, status, isSystem, requiredAttributes, metaTemplateId, priority, DispatchScope.BOTH);
+    }
+
+    public AlertTemplateEntity(
+            UUID id,
+            String templateKey,
+            String name,
+            String category,
+            String language,
+            String content,
+            String mediaUrl,
+            String mediaType,
+            AlertChannel channel,
+            TemplateStatus status,
+            boolean isSystem,
+            String requiredAttributes,
+            String metaTemplateId,
+            String priority,
+            DispatchScope dispatchScope
+    ) {
         this.id = id;
         this.templateKey = templateKey;
         this.name = name;
@@ -132,6 +157,7 @@ public class AlertTemplateEntity extends AbstractAuditEntity {
         this.requiredAttributes = requiredAttributes;
         this.metaTemplateId = metaTemplateId;
         this.priority = priority;
+        this.dispatchScope = dispatchScope != null ? dispatchScope : DispatchScope.BOTH;
     }
 
     public UUID getId() { return id; }
@@ -162,6 +188,8 @@ public class AlertTemplateEntity extends AbstractAuditEntity {
     public void setMetaTemplateId(String metaTemplateId) { this.metaTemplateId = metaTemplateId; }
     public String getPriority() { return priority; }
     public void setPriority(String priority) { this.priority = priority; }
+    public DispatchScope getDispatchScope() { return dispatchScope; }
+    public void setDispatchScope(DispatchScope dispatchScope) { this.dispatchScope = dispatchScope != null ? dispatchScope : DispatchScope.BOTH; }
     public List<AlertButtonEntity> getButtons() { return buttons; }
     public void setButtons(List<AlertButtonEntity> buttons) { this.buttons = buttons; }
 }

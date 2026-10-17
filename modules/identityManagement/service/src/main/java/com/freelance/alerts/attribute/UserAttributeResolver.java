@@ -18,8 +18,6 @@ public class UserAttributeResolver implements IDomainAttributeResolver {
     }
 
     private static final Map<String, String> ATTRIBUTE_DESCRIPTIONS = Map.of(
-            "USER.user_id", "Unique identifier (UUID) of the recipient user account",
-            "USER.username", "Registered unique username/handle of the recipient user",
             "USER.first_name", "First name of the recipient user",
             "USER.name", "Display name of the recipient user"
     );
@@ -45,33 +43,55 @@ public class UserAttributeResolver implements IDomainAttributeResolver {
             return Collections.emptyMap();
         }
 
-        Map<String, String> map = new HashMap<>();
         User user = userRepository.get(userId);
+        if (user == null) {
+            return Collections.emptyMap();
+        }
 
+        String firstName = resolveFirstName(user);
+        String fullName = resolveFullName(user);
+
+        Map<String, String> map = new HashMap<>();
         for (String attr : requestedAttributes) {
             if (attr == null) continue;
             String normalized = attr.trim().toUpperCase();
-            if (normalized.startsWith("USER.")) {
-                String field = normalized.substring(5);
-                if ("USERNAME".equals(field) || "FIRST_NAME".equals(field) || "FIRSTNAME".equals(field) || "NAME".equals(field)) {
-                    if (user != null && user.getUsername() != null) {
-                        String val = user.getUsername();
-                        if ("FIRST_NAME".equals(field) || "FIRSTNAME".equals(field)) {
-                            int sp = val.indexOf(' ');
-                            if (sp > 0) {
-                                val = val.substring(0, sp);
-                            }
-                        }
-                        map.put(attr, val);
-                    }
-                } else if ("USER_ID".equals(field)) {
-                    if (user != null && user.getId() != null) {
-                        map.put(attr, user.getId().toString());
-                    }
-                }
+            switch (normalized) {
+                case "USER.FIRST_NAME", "USER.FIRSTNAME" -> map.put(attr, firstName);
+                case "USER.NAME" -> map.put(attr, fullName);
+                default -> {}
             }
         }
 
         return map;
+    }
+
+    private String resolveFirstName(User user) {
+        if (user.getFirstName() != null && !user.getFirstName().isBlank()) {
+            return user.getFirstName().trim();
+        }
+        if (user.getUsername() != null && !user.getUsername().isBlank() && !user.getUsername().startsWith("mem_")) {
+            String u = user.getUsername().trim();
+            int sp = u.indexOf(' ');
+            return sp > 0 ? u.substring(0, sp) : u;
+        }
+        return "Member";
+    }
+
+    private String resolveFullName(User user) {
+        String fn = user.getFirstName() != null ? user.getFirstName().trim() : "";
+        String ln = user.getLastName() != null ? user.getLastName().trim() : "";
+        if (!fn.isEmpty() && !ln.isEmpty()) {
+            return fn + " " + ln;
+        }
+        if (!fn.isEmpty()) {
+            return fn;
+        }
+        if (!ln.isEmpty()) {
+            return ln;
+        }
+        if (user.getUsername() != null && !user.getUsername().isBlank() && !user.getUsername().startsWith("mem_")) {
+            return user.getUsername().trim();
+        }
+        return "Member";
     }
 }

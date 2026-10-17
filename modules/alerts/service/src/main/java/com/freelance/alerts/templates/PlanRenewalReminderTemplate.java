@@ -4,21 +4,23 @@ import com.freelance.alerts.AlertChannel;
 import com.freelance.alerts.TemplateCategory;
 import com.freelance.alerts.template.ITemplate;
 import com.freelance.alerts.template.ITemplateButton;
+import com.freelance.alerts.template.TemplateButtonRecord;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class HelloWorldTemplate implements ITemplate {
+public class PlanRenewalReminderTemplate implements ITemplate {
+
+    public static final String TEMPLATE_KEY = "plan_renewal_reminder";
 
     @Override
     public String getTemplateKey() {
-        return "hello_world";
+        return TEMPLATE_KEY;
     }
 
     @Override
     public String getName() {
-        return "Hello World";
+        return "Plan Expiry Reminder";
     }
 
     @Override
@@ -33,7 +35,11 @@ public class HelloWorldTemplate implements ITemplate {
 
     @Override
     public String getContent() {
-        return "Hello World";
+        return "Hey {{USER.first_name}}, a quick heads-up from *{{GYM.name}}*! ⏳\n\n"
+                + "Your current membership is coming up for renewal soon:\n\n"
+                + "🏋️ *Plan:* {{PLAN.name}}\n"
+                + "📅 *Expires on:* {{PLAN.expiry_date}} ({{PLAN.days_left}} days left)\n\n"
+                + "Drop by the front desk or tap below to check renewal options and keep your workout streak going without a break!";
     }
 
     @Override
@@ -53,11 +59,13 @@ public class HelloWorldTemplate implements ITemplate {
 
     @Override
     public Set<String> getRequiredAttributes() {
-        return Collections.emptySet();
+        return Set.of("USER.first_name", "GYM.name", "PLAN.name", "PLAN.expiry_date", "PLAN.days_left");
     }
 
     @Override
     public List<ITemplateButton> getButtons() {
-        return Collections.emptyList();
+        return List.of(
+                TemplateButtonRecord.humanSupport("Chat with Reception", 1)
+        );
     }
 }

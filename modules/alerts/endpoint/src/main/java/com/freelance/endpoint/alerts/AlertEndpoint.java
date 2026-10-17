@@ -7,11 +7,14 @@ import com.freelance.chat.ChatTimelineService;
 import com.freelance.rest.app.endpoint.AbstractEndpoint;
 import com.freelance.rest.app.endpoint.annotation.Authorization;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
 
 @Path("/alerts")
 @Produces(MediaType.APPLICATION_JSON)
@@ -30,6 +33,20 @@ public class AlertEndpoint extends AbstractEndpoint {
         AlertEmitService emitService = new AlertEmitService();
         emitService.emitBatchAlert(request);
         return buildResponse(null, 202);
+    }
+
+    @GET
+    @Path("/chat/conversations")
+    @Authorization(
+            key = "ALERT_CHAT_READ",
+            name = "Read Chat Conversations",
+            description = "Retrieves all active chat conversations and their latest messages",
+            group = "Alerts.Chat"
+    )
+    public Response getChatConversations() {
+        ChatTimelineService timelineService = new ChatTimelineService();
+        List<ChatTimelineResponseDTO> response = timelineService.getActiveConversations();
+        return buildResponse(response, 200);
     }
 
     @POST
@@ -51,13 +68,27 @@ public class AlertEndpoint extends AbstractEndpoint {
     @Authorization(
             key = "ALERT_CHAT_REPLY",
             name = "Staff Chat Reply",
-            description = "Sends a human staff reply to a user chat, clearing the human attention flag",
+            description = "Sends a human staff reply to a user chat",
             group = "Alerts.Chat"
     )
     public Response sendChatReply(AdminChatReplyRequestDTO request) {
         ChatTimelineService timelineService = new ChatTimelineService();
         ChatMessageDTO response = timelineService.sendStaffReply(request);
         return buildResponse(response, 200);
+    }
+
+    @POST
+    @Path("/chat/resolve")
+    @Authorization(
+            key = "ALERT_CHAT_REPLY",
+            name = "Resolve Chat Session",
+            description = "Closes and resolves an active human support session for a user",
+            group = "Alerts.Chat"
+    )
+    public Response resolveChatSession(ChatTimelineRequestDTO request) {
+        ChatTimelineService timelineService = new ChatTimelineService();
+        boolean resolved = timelineService.resolveChatSession(request != null ? request.userId() : null, request != null ? request.channel() : null);
+        return buildResponse(Map.of("resolved", resolved), 200);
     }
 
     @POST

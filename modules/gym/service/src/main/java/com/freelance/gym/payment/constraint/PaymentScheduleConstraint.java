@@ -5,6 +5,7 @@ import com.freelance.gym.payment.repository.PaymentRepository;
 import com.freelance.keys.gym.payment.PaymentConstraintErrors;
 import com.freelance.rest.app.service.exception.constraint.AbstractConstraint;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +28,10 @@ public class PaymentScheduleConstraint extends AbstractConstraint {
 
         List<PaymentEntity> payments = paymentRepository.findByIds(paymentIdsToModify);
         for (PaymentEntity p : payments) {
-            if (p.getTransactionId() != null && !p.getTransactionId().isBlank()) {
+            boolean isPaid = (p.getPaidAmount() != null && p.getPaidAmount().compareTo(BigDecimal.ZERO) > 0)
+                    || (p.getTransactionId() != null && !p.getTransactionId().isBlank())
+                    || (p.getPaidDate() != null);
+            if (isPaid) {
                 raiseConstraintError(PaymentConstraintErrors.PAID_PAYMENT_CANNOT_BE_MODIFIED);
             }
         }

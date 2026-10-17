@@ -5,6 +5,7 @@ import com.freelance.authorization.repository.AuthorizationRepository;
 import com.freelance.authorization.seeder.AuthorizationSeeder;
 import com.freelance.config.DatabaseConfig;
 import com.freelance.config.DatabaseConfigHolder;
+import com.freelance.flyway.FlywayMigrationRunner;
 import com.freelance.configuration.error.ErrorConfigurationService;
 import com.freelance.configuration.seeder.ConfigurationSeeder;
 import com.freelance.configuration.system.SystemConfigurationService;
@@ -160,18 +161,26 @@ public class ControlPlaneBootstrap {
             new RoleAuthorizationService().preloadRoleAuthorizationCacheEntries();
         }
 
-        // 10. Synchronize configurations and authorizations in the database for all active customer tenants
+        // 10. Synchronize migrations, configurations, and authorizations in the database for all active customer tenants
         for (TenantEntity tenant : allTenants) {
             if (controlTenant.equalsIgnoreCase(tenant.getTenantId())) {
                 continue;
             }
+            try {
+                DatabaseConfig effectiveDbConfig = databaseConfig != null ? databaseConfig : DatabaseConfigHolder.get();
+                new FlywayMigrationRunner().migrate(effectiveDbConfig, tenant.getTenantId());
+            } catch (Exception e) {
+                logger.warn("[ControlPlaneBootstrap] Failed to migrate tenant '{}': {}", tenant.getTenantId(), e.getMessage());
+            }
+
             try (Transaction tenantTx = Transaction.start(tenant.getTenantId())) {
                 Transaction.getRequestContext().withUserId(SystemHardcoding.SYSTEM_USER_ID.asUuid());
 
                 new ConfigurationSeeder().seed();
                 new AuthorizationSeeder().seed();
+                com.freelance.template.seeder.AlertsBootstrap.init();
 
-                logger.info("[ControlPlaneBootstrap] Synchronized configurations & authorizations for tenant '{}'.", tenant.getTenantId());
+                logger.info("[ControlPlaneBootstrap] Synchronized configurations, authorizations & alerts for tenant '{}'.", tenant.getTenantId());
             } catch (Exception e) {
                 logger.warn("[ControlPlaneBootstrap] Failed to sync tenant '{}': {}", tenant.getTenantId(), e.getMessage());
             }

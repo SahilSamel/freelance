@@ -36,4 +36,21 @@ class TokenBucketRateLimiterTest {
             limiter.acquire();
         }
     }
+
+    @Test
+    @DisplayName("Dynamically updating rate limit modifies token acquisition throughput immediately")
+    void testDynamicRateUpdate() throws InterruptedException {
+        // Start throttled at 2 tokens/sec
+        TokenBucketRateLimiter limiter = new TokenBucketRateLimiter(2.0, 1.0);
+        assertEquals(2.0, limiter.getRatePerSecond());
+
+        // Update dynamically to unlimited (0.0)
+        limiter.setRatePerSecond(0.0);
+        assertEquals(0.0, limiter.getRatePerSecond());
+
+        // Acquires should now be instantaneous
+        for (int i = 0; i < 50; i++) {
+            limiter.acquire();
+        }
+    }
 }

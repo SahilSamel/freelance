@@ -8,6 +8,8 @@ gradle
 app.log
 logs/
 keystore.jks
+storage/
+Launcher/storage/
 
 ### IntelliJ IDEA ###
 .idea

@@ -490,4 +490,119 @@ public class ValidationTest {
                 )
         ));
     }
+
+    // ==========================================
+    // PaymentCollectValidation Tests
+    // ==========================================
+    @Test
+    void testPaymentCollectValidation() {
+        com.freelance.gym.payment.validation.PaymentCollectValidation validation =
+                new com.freelance.gym.payment.validation.PaymentCollectValidation();
+
+        // Null request
+        assertThrows(ValidationException.class, () -> validation.validateRequest(null));
+        resetContext();
+
+        // Null paymentId
+        assertThrows(ValidationException.class, () -> validation.validateRequest(
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        null,
+                        BigDecimal.valueOf(100),
+                        LocalDate.now(),
+                        com.freelance.gym.enums.PaymentMethod.UPI,
+                        "TXN1",
+                        "Note"
+                )
+        ));
+        resetContext();
+
+        // Null or non-positive paidAmount
+        assertThrows(ValidationException.class, () -> validation.validateRequest(
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        UUID.randomUUID(),
+                        null,
+                        LocalDate.now(),
+                        com.freelance.gym.enums.PaymentMethod.UPI,
+                        "TXN1",
+                        "Note"
+                )
+        ));
+        resetContext();
+
+        assertThrows(ValidationException.class, () -> validation.validateRequest(
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        UUID.randomUUID(),
+                        BigDecimal.ZERO,
+                        LocalDate.now(),
+                        com.freelance.gym.enums.PaymentMethod.UPI,
+                        "TXN1",
+                        "Note"
+                )
+        ));
+        resetContext();
+
+        // Null paidDate
+        assertThrows(ValidationException.class, () -> validation.validateRequest(
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        UUID.randomUUID(),
+                        BigDecimal.valueOf(100),
+                        null,
+                        com.freelance.gym.enums.PaymentMethod.UPI,
+                        "TXN1",
+                        "Note"
+                )
+        ));
+        resetContext();
+
+        // Null or NONE paymentMethod
+        assertThrows(ValidationException.class, () -> validation.validateRequest(
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        UUID.randomUUID(),
+                        BigDecimal.valueOf(100),
+                        LocalDate.now(),
+                        null,
+                        "TXN1",
+                        "Note"
+                )
+        ));
+        resetContext();
+
+        assertThrows(ValidationException.class, () -> validation.validateRequest(
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        UUID.randomUUID(),
+                        BigDecimal.valueOf(100),
+                        LocalDate.now(),
+                        com.freelance.gym.enums.PaymentMethod.NONE,
+                        "TXN1",
+                        "Note"
+                )
+        ));
+        resetContext();
+
+        // TransactionId too long
+        String longTxn = "T".repeat(101);
+        assertThrows(ValidationException.class, () -> validation.validateRequest(
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        UUID.randomUUID(),
+                        BigDecimal.valueOf(100),
+                        LocalDate.now(),
+                        com.freelance.gym.enums.PaymentMethod.UPI,
+                        longTxn,
+                        "Note"
+                )
+        ));
+        resetContext();
+
+        // Valid request
+        assertDoesNotThrow(() -> validation.validateRequest(
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        UUID.randomUUID(),
+                        BigDecimal.valueOf(100),
+                        LocalDate.now(),
+                        com.freelance.gym.enums.PaymentMethod.UPI,
+                        "TXN1",
+                        "Note"
+                )
+        ));
+    }
 }

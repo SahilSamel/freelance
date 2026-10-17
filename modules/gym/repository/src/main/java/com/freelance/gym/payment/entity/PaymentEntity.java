@@ -21,7 +21,7 @@ import java.util.UUID;
         ),
         @NamedQuery(
                 name = PaymentEntity.QUERY_DELETE_PENDING_BY_IDS,
-                query = "DELETE FROM PaymentEntity p WHERE p.id IN :ids AND p.transactionId IS NULL"
+                query = "DELETE FROM PaymentEntity p WHERE p.id IN :ids AND (p.paidAmount IS NULL OR p.paidAmount = 0)"
         )
 })
 public class PaymentEntity extends AbstractAuditEntity {

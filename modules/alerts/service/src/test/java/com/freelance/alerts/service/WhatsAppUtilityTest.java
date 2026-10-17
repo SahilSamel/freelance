@@ -330,10 +330,25 @@ class WhatsAppUtilityTest {
         assertTrue(merged[0]);
         assertNotNull(contact.getHumanSessionExpiresAt());
         assertTrue(contact.isHumanSessionActive());
+        java.time.Instant initialExpiry = contact.getHumanSessionExpiresAt();
+
+        // Subsequent call does NOT extend or reset the timer
+        merged[0] = false;
+        WhatsAppUtility.extendHumanSession(contact, contactRepo, java.time.Duration.ofHours(48));
+        assertFalse(merged[0], "Should not merge or update if human session is already active");
+        assertEquals(initialExpiry, contact.getHumanSessionExpiresAt());
+
+        // closeHumanSession explicitly clears session
+        WhatsAppUtility.closeHumanSession(contact, contactRepo);
+        assertTrue(merged[0]);
+        assertNull(contact.getHumanSessionExpiresAt());
+        assertFalse(contact.isHumanSessionActive());
 
         // Null safe
         assertDoesNotThrow(() -> WhatsAppUtility.extendHumanSession(null, contactRepo, java.time.Duration.ofHours(1)));
         assertDoesNotThrow(() -> WhatsAppUtility.extendHumanSession(contact, null, java.time.Duration.ofHours(1)));
+        assertDoesNotThrow(() -> WhatsAppUtility.closeHumanSession(null, contactRepo));
+        assertDoesNotThrow(() -> WhatsAppUtility.closeHumanSession(contact, null));
     }
 
     @Test

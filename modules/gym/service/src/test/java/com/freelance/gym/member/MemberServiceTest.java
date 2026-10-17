@@ -3,6 +3,9 @@ package com.freelance.gym.member;
 import com.freelance.alerts.AlertChannel;
 import com.freelance.alerts.dto.UserContactDTO;
 import com.freelance.alerts.preference.service.UserContactService;
+import com.freelance.alerts.AlertsEngine;
+import com.freelance.alerts.templates.MemberWelcomeOnboardingTemplate;
+import com.freelance.gym.payment.ReceiptNotificationService;
 import com.freelance.gym.enums.PaymentMethod;
 import com.freelance.gym.fixtures.TestContextHelper;
 import com.freelance.gym.member.assembler.MemberAssembler;
@@ -47,7 +50,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -89,6 +92,12 @@ public class MemberServiceTest {
     @Mock
     private PaymentService paymentService;
 
+    @Mock
+    private ReceiptNotificationService receiptNotificationService;
+
+    @Mock
+    private AlertsEngine alertsEngine;
+
     private MemberService memberService;
 
     @BeforeEach
@@ -108,7 +117,9 @@ public class MemberServiceTest {
                 planService,
                 paymentService,
                 new MemberAssembler(),
-                new PaymentAssembler()
+                new PaymentAssembler(),
+                receiptNotificationService,
+                alertsEngine
         );
     }
 
@@ -275,6 +286,7 @@ public class MemberServiceTest {
 
         UserPlanEntity existingPlan = new UserPlanEntity(UUID.randomUUID(), userId, planId, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
         when(userPlanRepository.findLatestByUserAndPlan(userId, planId)).thenReturn(Optional.of(existingPlan));
+        when(userPlanRepository.findByUserId(userId)).thenReturn(List.of(existingPlan));
 
         // Request renewal without explicit startDate -> should auto-compute 2026-02-01 (old endDate + 1)
         List<MemberPlanAssignmentDTO> renewalPlans = List.of(
@@ -302,6 +314,47 @@ public class MemberServiceTest {
         // Verify that NO deletions occurred! Strictly additive
         verify(userPlanRepository, never()).deleteByUserId(any());
         verify(paymentService, never()).deletePendingPaymentsByUserPlanIds(any());
+        verify(alertsEngine, times(1)).emitAlert(isA(com.freelance.alerts.templates.MemberRenewalConfirmationTemplate.class), eq(userId), any());
+    }
+
+    @Test
+    void testRenewMember_ProspectEnrolls_EmitsWelcomeAlertAndReceipt() {
+        UUID userId = UUID.randomUUID();
+        UUID planId = UUID.randomUUID();
+
+        when(userReadService.existsById(userId)).thenReturn(true);
+        when(userPlanRepository.findByUserId(userId)).thenReturn(List.of()); // Prospect: 0 existing plans
+        when(userPlanRepository.findLatestByUserAndPlan(userId, planId)).thenReturn(Optional.empty());
+
+        List<MemberPlanAssignmentDTO> plans = List.of(
+                new MemberPlanAssignmentDTO(planId, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31))
+        );
+
+        List<PaymentScheduleDTO> payments = List.of(
+                new PaymentScheduleDTO(BigDecimal.valueOf(2500), BigDecimal.valueOf(2500), LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 1), PaymentMethod.UPI, "TXN_PROSPECT", "Enrollment payment")
+        );
+
+        UserPlanResponseDTO assignedPlan = new UserPlanResponseDTO(UUID.randomUUID(), userId, planId, "Gym Access", LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31));
+        when(planService.assignPlansToUser(eq(userId), any())).thenReturn(List.of(assignedPlan));
+
+        PaymentResponseDTO assignedPayment = new PaymentResponseDTO(UUID.randomUUID(), BigDecimal.valueOf(2500), BigDecimal.valueOf(2500), LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 1), PaymentMethod.UPI, "TXN_PROSPECT", "Enrollment payment", List.of(assignedPlan));
+        when(paymentService.createInstallments(eq(List.of(assignedPlan)), eq(payments))).thenReturn(List.of(assignedPayment));
+
+        MemberRenewRequestDTO request = new MemberRenewRequestDTO(userId, plans, payments);
+        MemberRenewResponseDTO response = memberService.renewMember(request);
+
+        assertNotNull(response);
+        assertEquals(userId, response.userId());
+        verify(alertsEngine, times(1)).emitAlert(isA(com.freelance.alerts.templates.MemberWelcomeOnboardingTemplate.class), eq(userId), any());
+        verify(receiptNotificationService, times(1)).generateAndDispatchReceipt(
+                eq(userId),
+                eq(assignedPayment.id()),
+                eq(BigDecimal.valueOf(2500)),
+                eq("UPI"),
+                eq("TXN_PROSPECT"),
+                eq(LocalDate.of(2026, 3, 1)),
+                any()
+        );
     }
 
     @Test
@@ -421,7 +474,7 @@ public class MemberServiceTest {
         verify(paymentService, times(1)).findPaidPaymentsByUserPlanIds(List.of(oldPlanId));
         verify(paymentService, times(1)).deletePendingPaymentsByUserPlanIds(List.of(oldPlanId));
         verify(userPlanRepository, times(1)).deleteByUserId(userId);
-        verify(paymentService, times(1)).linkPaidPaymentsToNewPlans(anyList(), eq(List.of(updatedPlanResp)));
+        verify(paymentService, times(1)).linkPaidPaymentsPrecisely(anyList(), eq(List.of(updatedPlanResp)), anyList(), anyMap(), anyMap());
     }
 
     @Test
@@ -557,6 +610,7 @@ public class MemberServiceTest {
         assertNotNull(record.phoneNumber());
         assertEquals("91", record.phoneNumber().countryCode());
         assertEquals("9876543210", record.phoneNumber().number());
+        assertTrue(record.plans().isEmpty());
         assertTrue(record.payments().isEmpty());
     }
 
@@ -609,5 +663,115 @@ public class MemberServiceTest {
         assertNull(record.phoneNumber());
         // Only 1 payment even though mapped twice
         assertEquals(1, record.payments().size());
+        assertEquals(2, record.plans().size());
+    }
+
+    @Test
+    void testCollectPaymentDelegation() {
+        com.freelance.gym.payment.dto.PaymentCollectRequestDTO request =
+                new com.freelance.gym.payment.dto.PaymentCollectRequestDTO(
+                        UUID.randomUUID(),
+                        BigDecimal.valueOf(1000),
+                        LocalDate.now(),
+                        PaymentMethod.UPI,
+                        "TXN_001",
+                        "Notes"
+                );
+
+        PaymentResponseDTO expected = new PaymentResponseDTO(
+                request.paymentId(),
+                BigDecimal.valueOf(1000),
+                BigDecimal.valueOf(1000),
+                LocalDate.now(),
+                LocalDate.now(),
+                PaymentMethod.UPI,
+                "TXN_001",
+                "Notes",
+                List.of()
+        );
+
+        when(paymentService.collectPayment(request)).thenReturn(expected);
+
+        PaymentResponseDTO result = memberService.collectPayment(request);
+        assertNotNull(result);
+        assertEquals(expected, result);
+        verify(paymentService, times(1)).collectPayment(request);
+    }
+
+    @Test
+    void testUpdateMember_ProspectEnrollment_EmitsWelcomeAlertAndReceipt() {
+        UUID userId = UUID.randomUUID();
+        when(userReadService.existsById(userId)).thenReturn(true);
+        when(userPlanRepository.findByUserId(userId)).thenReturn(List.of()); // Prospect (0 old plans)
+
+        UUID planId = UUID.randomUUID();
+        MemberPlanAssignmentDTO planAssignment = new MemberPlanAssignmentDTO(planId, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+        UserPlanResponseDTO assignedPlan = new UserPlanResponseDTO(UUID.randomUUID(), userId, planId, "1 Month Gold", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+        when(planService.assignPlansToUser(eq(userId), eq(List.of(planAssignment)))).thenReturn(List.of(assignedPlan));
+
+        UUID paymentId = UUID.randomUUID();
+        PaymentScheduleDTO schedule = new PaymentScheduleDTO(BigDecimal.valueOf(3000), BigDecimal.valueOf(3000), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1), PaymentMethod.UPI, "TXN_UPI_001", "Upfront", List.of(0));
+        PaymentResponseDTO paymentResp = new PaymentResponseDTO(paymentId, BigDecimal.valueOf(3000), BigDecimal.valueOf(3000), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1), PaymentMethod.UPI, "TXN_UPI_001", "Upfront", List.of(assignedPlan));
+        when(paymentService.createInstallments(eq(List.of(assignedPlan)), eq(List.of(schedule)))).thenReturn(List.of(paymentResp));
+
+        MemberUpdateRequestDTO request = new MemberUpdateRequestDTO(
+                userId,
+                null,
+                List.of(planAssignment),
+                List.of(schedule)
+        );
+
+        MemberUpdateResponseDTO response = memberService.updateMember(request);
+
+        assertNotNull(response);
+        assertEquals(1, response.plans().size());
+        assertEquals(1, response.payments().size());
+
+        // Verify Welcome template emitted with customParameters containing plans breakdown
+        verify(alertsEngine, times(1)).emitAlert(any(MemberWelcomeOnboardingTemplate.class), eq(userId), argThat(params ->
+                params != null && params.containsKey("MEMBER.plans_breakdown") && params.get("MEMBER.plans_breakdown").contains("1 Month Gold")
+        ));
+
+        // Verify Instant Receipt generated and dispatched
+        verify(receiptNotificationService, times(1)).generateAndDispatchReceipt(
+                eq(userId),
+                eq(paymentId),
+                eq(BigDecimal.valueOf(3000)),
+                eq("UPI"),
+                eq("TXN_UPI_001"),
+                eq(LocalDate.of(2026, 1, 1)),
+                eq(List.of(assignedPlan))
+        );
+    }
+
+    @Test
+    void testUpdateMember_ExistingMemberWithPlans_DoesNotReEmitWelcomeAlert() {
+        UUID userId = UUID.randomUUID();
+        UUID oldPlanId = UUID.randomUUID();
+        UserPlanEntity existingPlan = new UserPlanEntity(oldPlanId, userId, UUID.randomUUID(), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31));
+
+        when(userReadService.existsById(userId)).thenReturn(true);
+        when(userPlanRepository.findByUserId(userId)).thenReturn(List.of(existingPlan)); // Already enrolled with plans
+
+        UUID planId = UUID.randomUUID();
+        MemberPlanAssignmentDTO planAssignment = new MemberPlanAssignmentDTO(planId, LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28));
+        UserPlanResponseDTO assignedPlan = new UserPlanResponseDTO(UUID.randomUUID(), userId, planId, "1 Month Gold", LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28));
+        when(planService.assignPlansToUser(eq(userId), eq(List.of(planAssignment)))).thenReturn(List.of(assignedPlan));
+
+        MemberUpdateRequestDTO request = new MemberUpdateRequestDTO(
+                userId,
+                null,
+                List.of(planAssignment),
+                List.of()
+        );
+
+        MemberUpdateResponseDTO response = memberService.updateMember(request);
+
+        assertNotNull(response);
+
+        // Verify Welcome template was NOT emitted
+        verify(alertsEngine, never()).emitAlert(any(MemberWelcomeOnboardingTemplate.class), any());
+        verify(alertsEngine, never()).emitAlert(any(MemberWelcomeOnboardingTemplate.class), any(), any());
+        verify(receiptNotificationService, never()).generateAndDispatchReceipt(any(), any(), any(), any(), any(), any(), any());
     }
 }

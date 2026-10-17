@@ -10,6 +10,8 @@ public class AlertButtonReplyRepository extends AbstractRepository<AlertButtonRe
 
     public Optional<AlertButtonReplyEntity> findByButtonPayload(String payload) {
         if (payload == null || payload.isBlank()) return Optional.empty();
-        return executeSingleResultSearch("AlertButtonReply.findByButtonPayload", Map.of("payload", payload));
+        return executeListResultSearch("AlertButtonReply.findByButtonPayload", Map.of("payload", payload))
+                .stream()
+                .findFirst();
     }
 }

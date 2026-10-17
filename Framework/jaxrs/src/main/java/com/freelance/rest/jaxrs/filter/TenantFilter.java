@@ -36,21 +36,26 @@ public class TenantFilter implements ContainerRequestFilter {
 
     private static final Set<String> EXCLUDED_PATHS = Set.of(
             "coverage",
-            "favicon.ico"
+            "favicon.ico",
+            "alerts/media"
     );
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
         String path = requestContext.getUriInfo() != null ? requestContext.getUriInfo().getPath() : "";
-        if (isExcluded(path)) {
-            requestContext.setProperty(TENANT_PROPERTY, DEFAULT_TENANT);
-            logger.debug("[TenantFilter] Path '{}' is excluded. Using default tenant context '{}'", path, DEFAULT_TENANT);
-            return;
-        }
-
         String tenantId = resolveTenantId(requestContext);
         if (tenantId != null) {
             tenantId = tenantId.trim().toLowerCase();
+        }
+
+        if (isExcluded(path)) {
+            // If an explicit valid tenant was provided in the header/subdomain, honor it; otherwise fall back to DEFAULT_TENANT
+            String effectiveTenant = (tenantId != null && !tenantId.isBlank() && isValidTenantId(tenantId))
+                    ? tenantId
+                    : DEFAULT_TENANT;
+            requestContext.setProperty(TENANT_PROPERTY, effectiveTenant);
+            logger.debug("[TenantFilter] Path '{}' is excluded. Using tenant context '{}'", path, effectiveTenant);
+            return;
         }
 
         if (tenantId == null
@@ -118,6 +123,13 @@ public class TenantFilter implements ContainerRequestFilter {
         if (parts.length >= 3) {
             String sub = parts[0].trim();
             if (!sub.equalsIgnoreCase("www") && !sub.equalsIgnoreCase("api")) {
+                if (TenantRegistry.isActive(sub)) {
+                    return sub;
+                }
+                String normalizedUnderScore = sub.replace("-", "_");
+                if (TenantRegistry.isActive(normalizedUnderScore)) {
+                    return normalizedUnderScore;
+                }
                 return sub;
             }
         }

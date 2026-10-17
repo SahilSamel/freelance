@@ -305,7 +305,7 @@ class WhatsAppAlertProcessorTest {
         UUID userId = UUID.randomUUID();
         userReadService.validUsers.add(userId);
         UUID tplId = UUID.randomUUID();
-        AlertTemplateEntity tpl = new AlertTemplateEntity(tplId, "TPL_TEST", "Test", "UTILITY", "en", "Content", null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED, false, null, null);
+        AlertTemplateEntity tpl = new AlertTemplateEntity(tplId, "TPL_TEST", "Test", "MARKETING", "en", "Content", null, null, AlertChannel.WHATSAPP, TemplateStatus.APPROVED, false, null, null);
         templateRepo.persist(tpl);
 
         // 1. Missing contact

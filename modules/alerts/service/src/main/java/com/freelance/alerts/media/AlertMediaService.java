@@ -101,9 +101,23 @@ public class AlertMediaService {
 
             String tenantId = resolveTenantId();
 
-            // 1. Upload to Meta WhatsApp Media API to obtain Media ID
-            WhatsAppMediaService.UploadedMedia uploaded = whatsAppMediaService.uploadMedia(fileName, mimeType, rawBytes);
-            String mediaId = uploaded.mediaId();
+            // 1. Upload to Meta WhatsApp Media API to obtain Media ID if configured
+            String mediaId = null;
+            try {
+                WhatsAppMediaService.UploadedMedia uploaded = whatsAppMediaService.uploadMedia(fileName, mimeType, rawBytes);
+                if (uploaded != null && uploaded.mediaId() != null) {
+                    mediaId = uploaded.mediaId();
+                }
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Media upload was interrupted", ie);
+            } catch (Exception upstreamEx) {
+                logger.warn("[AlertMediaService] WhatsApp Media API upload skipped/failed ({}). Generating local media ID.", upstreamEx.getMessage());
+            }
+
+            if (mediaId == null || mediaId.isBlank()) {
+                mediaId = "med_" + UUID.randomUUID().toString().replace("-", "");
+            }
 
             // 2. Persist to local storage under tenant partition with mediaId filename for fast retrieval
             String localFileName = mediaId + ext;
@@ -116,10 +130,6 @@ public class AlertMediaService {
                     mimeType,
                     rawBytes.length
             );
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.error("Media upload was interrupted", e);
-            throw new RuntimeException("Media upload was interrupted", e);
         } catch (IOException e) {
             logger.error("Failed to upload or store media", e);
             throw new RuntimeException("Failed to upload media: " + e.getMessage(), e);

@@ -70,7 +70,6 @@ public class EventConsumerScanner {
 
                 ConsumerConfig config = ConsumerConfig.builder()
                         .concurrency(annotation.concurrency())
-                        .rateLimitPerSecond(annotation.rateLimitPerSecond())
                         .maxRetries(annotation.maxRetries())
                         .backoffMillis(annotation.backoffMillis())
                         .backoffMultiplier(annotation.backoffMultiplier())

@@ -5,6 +5,7 @@ import com.freelance.alerts.AlertDirection;
 import com.freelance.alerts.AlertErrorCode;
 import com.freelance.alerts.AlertMessageStatus;
 import com.freelance.alerts.AlertsEngine;
+import com.freelance.alerts.TemplateCategory;
 import com.freelance.alerts.TemplateStatus;
 import com.freelance.alerts.channel.entity.AlertChannelConfigEntity;
 import com.freelance.alerts.channel.repository.AlertChannelConfigRepository;
@@ -26,6 +27,7 @@ import com.freelance.dispatcher.data.AlertDispatchRequest;
 import com.freelance.dispatcher.data.AlertDispatchResult;
 import com.freelance.event.exception.EventDelayedException;
 import com.freelance.event.model.EventMessage;
+import com.freelance.event.model.EventPriority;
 import com.freelance.template.utils.TemplateRenderUtility;
 import com.freelance.user.read.UserReadService;
 import org.slf4j.Logger;
@@ -174,7 +176,7 @@ public class WhatsAppAlertProcessor {
      *                                                               +---------------------------------+            | Pass
      *                                                          Fail |                                              v
      *                                                               v                                   +----------------------------------+
-     *                                                         +-------------------------------+         |    7. Meta Graph API Dispatch    |
+     *                                                         +-------------------------------+         | 7. Provider Dispatch (Meta/MSG91)|
      *                                                         |        Record FAILED:         |         +----------------------------------+
      *                                                         |   ERR_TEMPLATE_NOT_APPROVED   |
      *                                                         |     / ERR_CHANNEL_MISMATCH    |
@@ -253,7 +255,11 @@ public class WhatsAppAlertProcessor {
         String recipientContact = contact.getContactValue();
 
         // ── 4. Legal Consent & Permissions ───────────────────────────────────
-        if (contact.isOptedOut()) {
+        boolean isUtility = template != null && (
+                TemplateCategory.UTILITY.name().equalsIgnoreCase(template.getCategory()) ||
+                TemplateCategory.AUTHENTICATION.name().equalsIgnoreCase(template.getCategory())
+        );
+        if (contact.isOptedOut() && !isUtility) {
             recordOutboundMessage(
                     payload.messageId(),
                     userId,
@@ -268,7 +274,7 @@ public class WhatsAppAlertProcessor {
             return;
         }
 
-        if (!contact.isActive()) {
+        if (!contact.isActive() && !contact.isOptedOut()) {
             recordOutboundMessage(
                     payload.messageId(),
                     userId,
@@ -284,19 +290,21 @@ public class WhatsAppAlertProcessor {
         }
 
         // ── 5. Conversational Timing / Sliding Window ────────────────────────
-        if (WhatsAppUtility.isHumanSessionActive(contact, message.getPriority())) {
+        // If human support session is active, marketing messages are delayed for 24 hours.
+        // Utility messages, authentication alerts, and direct staff replies are allowed through.
+        if (contact.isHumanSessionActive() && !isUtility && message.getPriority() != EventPriority.HIGH) {
             throw new EventDelayedException("User is waiting for human reply; delaying outbound message for 24 hours.");
         }
 
         // ── 6. Content Resolution & Template Preconditions ───────────────────
-        if (payload.rawContent() != null && !payload.rawContent().isBlank()) {
-            content = payload.rawContent();
-        } else {
+        if (payload.templateId() != null) {
             template = templateRepository.get(payload.templateId());
-            if (template == null) {
+            if (template == null && (payload.rawContent() == null || payload.rawContent().isBlank())) {
                 return;
             }
+        }
 
+        if (template != null) {
             if (template.getChannel() != channel) {
                 String reason = AlertErrorCode.CHANNEL_MISMATCH.format(template.getChannel(), channel);
                 recordOutboundMessage(
@@ -346,11 +354,28 @@ public class WhatsAppAlertProcessor {
                     return;
                 }
             }
-
-            Set<String> requiredAttrs = WhatsAppUtility.parseAttributes(template.getRequiredAttributes());
-            resolvedAttributes = AttributeResolutionEngine.getInstance().resolveAll(userId, requiredAttrs);
-            content = TemplateRenderUtility.render(template, resolvedAttributes);
         }
+
+        String targetContent = (payload.rawContent() != null && !payload.rawContent().isBlank())
+                ? payload.rawContent()
+                : (template != null ? template.getContent() : "");
+
+        Set<String> requiredAttrs = new HashSet<>();
+        if (template != null && template.getRequiredAttributes() != null) {
+            requiredAttrs.addAll(WhatsAppUtility.parseAttributes(template.getRequiredAttributes()));
+        }
+        if (!targetContent.isBlank()) {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\{\\{([^}]+)\\}\\}").matcher(targetContent);
+            while (matcher.find()) {
+                requiredAttrs.add(matcher.group(1).trim());
+            }
+        }
+
+        resolvedAttributes = new HashMap<>(AttributeResolutionEngine.getInstance().resolveAll(userId, requiredAttrs));
+        if (payload.customParameters() != null && !payload.customParameters().isEmpty()) {
+            resolvedAttributes.putAll(payload.customParameters());
+        }
+        content = TemplateRenderUtility.render(targetContent, resolvedAttributes);
 
         // ── 7. Dispatcher Resolution ─────────────────────────────────────────
         Optional<IAlertDispatcher> dispatcherOpt = dispatcherFactory.getDispatcher(channel);
@@ -372,6 +397,16 @@ public class WhatsAppAlertProcessor {
         IAlertDispatcher dispatcher = dispatcherOpt.get();
 
         // ── 8. Dispatch Execution ────────────────────────────────────────────
+        String effectiveMediaUrl = payload.mediaUrl() != null && !payload.mediaUrl().isBlank()
+                ? payload.mediaUrl()
+                : (template != null ? template.getMediaUrl() : null);
+        String effectiveMediaId = payload.mediaId() != null && !payload.mediaId().isBlank()
+                ? payload.mediaId()
+                : null;
+        String effectiveMediaType = payload.mediaType() != null && !payload.mediaType().isBlank()
+                ? payload.mediaType()
+                : (template != null ? template.getMediaType() : null);
+
         AlertDispatchRequest dispatchRequest = new AlertDispatchRequest(
                 userId,
                 template,
@@ -380,9 +415,9 @@ public class WhatsAppAlertProcessor {
                 content,
                 resolvedAttributes,
                 message.getPriority(),
-                payload.mediaUrl(),
-                payload.mediaId(),
-                payload.mediaType()
+                effectiveMediaUrl,
+                effectiveMediaId,
+                effectiveMediaType
         );
         AlertDispatchResult result = dispatcher.dispatch(dispatchRequest);
 
@@ -398,9 +433,9 @@ public class WhatsAppAlertProcessor {
                     AlertMessageStatus.SENT,
                     null,
                     result.rawResponse(),
-                    payload.mediaUrl(),
-                    payload.mediaId(),
-                    payload.mediaType()
+                    effectiveMediaUrl,
+                    effectiveMediaId,
+                    effectiveMediaType
             );
         } else if (result.isFailure()) {
             String failReason = result.rawResponse() != null ? result.rawResponse() : ("Downstream dispatch failure: " + result.errorMessage());
@@ -414,9 +449,9 @@ public class WhatsAppAlertProcessor {
                     AlertMessageStatus.FAILED,
                     result.errorCode() != null ? result.errorCode() : AlertErrorCode.ERR_DISPATCH_FAILED,
                     failReason,
-                    payload.mediaUrl(),
-                    payload.mediaId(),
-                    payload.mediaType()
+                    effectiveMediaUrl,
+                    effectiveMediaId,
+                    effectiveMediaType
             );
         } else if (result.isDelayed()) {
             throw new EventDelayedException(result.errorMessage() != null ? result.errorMessage() : "Message dispatch delayed");
@@ -488,8 +523,8 @@ public class WhatsAppAlertProcessor {
      *         |                    v                   |                 |                       v
      *         |             +---------------+          |                 v              +--------------------+
      *         |             | Extend Session|          |       +--------------------+   | Emit Automated     |
-     *         |             | (now + 24h)   |          |       | Persist TEXT Msg   |   | Triage Menu        |
-     *         |             | on Contact    |          |       | in FL_ALERT_MESSAGE|   | (inbound_triage)   |
+     *         |             | (now + 24h)   |          |       | Persist TEXT Msg   |   | Welcome Menu       |
+     *         |             | on Contact    |          |       | in FL_ALERT_MESSAGE|   | (welcome_menu)     |
      *         |             +---------------+          |       +--------------------+   +--------------------+
      *         |                    |                   |
      *         v                    v                   v
@@ -506,10 +541,10 @@ public class WhatsAppAlertProcessor {
      *
      * Note on Human Session:
      * The 24-hour human support session (human_session_expires_at on FL_USER_CONTACT)
-     * is activated or extended ONLY via explicit interactive button clicks
-     * (requires_human_agent=true or unmapped fallback). Inbound freeform text defaults
-     * to the automated triage menu (inbound_triage) without opening a human session,
-     * preventing notification spam until the customer requests human assistance.
+     * is activated or extended via explicit interactive button clicks (requires_human_agent=true
+     * or unmapped fallback) or when inbound media is sent (images/documents). Inbound freeform
+     * text defaults to the automated welcome menu (inbound_welcome_menu) when no human session
+     * is active, preventing notification spam until the customer requests human assistance.
      *
      * Note on Deduplication:
      * Inbound messages are deduplicated using Meta's wamid (FL_ALERT_MESSAGE.meta_message_id)
@@ -518,9 +553,12 @@ public class WhatsAppAlertProcessor {
     public void processInbound(EventMessage<WhatsAppWebhookPayloadDTO> eventMessage) {
         if (eventMessage == null) return;
         WhatsAppWebhookPayloadDTO payload = eventMessage.getPayload();
-        if (payload == null || payload.entry() == null) return;
+        if (payload == null) return;
 
-        for (WebhookEntryDTO entry : payload.entry()) {
+        List<WebhookEntryDTO> entries = payload.resolveEntries();
+        if (entries == null || entries.isEmpty()) return;
+
+        for (WebhookEntryDTO entry : entries) {
             if (entry == null || entry.changes() == null) continue;
             for (WebhookChangeDTO change : entry.changes()) {
                 if (change == null || change.value() == null) continue;
@@ -717,8 +755,8 @@ public class WhatsAppAlertProcessor {
                         // If media is sent, extend human session so staff can view and assist
                         if (mediaId != null) {
                             WhatsAppUtility.extendHumanSession(contact, contactRepository, Duration.ofHours(24));
-                        } else if (!isOptOut && !isOptIn) {
-                            // If plain text and not consent keyword, dispatch the automated welcome menu template (fallback to triage)
+                        } else if (!isOptOut && !isOptIn && !contact.isHumanSessionActive()) {
+                            // If plain text, not consent keyword, and NO active human session, dispatch automated welcome menu template (triage)
                             templateRepository.findByKey(InboundWelcomeTemplate.TEMPLATE_KEY)
                                     .ifPresent(welcomeTpl -> alertsEngine.emitAlert(welcomeTpl.getId(), userId));
                         }

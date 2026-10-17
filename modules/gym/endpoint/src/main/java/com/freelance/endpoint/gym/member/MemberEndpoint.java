@@ -74,4 +74,30 @@ public class MemberEndpoint extends AbstractEndpoint {
         MemberUpdateResponseDTO response = memberService.updateMember(request);
         return buildResponse(response, 200);
     }
+
+    @POST
+    @Path("/payment/collect")
+    @Authorization(
+            key = "MEMBER_PAYMENT_COLLECT",
+            name = "Collect Member Payment",
+            description = "Records payment collection for a pending installment",
+            group = "Gym.Member"
+    )
+    public Response collectPayment(com.freelance.gym.payment.dto.PaymentCollectRequestDTO request) {
+        com.freelance.gym.payment.dto.PaymentResponseDTO response = memberService.collectPayment(request);
+        return buildResponse(response, 200);
+    }
+
+    @POST
+    @Path("/payment/receipt/send")
+    @Authorization(
+            key = "MEMBER_PAYMENT_COLLECT",
+            name = "Collect Member Payment",
+            description = "Dispatches an itemized payment receipt via WhatsApp for a specific payment",
+            group = "Gym.Member"
+    )
+    public Response sendReceipt(com.freelance.gym.payment.dto.PaymentReceiptSendRequestDTO request) {
+        com.freelance.gym.payment.dto.PaymentReceiptSendResponseDTO response = memberService.sendReceipt(request);
+        return buildResponse(response, 200);
+    }
 }

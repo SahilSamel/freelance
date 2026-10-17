@@ -2,8 +2,11 @@ package com.freelance.dispatcher;
 
 import com.freelance.ConfigurationEngine;
 import com.freelance.alerts.AlertChannel;
+import com.freelance.dispatcher.impl.whatsapp.Msg91WhatsAppDispatcherService;
 import com.freelance.dispatcher.impl.whatsapp.WhatsAppDispatcherService;
 import com.freelance.keys.alerts.message.AlertEmitConfigKeys;
+import com.freelance.keys.alerts.webhook.WebhookConfigKeys;
+import com.freelance.system.SystemHardcoding;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 import org.reflections.util.ConfigurationBuilder;
@@ -106,14 +109,20 @@ public class AlertDispatcherFactory {
 
         // Ensure default built-in dispatchers are present if not found by reflection
         if (!dispatchers.containsKey(AlertChannel.WHATSAPP)) {
-            register(new WhatsAppDispatcherService());
+            String provider = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_PROVIDER);
+            if (SystemHardcoding.META.asString().equalsIgnoreCase(provider)) {
+                register(new WhatsAppDispatcherService());
+            } else {
+                register(new Msg91WhatsAppDispatcherService());
+            }
         }
     }
 
     public void register(IAlertDispatcher dispatcher) {
         if (dispatcher != null && dispatcher.getChannel() != null) {
             dispatchers.put(dispatcher.getChannel(), dispatcher);
-            logger.info("[AlertDispatcherFactory] Registered dispatcher for channel: {}", dispatcher.getChannel());
+            logger.info("[AlertDispatcherFactory] Registered dispatcher: {} for channel: {}",
+                    dispatcher.getClass().getSimpleName(), dispatcher.getChannel());
         }
     }
 
@@ -133,6 +142,22 @@ public class AlertDispatcherFactory {
     public Optional<IAlertDispatcher> getDispatcher(AlertChannel requestedChannel) {
         ensureDiscovered();
 
+        if (requestedChannel == AlertChannel.WHATSAPP && dispatchers.containsKey(AlertChannel.WHATSAPP)) {
+            String provider = ConfigurationEngine.get(WebhookConfigKeys.WHATSAPP_PROVIDER);
+            IAlertDispatcher current = dispatchers.get(AlertChannel.WHATSAPP);
+            if (SystemHardcoding.META.asString().equalsIgnoreCase(provider)) {
+                if (current instanceof WhatsAppDispatcherService) {
+                    return Optional.of(current);
+                }
+                return Optional.of(new WhatsAppDispatcherService());
+            } else {
+                if (current instanceof Msg91WhatsAppDispatcherService) {
+                    return Optional.of(current);
+                }
+                return Optional.of(new Msg91WhatsAppDispatcherService());
+            }
+        }
+
         if (requestedChannel != null && dispatchers.containsKey(requestedChannel)) {
             return Optional.of(dispatchers.get(requestedChannel));
         }
@@ -150,7 +175,7 @@ public class AlertDispatcherFactory {
                     requestedChannel,
                     defaultChannel
             );
-            return Optional.of(dispatchers.get(defaultChannel));
+            return getDispatcher(defaultChannel);
         }
 
         logger.error(

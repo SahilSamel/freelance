@@ -2,6 +2,7 @@ package com.freelance.alerts.template;
 
 import com.freelance.alerts.AlertChannel;
 import com.freelance.alerts.TemplateCategory;
+import com.freelance.alerts.TemplateStatus;
 
 import java.util.List;
 import java.util.Set;
@@ -146,5 +147,23 @@ public interface ITemplate {
      */
     default String getPriority() {
         return null;
+    }
+
+    /**
+     * Initial approval status when seeded into the database.
+     * Defaults to {@link TemplateStatus#APPROVED} for system-defined templates.
+     */
+    default TemplateStatus getInitialStatus() {
+        return TemplateStatus.APPROVED;
+    }
+
+    /**
+     * Target audience / dispatch scope of this template.
+     * Defaults to {@link DispatchScope#BOTH}.
+     *
+     * @return dispatch scope enum (INDIVIDUAL, BULK, or BOTH)
+     */
+    default DispatchScope getDispatchScope() {
+        return DispatchScope.BOTH;
     }
 }

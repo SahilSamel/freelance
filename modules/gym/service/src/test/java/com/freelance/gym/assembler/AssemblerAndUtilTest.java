@@ -34,7 +34,7 @@ public class AssemblerAndUtilTest {
     @Test
     void testMemberAssembler_NullUser() {
         MemberAssembler assembler = new MemberAssembler();
-        assertNull(assembler.toMemberRecord(null, null, "John", "Doe", null));
+        assertNull(assembler.toMemberRecord(null, null, "John", "Doe", null, null));
     }
 
     @Test
@@ -48,21 +48,27 @@ public class AssemblerAndUtilTest {
                 new PaymentResponseDTO(UUID.randomUUID(), BigDecimal.valueOf(500), BigDecimal.ZERO, LocalDate.now(), null, PaymentMethod.NONE, null, null, List.of())
         );
 
+        List<UserPlanResponseDTO> plans = List.of(
+                new UserPlanResponseDTO(UUID.randomUUID(), userId, UUID.randomUUID(), "VIP", LocalDate.now(), LocalDate.now().plusDays(30))
+        );
+
         // Custom first and last name
-        MemberRecordDTO record1 = assembler.toMemberRecord(user, phone, "CustomFirst", "CustomLast", payments);
+        MemberRecordDTO record1 = assembler.toMemberRecord(user, phone, "CustomFirst", "CustomLast", plans, payments);
         assertNotNull(record1);
         assertEquals(userId, record1.userId());
         assertEquals("john_user", record1.username());
         assertEquals("CustomFirst", record1.firstName());
         assertEquals("CustomLast", record1.lastName());
         assertEquals(phone, record1.phoneNumber());
+        assertEquals(plans, record1.plans());
         assertEquals(payments, record1.payments());
 
-        // Null first/last name and null payments -> fallback to user entity and empty list
-        MemberRecordDTO record2 = assembler.toMemberRecord(user, phone, null, null, null);
+        // Null first/last name, null plans and null payments -> fallback to user entity and empty list
+        MemberRecordDTO record2 = assembler.toMemberRecord(user, phone, null, null, null, null);
         assertNotNull(record2);
         assertEquals("UserFirst", record2.firstName());
         assertEquals("UserLast", record2.lastName());
+        assertTrue(record2.plans().isEmpty());
         assertTrue(record2.payments().isEmpty());
     }
 
