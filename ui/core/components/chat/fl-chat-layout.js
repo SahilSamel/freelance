@@ -4,6 +4,7 @@
  */
 
 import { Icons } from '../../../assets/icons/icons.js';
+import { AppConfig } from '../../config/app-config.js';
 import '../shell/fl-avatar.js';
 
 export class FlChatLayout extends HTMLElement {
@@ -294,8 +295,9 @@ export class FlChatThread extends HTMLElement {
 
   linkify(text) {
     if (!text) return '';
+    const formatted = AppConfig.formatWhatsAppText(text);
     const urlPattern = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
-    return text.replace(urlPattern, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: 500;">$1</a>');
+    return formatted.replace(urlPattern, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: 500;">$1</a>');
   }
 
   renderMessageStatus(msg) {
@@ -326,7 +328,7 @@ export class FlChatThread extends HTMLElement {
     // 3. Delivered -> WhatsApp Double Grey Tick
     if (rawStatus === 'DELIVERED') {
       return `
-        <span style="color: #8696a0; display: inline-flex; align-items: center; width: 17px; height: 15px;" title="Delivered">
+        <span style="color: #667781; display: inline-flex; align-items: center; width: 17px; height: 15px;" title="Delivered">
           <svg viewBox="0 0 16 15" width="16" height="14" fill="currentColor">
             <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L6.442 12.759 2.016 8.333a.365.365 0 0 0-.516 0l-.372.372a.365.365 0 0 0 0 .516l4.73 4.73a.365.365 0 0 0 .546-.032l8.667-10.1a.365.365 0 0 0-.063-.503zm-3.882.063l-.478-.372a.365.365 0 0 0-.51.063L4.57 9.873l.942.942 5.094-6.936a.365.365 0 0 0-.063-.503z"/>
           </svg>
@@ -334,11 +336,11 @@ export class FlChatThread extends HTMLElement {
       `;
     }
 
-    // 4. Read / Viewed -> WhatsApp Double Blue Tick
+    // 4. Read / Viewed -> WhatsApp Vivid Double Blue Tick with subtle soft glow
     if (rawStatus === 'READ' || rawStatus === 'VIEWED') {
       return `
-        <span style="color: #53bdeb; display: inline-flex; align-items: center; width: 17px; height: 15px;" title="Read">
-          <svg viewBox="0 0 16 15" width="16" height="14" fill="currentColor">
+        <span style="color: #34b7f1; display: inline-flex; align-items: center; width: 17px; height: 15px;" title="Read">
+          <svg viewBox="0 0 16 15" width="16" height="14" fill="#34b7f1" style="filter: drop-shadow(0 0 2px rgba(52, 183, 241, 0.45));">
             <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L6.442 12.759 2.016 8.333a.365.365 0 0 0-.516 0l-.372.372a.365.365 0 0 0 0 .516l4.73 4.73a.365.365 0 0 0 .546-.032l8.667-10.1a.365.365 0 0 0-.063-.503zm-3.882.063l-.478-.372a.365.365 0 0 0-.51.063L4.57 9.873l.942.942 5.094-6.936a.365.365 0 0 0-.063-.503z"/>
           </svg>
         </span>
@@ -358,11 +360,11 @@ export class FlChatThread extends HTMLElement {
       `;
     }
 
-    // Default fallback for sent messages
+    // Default fallback: Single grey tick for sent messages
     return `
-      <span style="color: #53bdeb; display: inline-flex; align-items: center; width: 17px; height: 15px;" title="Delivered">
-        <svg viewBox="0 0 16 15" width="16" height="14" fill="currentColor">
-          <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L6.442 12.759 2.016 8.333a.365.365 0 0 0-.516 0l-.372.372a.365.365 0 0 0 0 .516l4.73 4.73a.365.365 0 0 0 .546-.032l8.667-10.1a.365.365 0 0 0-.063-.503zm-3.882.063l-.478-.372a.365.365 0 0 0-.51.063L4.57 9.873l.942.942 5.094-6.936a.365.365 0 0 0-.063-.503z"/>
+      <span style="color: #667781; display: inline-flex; align-items: center; width: 15px; height: 15px;" title="Sent">
+        <svg viewBox="0 0 16 15" width="15" height="14" fill="currentColor">
+          <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L6.442 12.759 2.016 8.333a.365.365 0 0 0-.516 0l-.372.372a.365.365 0 0 0 0 .516l4.73 4.73a.365.365 0 0 0 .546-.032l8.667-10.1a.365.365 0 0 0-.063-.503z"/>
         </svg>
       </span>
     `;
@@ -405,17 +407,81 @@ export class FlChatThread extends HTMLElement {
           }
         }
 
+        // Quoted message detection (Native replyToMessageId)
+        const rawContent = m.content || m.text || '';
+        let quoteSnippet = null;
+        const contentBody = rawContent;
+        let quoteSender = isOutgoing ? 'Staff' : 'Member';
+        let quoteText = '';
+
+        if (m.replyToMessageId && Array.isArray(this.messages)) {
+          const parentMsg = this.messages.find(other => String(other.id) === String(m.replyToMessageId));
+          if (parentMsg) {
+            const pIsOut = parentMsg.direction === 'OUTBOUND' || parentMsg.sender === 'staff' || parentMsg.isOutgoing;
+            quoteSender = pIsOut ? 'Staff' : (this.activeName || 'Member');
+            const pRawMedia = String(parentMsg.mediaType || '').toUpperCase();
+            if (parentMsg.text && parentMsg.text.trim()) {
+              quoteText = parentMsg.text.trim();
+            } else if (parentMsg.content && parentMsg.content.trim()) {
+              quoteText = parentMsg.content.trim();
+            } else if (pRawMedia === 'IMAGE') {
+              quoteText = '📷 Photo';
+            } else if (pRawMedia === 'DOCUMENT' || pRawMedia === 'PDF') {
+              quoteText = '📄 ' + (parentMsg.fileName || 'Document');
+            } else if (pRawMedia === 'VIDEO') {
+              quoteText = '🎬 Video';
+            } else if (pRawMedia === 'AUDIO') {
+              quoteText = '🎵 Audio';
+            } else {
+              quoteText = 'Attachment';
+            }
+            quoteSnippet = quoteText;
+          }
+        }
+        if (!quoteSnippet && m.replyToText) {
+          quoteSender = m.replyToSender || (isOutgoing ? (this.activeName || 'Member') : 'Staff');
+          quoteText = m.replyToText.trim();
+          quoteSnippet = quoteText;
+        }
+
+        const rawMediaType = String(m.mediaType || '').toUpperCase();
+        const mediaUrlStr = String(m.mediaUrl || '');
         const isImg = m.mediaUrl && (
-          (m.mediaType && m.mediaType.toUpperCase() === 'IMAGE') ||
-          m.mediaUrl.match(/\.(jpg|jpeg|png|webp)/i) ||
-          (m.content === '[Image]' || m.text === '[Image]')
+          rawMediaType === 'IMAGE' ||
+          mediaUrlStr.match(/\.(jpg|jpeg|png|webp|gif)/i) ||
+          (contentBody === '[Image]')
         );
         const isDoc = m.mediaUrl && (
-          (m.mediaType && m.mediaType.toUpperCase() === 'DOCUMENT') ||
-          m.mediaUrl.match(/\.pdf/i) ||
-          (m.content === '[Document]' || m.text === '[Document]')
+          rawMediaType === 'DOCUMENT' ||
+          mediaUrlStr.match(/\.pdf/i) ||
+          (contentBody === '[Document]')
         );
-        const showText = formattedContent && formattedContent !== '[Image]' && formattedContent !== '[Document]';
+        const isAudio = m.mediaUrl && (
+          rawMediaType === 'AUDIO' ||
+          mediaUrlStr.match(/\.(mp3|ogg|wav|m4a|aac|opus)/i) ||
+          contentBody.includes('[Audio]')
+        );
+        const isVideo = m.mediaUrl && (
+          rawMediaType === 'VIDEO' ||
+          mediaUrlStr.match(/\.(mp4|webm|mov|mkv)/i) ||
+          contentBody.includes('[Video]') ||
+          contentBody.includes('[Video/GIF]')
+        );
+
+        let docName = (contentBody && contentBody.startsWith('📄 ')) ? contentBody.substring(2).trim() : 'Document.pdf';
+        if (isDoc && !contentBody.startsWith('📄 ') && contentBody.toLowerCase().endsWith('.pdf')) {
+          docName = contentBody;
+        }
+
+        const isDocDuplicate = isDoc && (contentBody === docName || contentBody === ('📄 ' + docName) || contentBody === '[Document]');
+        const formattedContent = this.linkify(contentBody);
+        const showText = formattedContent && 
+          formattedContent !== '[Image]' && 
+          formattedContent !== '[Document]' && 
+          formattedContent !== '[Audio]' && 
+          formattedContent !== '[Video]' && 
+          formattedContent !== '🎬 [Video/GIF]' && 
+          !isDocDuplicate;
 
         return `
           <div style="
@@ -454,13 +520,44 @@ export class FlChatThread extends HTMLElement {
                 </span>
               </div>
 
+              <!-- Quoted / Reply Snippet (WhatsApp Native Style) -->
+              ${quoteSnippet ? `
+                <div style="
+                  border-left: 4px solid ${isOutgoing ? '#059669' : '#2563eb'};
+                  background: ${isOutgoing ? 'rgba(0, 0, 0, 0.05)' : 'rgba(37, 99, 235, 0.06)'};
+                  padding: 5px 8px;
+                  border-radius: 4px;
+                  margin-bottom: 6px;
+                  font-size: 12px;
+                ">
+                  <div style="font-weight: 700; font-size: 11px; color: ${isOutgoing ? '#065f46' : '#1d4ed8'}; margin-bottom: 2px;">
+                    ${quoteSender}
+                  </div>
+                  <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; color: #475569; font-size: 12px;">
+                    ${quoteText}
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- Video Media Attachment -->
+              ${isVideo ? `
+                <div style="margin-bottom: 6px; border-radius: 6px; overflow: hidden; width: 100%; max-width: 380px; background: #000000;">
+                  <video 
+                    controls 
+                    playsinline
+                    src="${m.mediaUrl}" 
+                    style="width: 100%; max-height: 320px; display: block;"
+                  ></video>
+                </div>
+              ` : ''}
+
               <!-- Image Media Attachment -->
               ${isImg ? `
-                <div class="fl-chat-img-thumb" data-url="${m.mediaUrl}" style="margin-bottom: 6px; cursor: pointer; border-radius: 6px; overflow: hidden; max-width: 260px;">
+                <div class="fl-chat-img-thumb" data-url="${m.mediaUrl}" style="margin-bottom: 6px; cursor: pointer; border-radius: 6px; overflow: hidden; width: 100%; max-width: 380px; background: #ffffff;">
                   <img 
                     src="${m.mediaUrl}" 
                     alt="Photo" 
-                    style="width: 100%; max-height: 220px; object-fit: cover; display: block; border-radius: 6px;"
+                    style="width: 100%; max-height: 320px; object-fit: contain; display: block;"
                     onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'200\\' height=\\'120\\'><rect fill=\\'%23cbd5e1\\' width=\\'200\\' height=\\'120\\'/><text fill=\\'%23475569\\' x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' font-size=\\'13\\'>Photo</text></svg>';"
                   />
                 </div>
@@ -473,7 +570,7 @@ export class FlChatThread extends HTMLElement {
                     <span style="font-size: 22px;">📄</span>
                     <div style="min-width: 0;">
                       <div style="font-weight: 600; font-size: 12px; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        Document.pdf
+                        ${docName}
                       </div>
                       <div style="font-size: 10.5px; color: #64748b;">PDF Document</div>
                     </div>
@@ -481,6 +578,13 @@ export class FlChatThread extends HTMLElement {
                   <a href="${m.mediaUrl}" target="_blank" download style="background: #25d366; color: #ffffff; text-decoration: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; white-space: nowrap;">
                     Download ⤓
                   </a>
+                </div>
+              ` : ''}
+
+              <!-- Audio Media Attachment -->
+              ${isAudio ? `
+                <div style="margin-bottom: 6px; padding: 4px 0;">
+                  <audio controls src="${m.mediaUrl}" style="width: 100%; max-width: 320px; height: 38px; display: block;"></audio>
                 </div>
               ` : ''}
 

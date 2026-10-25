@@ -19,7 +19,6 @@ import com.freelance.alerts.template.entity.AlertButtonReplyEntity;
 import com.freelance.alerts.template.entity.AlertTemplateEntity;
 import com.freelance.alerts.template.repository.AlertButtonReplyRepository;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
-import com.freelance.alerts.templates.InboundWelcomeTemplate;
 import com.freelance.attribute.AttributeResolutionEngine;
 import com.freelance.dispatcher.AlertDispatcherFactory;
 import com.freelance.dispatcher.IAlertDispatcher;
@@ -30,8 +29,14 @@ import com.freelance.event.model.EventMessage;
 import com.freelance.event.model.EventPriority;
 import com.freelance.template.utils.TemplateRenderUtility;
 import com.freelance.user.read.UserReadService;
+import com.freelance.user.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.freelance.alerts.dto.ChatMessageDTO;
+import com.freelance.chat.TenantChatStreamHub;
+import com.freelance.rest.app.transaction.Transaction;
+import com.freelance.system.SystemHardcoding;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -50,6 +55,7 @@ public class WhatsAppAlertProcessor {
     private final AlertButtonReplyRepository buttonReplyRepository;
     private final AlertDispatcherFactory dispatcherFactory;
     private final AlertsEngine alertsEngine;
+    private final UserRepository userRepository;
 
     public WhatsAppAlertProcessor() {
         this(
@@ -60,7 +66,8 @@ public class WhatsAppAlertProcessor {
                 new AlertMessageRepository(),
                 new AlertButtonReplyRepository(),
                 new AlertDispatcherFactory(),
-                AlertsEngine.getInstance()
+                AlertsEngine.getInstance(),
+                new UserRepository()
         );
     }
 
@@ -114,6 +121,30 @@ public class WhatsAppAlertProcessor {
             AlertDispatcherFactory dispatcherFactory,
             AlertsEngine alertsEngine
     ) {
+        this(
+                userReadService,
+                templateRepository,
+                contactRepository,
+                channelConfigRepository,
+                messageRepository,
+                buttonReplyRepository,
+                dispatcherFactory,
+                alertsEngine,
+                new UserRepository()
+        );
+    }
+
+    public WhatsAppAlertProcessor(
+            UserReadService userReadService,
+            AlertTemplateRepository templateRepository,
+            UserContactRepository contactRepository,
+            AlertChannelConfigRepository channelConfigRepository,
+            AlertMessageRepository messageRepository,
+            AlertButtonReplyRepository buttonReplyRepository,
+            AlertDispatcherFactory dispatcherFactory,
+            AlertsEngine alertsEngine,
+            UserRepository userRepository
+    ) {
         this.userReadService = userReadService;
         this.templateRepository = templateRepository;
         this.contactRepository = contactRepository;
@@ -122,6 +153,7 @@ public class WhatsAppAlertProcessor {
         this.buttonReplyRepository = buttonReplyRepository;
         this.dispatcherFactory = dispatcherFactory != null ? dispatcherFactory : new AlertDispatcherFactory();
         this.alertsEngine = alertsEngine != null ? alertsEngine : AlertsEngine.getInstance();
+        this.userRepository = userRepository != null ? userRepository : new UserRepository();
     }
 
     /*
@@ -555,6 +587,14 @@ public class WhatsAppAlertProcessor {
         WhatsAppWebhookPayloadDTO payload = eventMessage.getPayload();
         if (payload == null) return;
 
+        String effectiveTenantId = eventMessage.getTenantId();
+        if (effectiveTenantId == null || effectiveTenantId.isBlank()) {
+            effectiveTenantId = Transaction.getRequestContext().tenantId();
+        }
+        if (effectiveTenantId == null || effectiveTenantId.isBlank()) {
+            effectiveTenantId = SystemHardcoding.DEFAULT_TENANT.asString();
+        }
+
         List<WebhookEntryDTO> entries = payload.resolveEntries();
         if (entries == null || entries.isEmpty()) return;
 
@@ -571,6 +611,12 @@ public class WhatsAppAlertProcessor {
                         if (wamid == null) continue;
 
                         Optional<AlertMessageEntity> messageOpt = messageRepository.findByMetaMessageId(wamid);
+                        if (messageOpt.isEmpty() && status.recipientId() != null && !status.recipientId().isBlank()) {
+                            Optional<UserContactEntity> cOpt = contactRepository.findByContactAndChannel(status.recipientId(), AlertChannel.WHATSAPP);
+                            if (cOpt.isPresent()) {
+                                messageOpt = messageRepository.findLatestByUserAndChannel(cOpt.get().getUserId(), AlertChannel.WHATSAPP);
+                            }
+                        }
                         if (messageOpt.isEmpty()) {
                             continue;
                         }
@@ -588,22 +634,27 @@ public class WhatsAppAlertProcessor {
                                     contactRepository,
                                     templateRepository
                             );
+                            broadcastStatusUpdate(effectiveTenantId, msg);
                         } else if ("delivered".equalsIgnoreCase(status.status())) {
                             if (msg.getStatus() == AlertMessageStatus.SENT || msg.getStatus() == AlertMessageStatus.PENDING) {
                                 msg.setStatus(AlertMessageStatus.DELIVERED);
                                 messageRepository.merge(msg);
+                                broadcastStatusUpdate(effectiveTenantId, msg);
                             }
                         } else if ("read".equalsIgnoreCase(status.status())) {
                             msg.setStatus(AlertMessageStatus.READ);
                             messageRepository.merge(msg);
-                        } else if ("sent".equalsIgnoreCase(status.status())) {
+                            broadcastStatusUpdate(effectiveTenantId, msg);
+                        } else if ("sent".equalsIgnoreCase(status.status()) || "submitted".equalsIgnoreCase(status.status())) {
                             if (msg.getStatus() == AlertMessageStatus.PENDING) {
                                 msg.setStatus(AlertMessageStatus.SENT);
                                 messageRepository.merge(msg);
+                                broadcastStatusUpdate(effectiveTenantId, msg);
                             }
                         } else if ("failed".equalsIgnoreCase(status.status())) {
                             msg.setStatus(AlertMessageStatus.FAILED);
                             messageRepository.merge(msg);
+                            broadcastStatusUpdate(effectiveTenantId, msg);
                         }
                     }
                 }
@@ -622,24 +673,39 @@ public class WhatsAppAlertProcessor {
                             continue;
                         }
 
-                        Optional<UserContactEntity> contactOpt = contactRepository.findByContactAndChannel(fromPhone, AlertChannel.WHATSAPP);
-
-                        UserContactEntity contact;
-                        UUID userId;
-                        if (contactOpt.isPresent()) {
-                            contact = contactOpt.get();
-                            userId = contact.getUserId();
-                        } else {
-                            userId = UUID.nameUUIDFromBytes(("wa:" + fromPhone).getBytes());
-                            contact = new UserContactEntity(UUID.randomUUID(), userId, AlertChannel.WHATSAPP, fromPhone, false, true, null);
-                            contactRepository.persist(contact);
-                        }
-
                         Instant messageTime = Instant.now();
                         if (msg.timestamp() != null) {
                             try {
                                 messageTime = Instant.ofEpochSecond(Long.parseLong(msg.timestamp()));
                             } catch (NumberFormatException ignored) {}
+                        }
+
+                        String normalizedPhone = fromPhone.startsWith("+") ? fromPhone : "+" + fromPhone;
+                        Optional<UserContactEntity> contactOpt = contactRepository.findByContactAndChannel(fromPhone, AlertChannel.WHATSAPP);
+
+                        UserContactEntity contact;
+                        UUID userId;
+                        boolean isNewContact = false;
+                        if (contactOpt.isPresent()) {
+                            contact = contactOpt.get();
+                            userId = contact.getUserId();
+                        } else {
+                            userId = UUID.nameUUIDFromBytes(("wa:" + normalizedPhone).getBytes());
+                            userRepository.ensureUserExists(userId, normalizedPhone, payload.customerName());
+                            Instant sessionExpiry = messageTime.plus(Duration.ofHours(24));
+                            contact = new UserContactEntity(UUID.randomUUID(), userId, AlertChannel.WHATSAPP, normalizedPhone, false, true, sessionExpiry);
+                            contactRepository.persist(contact);
+                            isNewContact = true;
+                        }
+
+                        // Mark prior outbound messages as READ when customer replies
+                        Optional<AlertMessageEntity> latestOutbound = messageRepository.findLatestByUserAndChannel(userId, AlertChannel.WHATSAPP);
+                        if (latestOutbound.isPresent()) {
+                            AlertMessageEntity prev = latestOutbound.get();
+                            if (prev.getDirection() == AlertDirection.OUTBOUND && prev.getStatus() != AlertMessageStatus.READ) {
+                                prev.setStatus(AlertMessageStatus.READ);
+                                messageRepository.merge(prev);
+                            }
                         }
 
                         String buttonPayload = msg.extractButtonPayload();
@@ -648,55 +714,55 @@ public class WhatsAppAlertProcessor {
                             textContent = msg.type() != null ? "[" + msg.type() + "]" : "[message]";
                         }
 
+                        // Resolve quoted reply context if present
+                        UUID resolvedReplyToMessageId = null;
+                        String resolvedReplyToSender = null;
+                        String resolvedReplyToText = null;
+                        if (msg.replyToId() != null && !msg.replyToId().isBlank()) {
+                            Optional<AlertMessageEntity> quotedOpt = messageRepository.findByMetaMessageId(msg.replyToId());
+                            if (quotedOpt.isPresent()) {
+                                AlertMessageEntity quoted = quotedOpt.get();
+                                resolvedReplyToMessageId = quoted.getId();
+                                resolvedReplyToSender = quoted.getDirection() == AlertDirection.OUTBOUND ? "Staff" : "Member";
+                                resolvedReplyToText = (quoted.getContent() != null && !quoted.getContent().isBlank())
+                                        ? quoted.getContent()
+                                        : (quoted.getMediaType() != null ? "[" + quoted.getMediaType() + "]" : "Attachment");
+                            }
+                        }
+
                         // 2A. Button & Interactive List Replies
                         if (buttonPayload != null && !buttonPayload.isBlank()) {
-                            Optional<AlertButtonReplyEntity> replyOpt = buttonReplyRepository.findByButtonPayload(buttonPayload);
-
-                            if (replyOpt.isPresent()) {
-                                AlertButtonReplyEntity reply = replyOpt.get();
-                                if (reply.isRequiresHumanAgent()) {
-                                    WhatsAppUtility.extendHumanSession(contact, contactRepository, Duration.ofHours(24));
-                                }
-
-                                AlertMessageEntity inboundMsg = new AlertMessageEntity(
-                                        UUID.randomUUID(),
-                                        userId,
-                                        AlertChannel.WHATSAPP,
-                                        AlertDirection.INBOUND,
-                                        "BUTTON_REPLY",
-                                        textContent,
-                                        msg.id(),
-                                        AlertMessageStatus.DELIVERED,
-                                        null,
-                                        null,
-                                        messageTime
-                                );
-                                messageRepository.persist(inboundMsg);
-
-                                if (reply.getReplyTemplate() != null) {
-                                    alertsEngine.emitAlert(reply.getReplyTemplate().getId(), userId);
-                                }
-                                continue;
+                            boolean isBtnOptOut = WhatsAppUtility.isOptOutKeyword(buttonPayload);
+                            if (isBtnOptOut) {
+                                WhatsAppUtility.updateUserConsent(userId, fromPhone, contactRepository, true, contact.isActive());
+                                contact.setOptedOut(true);
                             } else {
-                                // Unconfigured / unmapped button payload: unrecognized interactive action, fallback to human intervention
-                                WhatsAppUtility.extendHumanSession(contact, contactRepository, Duration.ofHours(24));
-
-                                AlertMessageEntity inboundMsg = new AlertMessageEntity(
-                                        UUID.randomUUID(),
-                                        userId,
-                                        AlertChannel.WHATSAPP,
-                                        AlertDirection.INBOUND,
-                                        "BUTTON_REPLY",
-                                        textContent,
-                                        msg.id(),
-                                        AlertMessageStatus.DELIVERED,
-                                        null,
-                                        null,
-                                        messageTime
-                                );
-                                messageRepository.persist(inboundMsg);
-                                continue;
+                                WhatsAppUtility.extendHumanSession(contact, contactRepository, Duration.ofHours(24), messageTime);
                             }
+
+                            AlertMessageEntity inboundMsg = new AlertMessageEntity(
+                                    UUID.randomUUID(),
+                                    userId,
+                                    AlertChannel.WHATSAPP,
+                                    AlertDirection.INBOUND,
+                                    "BUTTON_REPLY",
+                                    textContent,
+                                    null,
+                                    msg.id(),
+                                    AlertMessageStatus.DELIVERED,
+                                    null,
+                                    null,
+                                    messageTime,
+                                    null,
+                                    null,
+                                    null,
+                                    resolvedReplyToMessageId,
+                                    resolvedReplyToSender,
+                                    resolvedReplyToText
+                            );
+                            messageRepository.persist(inboundMsg);
+                            broadcastInboundMessage(effectiveTenantId, inboundMsg);
+                            continue;
                         }
 
                         // 2B. Opt-out / Opt-in Keywords
@@ -705,9 +771,8 @@ public class WhatsAppAlertProcessor {
                         boolean isOptIn = WhatsAppUtility.isOptInKeyword(trimmedText);
 
                         if (isOptOut) {
-                            WhatsAppUtility.updateUserConsent(userId, fromPhone, contactRepository, true, false);
+                            WhatsAppUtility.updateUserConsent(userId, fromPhone, contactRepository, true, contact.isActive());
                             contact.setOptedOut(true);
-                            contact.setActive(false);
                         } else if (isOptIn) {
                             WhatsAppUtility.updateUserConsent(userId, fromPhone, contactRepository, false, true);
                             contact.setOptedOut(false);
@@ -719,15 +784,20 @@ public class WhatsAppAlertProcessor {
                         String inMsgType = "TEXT";
                         String mediaId = null;
                         String mediaUrl = null;
-                        if ("image".equalsIgnoreCase(msg.type()) || msg.image() != null) {
+                        if ("image".equalsIgnoreCase(msg.type()) || "sticker".equalsIgnoreCase(msg.type()) || msg.image() != null) {
                             inMsgType = "IMAGE";
-                            if (media != null && media.id() != null) {
-                                mediaId = media.id();
-                                mediaUrl = "/alerts/media/" + mediaId;
-                            }
-                        } else if ("document".equalsIgnoreCase(msg.type()) || msg.document() != null) {
+                        } else if ("document".equalsIgnoreCase(msg.type()) || "pdf".equalsIgnoreCase(msg.type()) || msg.document() != null) {
                             inMsgType = "DOCUMENT";
-                            if (media != null && media.id() != null) {
+                        } else if ("audio".equalsIgnoreCase(msg.type()) || "voice".equalsIgnoreCase(msg.type()) || msg.audio() != null) {
+                            inMsgType = "AUDIO";
+                        } else if ("video".equalsIgnoreCase(msg.type()) || msg.video() != null) {
+                            inMsgType = "VIDEO";
+                        }
+
+                        if (media != null) {
+                            if (media.link() != null && !media.link().isBlank()) {
+                                mediaUrl = media.link();
+                            } else if (media.id() != null) {
                                 mediaId = media.id();
                                 mediaUrl = "/alerts/media/" + mediaId;
                             }
@@ -748,17 +818,17 @@ public class WhatsAppAlertProcessor {
                                 messageTime,
                                 mediaUrl,
                                 mediaId,
-                                inMsgType
+                                inMsgType,
+                                resolvedReplyToMessageId,
+                                resolvedReplyToSender,
+                                resolvedReplyToText
                         );
                         messageRepository.persist(inboundMsg);
+                        broadcastInboundMessage(effectiveTenantId, inboundMsg);
 
-                        // If media is sent, extend human session so staff can view and assist
-                        if (mediaId != null) {
-                            WhatsAppUtility.extendHumanSession(contact, contactRepository, Duration.ofHours(24));
-                        } else if (!isOptOut && !isOptIn && !contact.isHumanSessionActive()) {
-                            // If plain text, not consent keyword, and NO active human session, dispatch automated welcome menu template (triage)
-                            templateRepository.findByKey(InboundWelcomeTemplate.TEMPLATE_KEY)
-                                    .ifPresent(welcomeTpl -> alertsEngine.emitAlert(welcomeTpl.getId(), userId));
+                        // If regular inbound message (neither opt-out nor opt-in), extend 24-hour service session for existing contact
+                        if (!isOptOut && !isOptIn && !isNewContact) {
+                            WhatsAppUtility.extendHumanSession(contact, contactRepository, Duration.ofHours(24), messageTime);
                         }
                     }
                 }
@@ -810,6 +880,7 @@ public class WhatsAppAlertProcessor {
                         UUID userId = contactOpt.map(UserContactEntity::getUserId).orElse(null);
                         if (userId == null) {
                             userId = UUID.nameUUIDFromBytes(("wa:" + waId).getBytes());
+                            userRepository.ensureUserExists(userId, waId);
                             UserContactEntity newContact = new UserContactEntity(
                                     UUID.randomUUID(),
                                     userId,
@@ -941,5 +1012,44 @@ public class WhatsAppAlertProcessor {
                 msgType
         );
         messageRepository.persist(messageEntity);
+    }
+
+    private void broadcastInboundMessage(String tenantId, AlertMessageEntity entity) {
+        if (entity == null || tenantId == null) return;
+        try {
+            ChatMessageDTO dto = new ChatMessageDTO(
+                    entity.getId(),
+                    entity.getUserId(),
+                    entity.getChannel(),
+                    entity.getDirection(),
+                    entity.getMessageType(),
+                    entity.getContent(),
+                    entity.getStatus(),
+                    entity.getTimestamp(),
+                    entity.getMediaUrl(),
+                    entity.getMediaId(),
+                    entity.getMediaType(),
+                    entity.getReplyToMessageId(),
+                    entity.getReplyToSender(),
+                    entity.getReplyToText()
+            );
+            TenantChatStreamHub.broadcast(tenantId, "CHAT_MESSAGE", dto);
+        } catch (Exception e) {
+            logger.debug("[WhatsAppAlertProcessor] Could not broadcast inbound message: {}", e.getMessage());
+        }
+    }
+
+    private void broadcastStatusUpdate(String tenantId, AlertMessageEntity entity) {
+        if (entity == null || tenantId == null || entity.getUserId() == null) return;
+        try {
+            Map<String, Object> update = Map.of(
+                    "messageId", entity.getId().toString(),
+                    "userId", entity.getUserId().toString(),
+                    "status", entity.getStatus().name()
+            );
+            TenantChatStreamHub.broadcast(tenantId, "MESSAGE_STATUS", update);
+        } catch (Exception e) {
+            logger.debug("[WhatsAppAlertProcessor] Could not broadcast message status: {}", e.getMessage());
+        }
     }
 }

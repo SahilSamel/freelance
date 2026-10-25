@@ -13,8 +13,56 @@ public record WebhookMessageDTO(
         WebhookInteractiveDTO interactive,
         WebhookButtonDTO button,
         WebhookMediaDTO image,
-        WebhookMediaDTO document
+        WebhookMediaDTO document,
+        WebhookMediaDTO audio,
+        WebhookMediaDTO video,
+        String replyToId
 ) {
+    public WebhookMessageDTO(
+            String from,
+            String id,
+            String timestamp,
+            String type,
+            WebhookTextMessageDTO text,
+            WebhookInteractiveDTO interactive,
+            WebhookButtonDTO button,
+            WebhookMediaDTO image,
+            WebhookMediaDTO document,
+            WebhookMediaDTO audio,
+            String replyToId
+    ) {
+        this(from, id, timestamp, type, text, interactive, button, image, document, audio, null, replyToId);
+    }
+
+    public WebhookMessageDTO(
+            String from,
+            String id,
+            String timestamp,
+            String type,
+            WebhookTextMessageDTO text,
+            WebhookInteractiveDTO interactive,
+            WebhookButtonDTO button,
+            WebhookMediaDTO image,
+            WebhookMediaDTO document,
+            WebhookMediaDTO audio
+    ) {
+        this(from, id, timestamp, type, text, interactive, button, image, document, audio, null, null);
+    }
+
+    public WebhookMessageDTO(
+            String from,
+            String id,
+            String timestamp,
+            String type,
+            WebhookTextMessageDTO text,
+            WebhookInteractiveDTO interactive,
+            WebhookButtonDTO button,
+            WebhookMediaDTO image,
+            WebhookMediaDTO document
+    ) {
+        this(from, id, timestamp, type, text, interactive, button, image, document, null, null, null);
+    }
+
     public WebhookMessageDTO(
             String from,
             String id,
@@ -24,7 +72,7 @@ public record WebhookMessageDTO(
             WebhookInteractiveDTO interactive,
             WebhookButtonDTO button
     ) {
-        this(from, id, timestamp, type, text, interactive, button, null, null);
+        this(from, id, timestamp, type, text, interactive, button, null, null, null, null, null);
     }
 
     public WebhookMediaDTO extractMedia() {
@@ -33,6 +81,12 @@ public record WebhookMessageDTO(
         }
         if (document != null) {
             return document;
+        }
+        if (audio != null) {
+            return audio;
+        }
+        if (video != null) {
+            return video;
         }
         return null;
     }
@@ -81,6 +135,15 @@ public record WebhookMessageDTO(
                 return document.filename();
             }
             return "[Document]";
+        }
+        if (audio != null) {
+            return "[Audio]";
+        }
+        if (video != null) {
+            if (video.caption() != null && !video.caption().isBlank()) {
+                return video.caption();
+            }
+            return "🎬 [Video/GIF]";
         }
         return type != null ? "[" + type + "]" : "[unknown]";
     }

@@ -52,8 +52,25 @@ class ErrorMapperClass {
   }
 
   notifyUnauthorized() {
-    this.showErrorWindow('Your session has expired. Redirecting to login...', 'Session Expired', '401', 3000);
+    if (this._isHandlingUnauthorized) return;
+    this._isHandlingUnauthorized = true;
+
+    try {
+      import('../auth/session.js').then(({ SessionManager }) => {
+        SessionManager.clearSession();
+      }).catch(() => {});
+    } catch (_) {}
+
+    this.showErrorWindow('The session is invalid or has been terminated. Redirecting to login...', 'Session Terminated', 'FL_2103', 2500);
     window.dispatchEvent(new CustomEvent('fl:unauthorized'));
+
+    // Also directly perform router navigation / hash change after short delay if event wasn't caught
+    setTimeout(() => {
+      if (window.location.hash !== '#/login') {
+        window.location.hash = '#/login';
+      }
+      this._isHandlingUnauthorized = false;
+    }, 400);
   }
 
   handle(error, formElement = null) {
@@ -63,8 +80,12 @@ class ErrorMapperClass {
     const data = error.data;
     const errorCode = (data && data.errorCode) || (status ? `HTTP_${status}` : 'UNKNOWN_ERROR');
 
-    // Case 1: 401 Unauthorized -> redirect immediately
-    if (status === 401) {
+    // Case 1: 401 Unauthorized or Session Invalid (FL_2103 / FL_2104) -> redirect immediately
+    const isSessionInvalid = status === 401 ||
+      (data && (data.errorCode === 'FL_2103' || data.errorCode === 'FL_2104')) ||
+      (typeof error.message === 'string' && error.message.toLowerCase().includes('session is invalid'));
+
+    if (isSessionInvalid) {
       this.notifyUnauthorized();
       return;
     }

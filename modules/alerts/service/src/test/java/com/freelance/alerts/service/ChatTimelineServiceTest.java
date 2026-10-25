@@ -115,16 +115,16 @@ class ChatTimelineServiceTest {
         assertNotNull(timeline);
         assertEquals(3, timeline.messages().size());
         assertEquals(1, timeline.messages().get(0).sequenceNumber());
-        assertEquals("Message #1", timeline.messages().get(0).content());
+        assertEquals("Message #3", timeline.messages().get(0).content());
         assertEquals(2, timeline.messages().get(1).sequenceNumber());
-        assertEquals("Message #2", timeline.messages().get(1).content());
+        assertEquals("Message #4", timeline.messages().get(1).content());
         assertEquals(3, timeline.messages().get(2).sequenceNumber());
-        assertEquals("Message #3", timeline.messages().get(2).content());
+        assertEquals("Message #5", timeline.messages().get(2).content());
     }
 
     @Test
-    @DisplayName("Should maintain human support session on user contact when staff sends a reply until explicitly resolved")
-    void testSendStaffReply_maintainsHumanSessionUntilResolved() {
+    @DisplayName("Should maintain human support session on user contact when staff sends a reply")
+    void testSendStaffReply_maintainsHumanSession() {
         UUID userId = UUID.randomUUID();
         UserContactEntity contact = new UserContactEntity(
                 UUID.randomUUID(), userId, AlertChannel.WHATSAPP, "+919876543210", false, true, Instant.now().plusSeconds(3600)
@@ -143,11 +143,6 @@ class ChatTimelineServiceTest {
         Optional<UserContactEntity> updatedContact = contactRepo.findByUserAndChannel(userId, AlertChannel.WHATSAPP);
         assertTrue(updatedContact.isPresent());
         assertTrue(updatedContact.get().isHumanSessionActive(), "Staff reply should maintain human support session");
-
-        // Now explicitly resolve the session
-        boolean resolved = timelineService.resolveChatSession(userId, AlertChannel.WHATSAPP);
-        assertTrue(resolved);
-        assertFalse(updatedContact.get().isHumanSessionActive(), "Explicit resolveChatSession should close human support");
     }
 
     @Test
@@ -363,6 +358,42 @@ class ChatTimelineServiceTest {
     }
 
     @Test
+    @DisplayName("Should populate replyToMessageId, replyToSender, and replyToText in ChatMessageDTO")
+    void testGetTimeline_withQuotedReplyMessage() {
+        UUID userId = UUID.randomUUID();
+        UUID parentMsgId = UUID.randomUUID();
+
+        AlertMessageEntity parentMsg = new AlertMessageEntity(
+                parentMsgId, userId, AlertChannel.WHATSAPP, AlertDirection.OUTBOUND,
+                "TEXT", "Hello from Gym Staff!", null, null,
+                AlertMessageStatus.READ, null, null, Instant.now().minusSeconds(60)
+        );
+
+        UUID replyMsgId = UUID.randomUUID();
+        AlertMessageEntity replyMsg = new AlertMessageEntity(
+                replyMsgId, userId, AlertChannel.WHATSAPP, AlertDirection.INBOUND,
+                "TEXT", "Thanks! Can I reschedule?", null, "wamid_reply",
+                AlertMessageStatus.DELIVERED, null, null, Instant.now(),
+                null, null, "TEXT", parentMsgId, "Staff", "Hello from Gym Staff!"
+        );
+
+        messageRepo.persist(parentMsg);
+        messageRepo.persist(replyMsg);
+
+        ChatTimelineResponseDTO timeline = timelineService.getTimeline(
+                new ChatTimelineRequestDTO(userId, AlertChannel.WHATSAPP, 10, false)
+        );
+
+        assertNotNull(timeline);
+        assertEquals(2, timeline.messages().size());
+        ChatMessageDTO replyDto = timeline.messages().get(1);
+        assertEquals(replyMsgId, replyDto.id());
+        assertEquals(parentMsgId, replyDto.replyToMessageId());
+        assertEquals("Staff", replyDto.replyToSender());
+        assertEquals("Hello from Gym Staff!", replyDto.replyToText());
+    }
+
+    @Test
     @DisplayName("Default 0-arg constructor instantiates successfully")
     void testDefaultConstructor() {
         ChatTimelineService service = new ChatTimelineService();
@@ -385,6 +416,19 @@ class ChatTimelineServiceTest {
         @Override
         public List<AlertMessageEntity> findByUserAndChannel(UUID userId, AlertChannel channel) {
             return storage.stream().filter(m -> m.getUserId().equals(userId) && m.getChannel() == channel).toList();
+        }
+
+        @Override
+        public List<AlertMessageEntity> findRecentByUserAndChannel(UUID userId, AlertChannel channel, Integer limit, Instant beforeTimestamp) {
+            List<AlertMessageEntity> list = storage.stream()
+                    .filter(m -> m.getUserId().equals(userId) && m.getChannel() == channel)
+                    .filter(m -> beforeTimestamp == null || (m.getTimestamp() != null && m.getTimestamp().isBefore(beforeTimestamp)))
+                    .sorted(Comparator.comparing(AlertMessageEntity::getTimestamp, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .toList();
+            if (limit != null && limit > 0 && list.size() > limit) {
+                return list.subList(list.size() - limit, list.size());
+            }
+            return list;
         }
 
         @Override

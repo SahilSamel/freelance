@@ -312,7 +312,7 @@ class WhatsAppUtilityTest {
     }
 
     @Test
-    @DisplayName("extendHumanSession updates expiration time and merges contact")
+    @DisplayName("extendHumanSession updates expiration time and merges contact, extending rolling window")
     void testExtendHumanSession() {
         UserContactEntity contact = new UserContactEntity(
                 UUID.randomUUID(), UUID.randomUUID(), AlertChannel.WHATSAPP, "+12345", false, true, null
@@ -330,25 +330,17 @@ class WhatsAppUtilityTest {
         assertTrue(merged[0]);
         assertNotNull(contact.getHumanSessionExpiresAt());
         assertTrue(contact.isHumanSessionActive());
-        java.time.Instant initialExpiry = contact.getHumanSessionExpiresAt();
 
-        // Subsequent call does NOT extend or reset the timer
+        // Subsequent call DOES extend and overwrite the timer (rolling window)
         merged[0] = false;
-        WhatsAppUtility.extendHumanSession(contact, contactRepo, java.time.Duration.ofHours(48));
-        assertFalse(merged[0], "Should not merge or update if human session is already active");
-        assertEquals(initialExpiry, contact.getHumanSessionExpiresAt());
-
-        // closeHumanSession explicitly clears session
-        WhatsAppUtility.closeHumanSession(contact, contactRepo);
-        assertTrue(merged[0]);
-        assertNull(contact.getHumanSessionExpiresAt());
-        assertFalse(contact.isHumanSessionActive());
+        java.time.Instant newBase = java.time.Instant.now().plusSeconds(3600);
+        WhatsAppUtility.extendHumanSession(contact, contactRepo, java.time.Duration.ofHours(24), newBase);
+        assertTrue(merged[0], "Should merge and update when extending session");
+        assertEquals(newBase.plus(java.time.Duration.ofHours(24)), contact.getHumanSessionExpiresAt());
 
         // Null safe
         assertDoesNotThrow(() -> WhatsAppUtility.extendHumanSession(null, contactRepo, java.time.Duration.ofHours(1)));
         assertDoesNotThrow(() -> WhatsAppUtility.extendHumanSession(contact, null, java.time.Duration.ofHours(1)));
-        assertDoesNotThrow(() -> WhatsAppUtility.closeHumanSession(null, contactRepo));
-        assertDoesNotThrow(() -> WhatsAppUtility.closeHumanSession(contact, null));
     }
 
     @Test
@@ -404,7 +396,7 @@ class WhatsAppUtilityTest {
         UserContactEntity created = storage.get("+9112345");
         assertNotNull(created);
         assertTrue(created.isOptedOut());
-        assertFalse(created.isActive());
+        assertTrue(created.isActive());
 
         // Update existing contact
         WhatsAppUtility.updateUserConsent(userId, "+9112345", contactRepo, false, true);

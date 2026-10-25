@@ -7,6 +7,7 @@ import { Icons } from '../../../assets/icons/icons.js';
 import { SessionManager } from '../../auth/session.js';
 import { AppConfig } from '../../config/app-config.js';
 import { getAllSections } from '../../../pages/home/section-registry.js';
+import { HomeStore } from '../../../pages/home/home-store.js';
 import './fl-tabs.js';
 import './fl-avatar.js';
 
@@ -29,6 +30,8 @@ export class FlNavbar extends HTMLElement {
     };
     window.addEventListener('fl:chat-badge-update', this.badgeListener);
 
+    this.storeUnsub = HomeStore.subscribe(() => this.render());
+
     this.render();
   }
 
@@ -42,6 +45,9 @@ export class FlNavbar extends HTMLElement {
     }
     if (this.badgeListener) {
       window.removeEventListener('fl:chat-badge-update', this.badgeListener);
+    }
+    if (this.storeUnsub) {
+      this.storeUnsub();
     }
   }
 
@@ -57,6 +63,20 @@ export class FlNavbar extends HTMLElement {
     const user = SessionManager.getUser() || { username: 'Operator', name: 'Operator' };
     const chatBadge = window._fl_chat_attention_count > 0 ? String(window._fl_chat_attention_count) : '';
     const sections = getAllSections();
+
+    const homeState = HomeStore.getState();
+    const isSyncing = homeState.syncingGymData;
+    const lastSynced = homeState.lastSyncedAt;
+    let syncTimeText = 'Not synced';
+    if (lastSynced) {
+      const diffSec = Math.floor((Date.now() - lastSynced) / 1000);
+      if (diffSec < 60) syncTimeText = 'Just now';
+      else if (diffSec < 3600) syncTimeText = `${Math.floor(diffSec / 60)}m ago`;
+      else {
+        const d = new Date(lastSynced);
+        syncTimeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    }
 
     this.style.display = 'block';
     this.style.backgroundColor = '#ffffff';
@@ -103,17 +123,47 @@ export class FlNavbar extends HTMLElement {
           </div>
         </div>
 
-        <!-- Center Dynamic Tabs -->
-        <fl-tabs>
-          ${sections.map(s => {
-            const isChat = s.id === 'chats' || s.id === 'chat';
-            const badgeAttr = isChat && chatBadge ? `badge="${chatBadge}"` : '';
-            return `<fl-tab to="/${s.id}" ${activeTab === s.id ? 'active' : ''} label="${s.label}" ${badgeAttr}></fl-tab>`;
-          }).join('')}
-        </fl-tabs>
+        <!-- Center Empty Spacer -->
+        <div style="flex: 1;"></div>
 
         <!-- Right User Actions -->
-        <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <!-- Prominent Sync Button -->
+          <button 
+            type="button" 
+            id="fl-navbar-sync-btn" 
+            title="Refresh Members, Plans & Payments (${syncTimeText})"
+            style="
+              height: 36px;
+              padding: 0 13px;
+              display: flex;
+              align-items: center;
+              gap: 7px;
+              background: #f8fafc;
+              border: 1px solid #cbd5e1;
+              border-radius: 8px;
+              color: #0f172a;
+              font-size: 13px;
+              font-weight: 600;
+              cursor: ${isSyncing ? 'not-allowed' : 'pointer'};
+              transition: all 0.15s ease;
+              box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            "
+            onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#94a3b8';"
+            onmouseout="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1';"
+            ${isSyncing ? 'disabled' : ''}
+          >
+            <span class="${isSyncing ? 'fl-sync-spin' : ''}" style="display: inline-flex; color: #0f172a;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+              </svg>
+            </span>
+            <span>Sync Data</span>
+            <span style="font-size: 11px; font-weight: 500; color: #64748b; margin-left: 2px;">
+              ${isSyncing ? 'Syncing...' : syncTimeText}
+            </span>
+          </button>
+
           <!-- Notification Bell -->
           <div style="
             position: relative;
@@ -215,6 +265,14 @@ export class FlNavbar extends HTMLElement {
         if (window.fl && window.fl.router) {
           window.fl.router.navigate('/');
         }
+      });
+    }
+
+    const syncBtn = this.querySelector('#fl-navbar-sync-btn');
+    if (syncBtn) {
+      syncBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        HomeStore.refreshGymData(true);
       });
     }
   }

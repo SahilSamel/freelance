@@ -170,30 +170,24 @@ public final class WhatsAppUtility {
     }
 
     /**
-     * Initiates a 24-hour human support session for a contact if not already active.
-     * Subsequent messages from the customer do not extend or reset the timer.
+     * Initiates or extends a 24-hour service session for a contact.
+     * Follow-up messages overwrite the expiration timestamp with the new timestamp + duration.
      */
     public static void extendHumanSession(UserContactEntity contact, UserContactRepository contactRepo, Duration duration) {
-        if (contact == null || contactRepo == null) return;
-        if (contact.isHumanSessionActive()) {
-            logger.debug("[WhatsAppUtility] Human session already active for contact {} until {}; not extending.",
-                    contact.getContactValue(), contact.getHumanSessionExpiresAt());
-            return;
-        }
-        contact.setHumanSessionExpiresAt(Instant.now().plus(duration));
-        contactRepo.merge(contact);
-        logger.info("[WhatsAppUtility] Initiated human session for contact {} until {}",
-                contact.getContactValue(), contact.getHumanSessionExpiresAt());
+        extendHumanSession(contact, contactRepo, duration, Instant.now());
     }
 
     /**
-     * Explicitly terminates an active human support session on query resolution.
+     * Initiates or extends a 24-hour service session for a contact using a specific message timestamp.
+     * Overwrites ExpirationTime with inbound timestamp + duration.
      */
-    public static void closeHumanSession(UserContactEntity contact, UserContactRepository contactRepo) {
+    public static void extendHumanSession(UserContactEntity contact, UserContactRepository contactRepo, Duration duration, Instant baseTimestamp) {
         if (contact == null || contactRepo == null) return;
-        contact.setHumanSessionExpiresAt(null);
+        Instant base = baseTimestamp != null ? baseTimestamp : Instant.now();
+        contact.setHumanSessionExpiresAt(base.plus(duration));
         contactRepo.merge(contact);
-        logger.info("[WhatsAppUtility] Closed human session for contact {}", contact.getContactValue());
+        logger.info("[WhatsAppUtility] Extended 24-hour service session for contact {} until {}",
+                contact.getContactValue(), contact.getHumanSessionExpiresAt());
     }
 
     // =========================================================================
@@ -281,22 +275,25 @@ public final class WhatsAppUtility {
         if (contactOpt.isPresent()) {
             UserContactEntity contact = contactOpt.get();
             contact.setOptedOut(isOptedOut);
-            contact.setActive(isActive);
+            if (!isOptedOut) {
+                contact.setActive(true);
+            }
             contactRepo.merge(contact);
             logger.info("[WhatsAppUtility] Updated contact consent for user {} (phone={}): isOptedOut={}, isActive={}",
-                    contact.getUserId(), contact.getContactValue(), isOptedOut, isActive);
+                    contact.getUserId(), contact.getContactValue(), isOptedOut, contact.isActive());
         } else if (userId != null && contactValue != null && !contactValue.isBlank()) {
+            boolean activeFlag = isOptedOut || isActive;
             UserContactEntity newContact = new UserContactEntity(
                     UUID.randomUUID(),
                     userId,
                     AlertChannel.WHATSAPP,
                     contactValue.trim(),
                     isOptedOut,
-                    isActive
+                    activeFlag
             );
             contactRepo.persist(newContact);
             logger.info("[WhatsAppUtility] Created new contact with consent for user {} (phone={}): isOptedOut={}, isActive={}",
-                    userId, contactValue.trim(), isOptedOut, isActive);
+                    userId, contactValue.trim(), isOptedOut, activeFlag);
         }
     }
 

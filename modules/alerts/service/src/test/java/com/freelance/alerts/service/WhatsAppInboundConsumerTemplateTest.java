@@ -289,4 +289,93 @@ class WhatsAppInboundConsumerTemplateTest {
         assertEquals(TemplateStatus.APPROVED, updated.getStatus());
         assertEquals("123456789012345", updated.getMetaTemplateId());
     }
+
+    @Test
+    @DisplayName("Should resolve MSG91 live inbound customer message without being intercepted by status fallback")
+    void testMsg91InboundMessageResolution() throws Exception {
+        String json = """
+                {
+                  "crqid": "",
+                  "companyId": "579137",
+                  "requestedAt": "2026-10-22T12:36:45+05:30",
+                  "customerNumber": "918450932085",
+                  "bsuid": "IN.1503984521567004",
+                  "requestId": "",
+                  "reason": "",
+                  "uuid": "wamid.HBgMOTE4NDUwOTMyMDg1FQIAEhggQUM0RkE2MDNBOTQ5QzAE",
+                  "integratedNumber": "919137300805",
+                  "customerName": "Sahil Samel",
+                  "contentType": "text",
+                  "text": "Hi",
+                  "messageType": "text",
+                  "messages": "[{\\"from\\":\\"918450932085\\",\\"from_user_id\\":\\"IN.1503984521567004\\"}]",
+                  "ts": "2026-10-22T12:36:48+05:30"
+                }
+                """;
+
+        ObjectMapper mapper = new ObjectMapper();
+        WhatsAppWebhookPayloadDTO payload = mapper.readValue(json, WhatsAppWebhookPayloadDTO.class);
+        List<WebhookEntryDTO> entries = payload.resolveEntries();
+
+        assertNotNull(entries);
+        assertEquals(1, entries.size());
+        WebhookEntryDTO entry = entries.get(0);
+        assertEquals("918450932085", entry.id());
+        assertNotNull(entry.changes());
+        assertEquals(1, entry.changes().size());
+
+        WebhookChangeDTO change = entry.changes().get(0);
+        assertEquals("messages", change.field());
+        WebhookValueDTO value = change.value();
+        assertNotNull(value);
+        assertNull(value.statuses(), "Should not treat inbound customer message as a status/DLR receipt");
+        assertNotNull(value.messages(), "Should populate customer messages list");
+        assertEquals(1, value.messages().size());
+
+        WebhookMessageDTO msg = value.messages().get(0);
+        assertEquals("918450932085", msg.from());
+        assertEquals("wamid.HBgMOTE4NDUwOTMyMDg1FQIAEhggQUM0RkE2MDNBOTQ5QzAE", msg.id());
+        assertEquals("Hi", msg.extractTextContent());
+    }
+
+    @Test
+    @DisplayName("Should resolve MSG91 outbound report as a status receipt")
+    void testMsg91ReadReportResolution() throws Exception {
+        String json = """
+                {
+                  "crqid": "",
+                  "companyId": "579137",
+                  "requestedAt": "2026-10-22T12:36:45+05:30",
+                  "customerNumber": "918450932085",
+                  "requestId": "12fe7b5ea84a422ea42d7df7526f53e7",
+                  "reason": "",
+                  "eventName": "Read",
+                  "uuid": "12fe7b5ea84a422ea42d7df7526f53e7"
+                }
+                """;
+
+        ObjectMapper mapper = new ObjectMapper();
+        WhatsAppWebhookPayloadDTO payload = mapper.readValue(json, WhatsAppWebhookPayloadDTO.class);
+        List<WebhookEntryDTO> entries = payload.resolveEntries();
+
+        assertNotNull(entries);
+        assertEquals(1, entries.size());
+        WebhookEntryDTO entry = entries.get(0);
+        assertEquals("12fe7b5ea84a422ea42d7df7526f53e7", entry.id());
+        assertNotNull(entry.changes());
+        assertEquals(1, entry.changes().size());
+
+        WebhookChangeDTO change = entry.changes().get(0);
+        assertEquals("messages", change.field());
+        WebhookValueDTO value = change.value();
+        assertNotNull(value);
+        assertNull(value.messages(), "Should not treat outbound report as customer message");
+        assertNotNull(value.statuses(), "Should populate statuses list");
+        assertEquals(1, value.statuses().size());
+
+        WebhookStatusDTO status = value.statuses().get(0);
+        assertEquals("12fe7b5ea84a422ea42d7df7526f53e7", status.id());
+        assertEquals("read", status.status());
+        assertEquals("918450932085", status.recipientId());
+    }
 }

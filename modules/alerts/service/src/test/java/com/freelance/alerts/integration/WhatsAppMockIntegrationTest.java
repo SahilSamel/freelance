@@ -350,11 +350,7 @@ class WhatsAppMockIntegrationTest {
                 new PlanRenewalReminderTemplate(),
                 new PaymentOverdueReminderTemplate(),
                 new MemberLapsedWinbackTemplate(),
-                new GoogleReviewRequestTemplate(),
-                new InboundWelcomeTemplate(),
-                new InboundMemberSummaryTemplate(),
-                new InboundGymInfoTemplate(),
-                new InboundServicesInfoTemplate()
+                new GoogleReviewRequestTemplate()
         );
 
         TemplateSeeder seeder = new TemplateSeeder(templateRepo);
@@ -464,9 +460,9 @@ class WhatsAppMockIntegrationTest {
     // ── Integration Tests ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("1. Outbound Dispatch of All 13 Templates - Hits Real HTTP URL on Mock Server")
-    void testDispatchAll13Templates_RealHttpToMockServer() {
-        assertEquals(13, codeTemplates.size(), "All 13 system templates must be loaded");
+    @DisplayName("1. Outbound Dispatch of All 9 Templates - Hits Real HTTP URL on Mock Server")
+    void testDispatchAll9Templates_RealHttpToMockServer() {
+        assertEquals(9, codeTemplates.size(), "All 9 system templates must be loaded");
 
         // Ensure active interactive session window so all templates including >3 button templates can dispatch
         testContact.setHumanSessionExpiresAt(Instant.now().plus(Duration.ofHours(24)));
@@ -547,8 +543,8 @@ class WhatsAppMockIntegrationTest {
     }
 
     @Test
-    @DisplayName("3. Inbound Customer Freeform Text - Automatically Triggers Welcome Menu")
-    void testInboundCustomerText_TriggersWelcomeMenu() {
+    @DisplayName("3. Inbound Customer Freeform Text - Starts 24-Hour Service Session Without Automated Bot Messages")
+    void testInboundCustomerText_StartsServiceSessionWithoutAutomatedMessages() {
         mockServer.clear();
 
         // Customer replies: "Hey, I need help with gym membership"
@@ -564,89 +560,85 @@ class WhatsAppMockIntegrationTest {
         assertEquals("Hey, I need help with gym membership", latestInbound.get().getContent());
         assertEquals("TEXT", latestInbound.get().getMessageType());
 
-        // 2. Verify system automatically emitted 'inbound_welcome_menu' outbound to mock server
-        assertEquals(1, mockServer.getRecordedMessages().size(), "Mock server must receive outbound welcome menu");
-        MockWhatsAppHttpServer.RecordedOutboundMessage dispatched = mockServer.getLastMessage().orElseThrow();
-        assertEquals("inbound_welcome_menu", dispatched.templateName());
-        assertEquals(TEST_CUSTOMER_PHONE, dispatched.to());
+        // 2. Verify NO automated welcome menu or bot reply was sent to mock server
+        assertEquals(0, mockServer.getRecordedMessages().size(), "Mock server must receive NO outbound automated messages");
+
+        // 3. Verify 24-hour service session is active
+        assertNotNull(testContact.getHumanSessionExpiresAt());
+        assertTrue(testContact.isHumanSessionActive());
     }
 
     @Test
-    @DisplayName("4. Inbound Button Click: Membership & Dues -> Triggers Member Summary")
-    void testInboundButtonClick_MemberSummary() {
-        mockServer.clear();
-
-        // Customer clicks button "Membership & Dues" (payload: MENU_MEMBER_SUMMARY)
-        WhatsAppWebhookPayloadDTO btnWebhook = mockServer.createCustomerButtonPayload(
-                TEST_CUSTOMER_PHONE,
-                "MENU_MEMBER_SUMMARY",
-                "Membership & Dues"
-        );
-        processor.processInbound(EventMessage.of(AlertConsumer.INBOUND_WHATSAPP, btnWebhook, EventPriority.HIGH));
-
-        // Verify system automatically dispatched 'inbound_member_summary' outbound
-        assertEquals(1, mockServer.getRecordedMessages().size());
-        MockWhatsAppHttpServer.RecordedOutboundMessage dispatched = mockServer.getLastMessage().orElseThrow();
-        assertEquals("inbound_member_summary", dispatched.templateName());
-        assertEquals(TEST_CUSTOMER_PHONE, dispatched.to());
-    }
-
-    @Test
-    @DisplayName("5. Inbound Button Click: Gym Hours & Info -> Triggers Gym Info")
-    void testInboundButtonClick_GymInfo() {
-        mockServer.clear();
-
-        // Customer clicks button "Gym Hours & Info" (payload: MENU_GYM_INFO)
-        WhatsAppWebhookPayloadDTO btnWebhook = mockServer.createCustomerButtonPayload(
-                TEST_CUSTOMER_PHONE,
-                "MENU_GYM_INFO",
-                "Gym Hours & Info"
-        );
-        processor.processInbound(EventMessage.of(AlertConsumer.INBOUND_WHATSAPP, btnWebhook, EventPriority.HIGH));
-
-        assertEquals(1, mockServer.getRecordedMessages().size());
-        MockWhatsAppHttpServer.RecordedOutboundMessage dispatched = mockServer.getLastMessage().orElseThrow();
-        assertEquals("inbound_gym_info", dispatched.templateName());
-        assertEquals(TEST_CUSTOMER_PHONE, dispatched.to());
-    }
-
-    @Test
-    @DisplayName("6. Inbound Button Click: Plans & Pricing -> Triggers Services Info")
-    void testInboundButtonClick_ServicesInfo() {
-        mockServer.clear();
-
-        // Customer clicks button "Plans & Pricing" (payload: MENU_SERVICES)
-        WhatsAppWebhookPayloadDTO btnWebhook = mockServer.createCustomerButtonPayload(
-                TEST_CUSTOMER_PHONE,
-                "MENU_SERVICES",
-                "Plans & Pricing"
-        );
-        processor.processInbound(EventMessage.of(AlertConsumer.INBOUND_WHATSAPP, btnWebhook, EventPriority.HIGH));
-
-        assertEquals(1, mockServer.getRecordedMessages().size());
-        MockWhatsAppHttpServer.RecordedOutboundMessage dispatched = mockServer.getLastMessage().orElseThrow();
-        assertEquals("inbound_services_info", dispatched.templateName());
-        assertEquals(TEST_CUSTOMER_PHONE, dispatched.to());
-    }
-
-    @Test
-    @DisplayName("7. Inbound Button Click: Chat with Reception -> Escalates to Human Session")
-    void testInboundButtonClick_ChatWithReception_EscalatesToHuman() {
+    @DisplayName("4. Inbound Button Click: Chat with Reception -> Extends 24-Hour Service Session")
+    void testInboundButtonClick_ChatWithReception() {
         mockServer.clear();
         assertNull(testContact.getHumanSessionExpiresAt());
 
-        // Customer clicks "Chat with Reception" (payload: HUMAN_AGENT)
+        // Customer clicks button "Chat with Reception" (payload: CHAT_WITH_RECEPTION)
         WhatsAppWebhookPayloadDTO btnWebhook = mockServer.createCustomerButtonPayload(
                 TEST_CUSTOMER_PHONE,
-                "HUMAN_AGENT",
+                "CHAT_WITH_RECEPTION",
                 "Chat with Reception"
         );
         processor.processInbound(EventMessage.of(AlertConsumer.INBOUND_WHATSAPP, btnWebhook, EventPriority.HIGH));
 
-        // Verify human support session is extended
+        // Verify NO automated outbound message was dispatched
+        assertEquals(0, mockServer.getRecordedMessages().size());
+
+        // Verify 24-hour service session is active
         assertNotNull(testContact.getHumanSessionExpiresAt());
-        assertTrue(testContact.getHumanSessionExpiresAt().isAfter(Instant.now()));
-        assertTrue(testContact.getHumanSessionExpiresAt().isBefore(Instant.now().plus(Duration.ofHours(25))));
+        assertTrue(testContact.isHumanSessionActive());
+    }
+
+    @Test
+    @DisplayName("5. Inbound Button Click: Custom Payload -> Extends 24-Hour Service Session")
+    void testInboundButtonClick_CustomPayload() {
+        mockServer.clear();
+
+        WhatsAppWebhookPayloadDTO btnWebhook = mockServer.createCustomerButtonPayload(
+                TEST_CUSTOMER_PHONE,
+                "CUSTOM_INTERACTIVE_PAYLOAD",
+                "Help"
+        );
+        processor.processInbound(EventMessage.of(AlertConsumer.INBOUND_WHATSAPP, btnWebhook, EventPriority.HIGH));
+
+        assertEquals(0, mockServer.getRecordedMessages().size());
+        assertNotNull(testContact.getHumanSessionExpiresAt());
+        assertTrue(testContact.isHumanSessionActive());
+    }
+
+    @Test
+    @DisplayName("6. Inbound Button Click: Stop Notifications -> Triggers Opt-Out Without Extending Session")
+    void testInboundButtonClick_StopNotifications() {
+        mockServer.clear();
+        testContact.setHumanSessionExpiresAt(null);
+        testContact.setOptedOut(false);
+
+        WhatsAppWebhookPayloadDTO btnWebhook = mockServer.createCustomerButtonPayload(
+                TEST_CUSTOMER_PHONE,
+                "STOP",
+                "Stop Notifications"
+        );
+        processor.processInbound(EventMessage.of(AlertConsumer.INBOUND_WHATSAPP, btnWebhook, EventPriority.HIGH));
+
+        assertEquals(0, mockServer.getRecordedMessages().size());
+        assertTrue(testContact.isOptedOut(), "Contact must be marked optedOut = true");
+        assertTrue(testContact.isActive(), "Contact must remain active = true on opt-out");
+        assertNull(testContact.getHumanSessionExpiresAt(), "Session must not be extended on opt-out");
+    }
+
+    @Test
+    @DisplayName("7. Inbound Message Follow-Up -> Overwrites Expiration with Rolling 24-Hour Window")
+    void testInboundMessage_RollingWindowExtension() {
+        mockServer.clear();
+        Instant initialExpiry = Instant.now().plus(Duration.ofHours(5));
+        testContact.setHumanSessionExpiresAt(initialExpiry);
+
+        WhatsAppWebhookPayloadDTO textWebhook = mockServer.createCustomerTextPayload(TEST_CUSTOMER_PHONE, "Follow-up question");
+        processor.processInbound(EventMessage.of(AlertConsumer.INBOUND_WHATSAPP, textWebhook, EventPriority.HIGH));
+
+        assertNotNull(testContact.getHumanSessionExpiresAt());
+        assertTrue(testContact.getHumanSessionExpiresAt().isAfter(initialExpiry), "Session expiration must be overwritten with new rolling 24h window");
     }
 
     @Test

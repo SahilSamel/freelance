@@ -13,6 +13,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.sse.Sse;
+import jakarta.ws.rs.sse.SseEventSink;
+import com.freelance.chat.TenantChatStreamHub;
+import com.freelance.rest.app.transaction.Transaction;
 import java.util.List;
 import java.util.Map;
 
@@ -78,17 +83,31 @@ public class AlertEndpoint extends AbstractEndpoint {
     }
 
     @POST
-    @Path("/chat/resolve")
+    @Path("/chat/read")
     @Authorization(
-            key = "ALERT_CHAT_REPLY",
-            name = "Resolve Chat Session",
-            description = "Closes and resolves an active human support session for a user",
+            key = "ALERT_CHAT_READ",
+            name = "Mark Chat Read",
+            description = "Marks all unread incoming messages in a conversation as read",
             group = "Alerts.Chat"
     )
-    public Response resolveChatSession(ChatTimelineRequestDTO request) {
+    public Response markChatRead(ChatReadRequestDTO request) {
         ChatTimelineService timelineService = new ChatTimelineService();
-        boolean resolved = timelineService.resolveChatSession(request != null ? request.userId() : null, request != null ? request.channel() : null);
-        return buildResponse(Map.of("resolved", resolved), 200);
+        int count = timelineService.markConversationAsRead(request);
+        return buildResponse(Map.of("markedReadCount", count), 200);
+    }
+
+    @GET
+    @Path("/chat/stream")
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    @Authorization(
+            key = "ALERT_CHAT_READ",
+            name = "Stream Chat Events",
+            description = "Real-time Server-Sent Events stream for tenant chats",
+            group = "Alerts.Chat"
+    )
+    public void streamChatEvents(@Context SseEventSink eventSink, @Context Sse sse) {
+        String tenantId = Transaction.getRequestContext().tenantId();
+        TenantChatStreamHub.register(tenantId, eventSink, sse);
     }
 
     @POST

@@ -37,7 +37,8 @@ public class TenantFilter implements ContainerRequestFilter {
     private static final Set<String> EXCLUDED_PATHS = Set.of(
             "coverage",
             "favicon.ico",
-            "alerts/media"
+            "alerts/media",
+            "alerts/webhook"
     );
 
     @Override
@@ -109,13 +110,22 @@ public class TenantFilter implements ContainerRequestFilter {
             }
         }
 
+        if (requestContext.getUriInfo() != null && requestContext.getUriInfo().getQueryParameters() != null) {
+            String queryTenant = requestContext.getUriInfo().getQueryParameters().getFirst("tenant");
+            if (queryTenant != null && !queryTenant.isBlank()) {
+                return queryTenant.trim();
+            }
+        }
+
         return null;
     }
 
     private String extractSubdomain(String host) {
         String cleanHost = host.contains(":") ? host.substring(0, host.indexOf(":")) : host;
 
-        if (IPV4_PATTERN.matcher(cleanHost).matches() || "localhost".equalsIgnoreCase(cleanHost)) {
+        if (IPV4_PATTERN.matcher(cleanHost).matches()
+                || "localhost".equalsIgnoreCase(cleanHost)
+                || cleanHost.toLowerCase().endsWith("trycloudflare.com")) {
             return null;
         }
 
@@ -130,7 +140,7 @@ public class TenantFilter implements ContainerRequestFilter {
                 if (TenantRegistry.isActive(normalizedUnderScore)) {
                     return normalizedUnderScore;
                 }
-                return sub;
+                return TenantRegistry.hasAnyTenantsRegistered() ? null : sub;
             }
         }
 

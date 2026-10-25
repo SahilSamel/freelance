@@ -22,8 +22,47 @@ public record ChatMessageDTO(
         Instant timestamp,
         String mediaUrl,
         String mediaId,
-        String mediaType
+        String mediaType,
+        UUID replyToMessageId,
+        String replyToSender,
+        String replyToText
 ) {
+    public ChatMessageDTO(
+            Integer sequenceNumber,
+            UUID id,
+            UUID userId,
+            AlertChannel channel,
+            AlertDirection direction,
+            String messageType,
+            String content,
+            List<TemplateButtonDTO> buttons,
+            AlertMessageStatus status,
+            Instant timestamp,
+            String mediaUrl,
+            String mediaId,
+            String mediaType,
+            UUID replyToMessageId
+    ) {
+        this(sequenceNumber, id, userId, channel, direction, messageType, content, buttons, status, timestamp, mediaUrl, mediaId, mediaType, replyToMessageId, null, null);
+    }
+
+    public ChatMessageDTO(
+            Integer sequenceNumber,
+            UUID id,
+            UUID userId,
+            AlertChannel channel,
+            AlertDirection direction,
+            String messageType,
+            String content,
+            List<TemplateButtonDTO> buttons,
+            AlertMessageStatus status,
+            Instant timestamp,
+            String mediaUrl,
+            String mediaId,
+            String mediaType
+    ) {
+        this(sequenceNumber, id, userId, channel, direction, messageType, content, buttons, status, timestamp, mediaUrl, mediaId, mediaType, null, null, null);
+    }
     public ChatMessageDTO(
             UUID id,
             UUID userId,
@@ -34,7 +73,7 @@ public record ChatMessageDTO(
             AlertMessageStatus status,
             Instant timestamp
     ) {
-        this(null, id, userId, channel, direction, messageType, content, null, status, timestamp, null, null, null);
+        this(null, id, userId, channel, direction, messageType, content, null, status, timestamp, null, null, null, null, null, null);
     }
 
     public ChatMessageDTO(
@@ -50,7 +89,43 @@ public record ChatMessageDTO(
             String mediaId,
             String mediaType
     ) {
-        this(null, id, userId, channel, direction, messageType, content, null, status, timestamp, mediaUrl, mediaId, mediaType);
+        this(null, id, userId, channel, direction, messageType, content, null, status, timestamp, mediaUrl, mediaId, mediaType, null, null, null);
+    }
+
+    public ChatMessageDTO(
+            UUID id,
+            UUID userId,
+            AlertChannel channel,
+            AlertDirection direction,
+            String messageType,
+            String content,
+            AlertMessageStatus status,
+            Instant timestamp,
+            String mediaUrl,
+            String mediaId,
+            String mediaType,
+            UUID replyToMessageId
+    ) {
+        this(null, id, userId, channel, direction, messageType, content, null, status, timestamp, mediaUrl, mediaId, mediaType, replyToMessageId, null, null);
+    }
+
+    public ChatMessageDTO(
+            UUID id,
+            UUID userId,
+            AlertChannel channel,
+            AlertDirection direction,
+            String messageType,
+            String content,
+            AlertMessageStatus status,
+            Instant timestamp,
+            String mediaUrl,
+            String mediaId,
+            String mediaType,
+            UUID replyToMessageId,
+            String replyToSender,
+            String replyToText
+    ) {
+        this(null, id, userId, channel, direction, messageType, content, null, status, timestamp, mediaUrl, mediaId, mediaType, replyToMessageId, replyToSender, replyToText);
     }
 
     public ChatMessageDTO(

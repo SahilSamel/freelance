@@ -93,6 +93,15 @@ public class AlertMessageEntity extends AbstractAuditEntity {
     @Column(name = "media_type", length = 50)
     private String mediaType;
 
+    @Column(name = "reply_to_message_id")
+    private UUID replyToMessageId;
+
+    @Column(name = "reply_to_sender", length = 50)
+    private String replyToSender;
+
+    @Column(name = "reply_to_text", columnDefinition = "TEXT")
+    private String replyToText;
+
     public AlertMessageEntity() {}
 
     public AlertMessageEntity(
@@ -108,7 +117,7 @@ public class AlertMessageEntity extends AbstractAuditEntity {
             String rawErrorDetails,
             Instant timestamp
     ) {
-        this(id, userId, channel, direction, messageType, content, null, metaMessageId, status, errorCode, rawErrorDetails, timestamp, null, null, null);
+        this(id, userId, channel, direction, messageType, content, null, metaMessageId, status, errorCode, rawErrorDetails, timestamp, null, null, null, null, null, null);
     }
 
     public AlertMessageEntity(
@@ -125,7 +134,7 @@ public class AlertMessageEntity extends AbstractAuditEntity {
             String rawErrorDetails,
             Instant timestamp
     ) {
-        this(id, userId, channel, direction, messageType, content, template, metaMessageId, status, errorCode, rawErrorDetails, timestamp, null, null, null);
+        this(id, userId, channel, direction, messageType, content, template, metaMessageId, status, errorCode, rawErrorDetails, timestamp, null, null, null, null, null, null);
     }
 
     public AlertMessageEntity(
@@ -145,6 +154,50 @@ public class AlertMessageEntity extends AbstractAuditEntity {
             String mediaId,
             String mediaType
     ) {
+        this(id, userId, channel, direction, messageType, content, template, metaMessageId, status, errorCode, rawErrorDetails, timestamp, mediaUrl, mediaId, mediaType, null, null, null);
+    }
+
+    public AlertMessageEntity(
+            UUID id,
+            UUID userId,
+            AlertChannel channel,
+            AlertDirection direction,
+            String messageType,
+            String content,
+            AlertTemplateEntity template,
+            String metaMessageId,
+            AlertMessageStatus status,
+            String errorCode,
+            String rawErrorDetails,
+            Instant timestamp,
+            String mediaUrl,
+            String mediaId,
+            String mediaType,
+            UUID replyToMessageId
+    ) {
+        this(id, userId, channel, direction, messageType, content, template, metaMessageId, status, errorCode, rawErrorDetails, timestamp, mediaUrl, mediaId, mediaType, replyToMessageId, null, null);
+    }
+
+    public AlertMessageEntity(
+            UUID id,
+            UUID userId,
+            AlertChannel channel,
+            AlertDirection direction,
+            String messageType,
+            String content,
+            AlertTemplateEntity template,
+            String metaMessageId,
+            AlertMessageStatus status,
+            String errorCode,
+            String rawErrorDetails,
+            Instant timestamp,
+            String mediaUrl,
+            String mediaId,
+            String mediaType,
+            UUID replyToMessageId,
+            String replyToSender,
+            String replyToText
+    ) {
         this.id = id;
         this.userId = userId;
         this.channel = channel;
@@ -160,6 +213,9 @@ public class AlertMessageEntity extends AbstractAuditEntity {
         this.mediaUrl = mediaUrl;
         this.mediaId = mediaId;
         this.mediaType = mediaType;
+        this.replyToMessageId = replyToMessageId;
+        this.replyToSender = replyToSender;
+        this.replyToText = replyToText;
     }
 
     public UUID getId() { return id; }
@@ -192,4 +248,10 @@ public class AlertMessageEntity extends AbstractAuditEntity {
     public void setMediaId(String mediaId) { this.mediaId = mediaId; }
     public String getMediaType() { return mediaType; }
     public void setMediaType(String mediaType) { this.mediaType = mediaType; }
+    public UUID getReplyToMessageId() { return replyToMessageId; }
+    public void setReplyToMessageId(UUID replyToMessageId) { this.replyToMessageId = replyToMessageId; }
+    public String getReplyToSender() { return replyToSender; }
+    public void setReplyToSender(String replyToSender) { this.replyToSender = replyToSender; }
+    public String getReplyToText() { return replyToText; }
+    public void setReplyToText(String replyToText) { this.replyToText = replyToText; }
 }

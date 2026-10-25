@@ -21,6 +21,11 @@ public final class ConfigurationEngine {
 
     public static String get(IConfig config) {
         if (config == null) return null;
+        String envKey = config.getKey().replace('.', '_').toUpperCase();
+        String envVal = System.getenv(envKey);
+        if (envVal != null && !envVal.isBlank()) {
+            return envVal.trim();
+        }
         try {
             String value = CacheManager.get("cache_SystemConfig", config.getKey());
             return (value != null && !value.isBlank()) ? value : config.getDefaultValue();

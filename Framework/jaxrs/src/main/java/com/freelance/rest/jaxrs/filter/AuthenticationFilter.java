@@ -86,10 +86,18 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     private String extractBearerToken(ContainerRequestContext requestContext) {
         String authHeader = requestContext.getHeaderString(AUTHORIZATION_HEADER);
 
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            return null;
+        if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+            return authHeader.substring(BEARER_PREFIX.length()).trim();
         }
 
-        return authHeader.substring(BEARER_PREFIX.length()).trim();
+        // Fallback for native browser EventSource (SSE) which cannot send custom request headers
+        if (requestContext.getUriInfo() != null && requestContext.getUriInfo().getQueryParameters() != null) {
+            String queryToken = requestContext.getUriInfo().getQueryParameters().getFirst("token");
+            if (queryToken != null && !queryToken.isBlank()) {
+                return queryToken.trim();
+            }
+        }
+
+        return null;
     }
 }

@@ -1,8 +1,13 @@
 package com.freelance.alerts.message.repository;
 
 import com.freelance.alerts.AlertChannel;
+import com.freelance.alerts.AlertDirection;
+import com.freelance.alerts.AlertMessageStatus;
 import com.freelance.alerts.message.entity.AlertMessageEntity;
 import com.freelance.rest.app.repository.AbstractRepository;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +26,38 @@ public class AlertMessageRepository extends AbstractRepository<AlertMessageEntit
                 "userId", userId,
                 "channel", channel
         ));
+    }
+
+    public List<AlertMessageEntity> findRecentByUserAndChannel(UUID userId, AlertChannel channel, Integer limit, Instant beforeTimestamp) {
+        if (userId == null || channel == null) return List.of();
+        int max = (limit != null && limit > 0) ? limit : 50;
+
+        List<AlertMessageEntity> list;
+        if (beforeTimestamp != null) {
+            list = em().createQuery(
+                    "SELECT m FROM AlertMessageEntity m WHERE m.userId = :userId AND m.channel = :channel AND m.timestamp < :beforeTimestamp ORDER BY m.timestamp DESC, m.createdDate DESC",
+                    AlertMessageEntity.class
+            )
+            .setParameter("userId", userId)
+            .setParameter("channel", channel)
+            .setParameter("beforeTimestamp", beforeTimestamp)
+            .setMaxResults(max)
+            .getResultList();
+        } else {
+            list = em().createQuery(
+                    "SELECT m FROM AlertMessageEntity m WHERE m.userId = :userId AND m.channel = :channel ORDER BY m.timestamp DESC, m.createdDate DESC",
+                    AlertMessageEntity.class
+            )
+            .setParameter("userId", userId)
+            .setParameter("channel", channel)
+            .setMaxResults(max)
+            .getResultList();
+        }
+
+        if (list != null && list.size() > 1) {
+            java.util.Collections.reverse(list);
+        }
+        return list != null ? list : List.of();
     }
 
     public Optional<AlertMessageEntity> findByMetaMessageId(String metaMessageId) {
@@ -62,5 +99,18 @@ public class AlertMessageRepository extends AbstractRepository<AlertMessageEntit
                 "SELECT m FROM AlertMessageEntity m WHERE m.channel = :channel ORDER BY m.timestamp ASC, m.createdDate ASC",
                 AlertMessageEntity.class
         ).setParameter("channel", channel).getResultList();
+    }
+
+    public int markAllInboundAsRead(UUID userId, AlertChannel channel) {
+        if (userId == null || channel == null) return 0;
+        return em().createQuery(
+                "UPDATE AlertMessageEntity m SET m.status = :readStatus, m.lastUpdatedDate = :now WHERE m.userId = :userId AND m.channel = :channel AND m.direction = :inboundDir AND m.status != :readStatus"
+        )
+        .setParameter("readStatus", AlertMessageStatus.READ)
+        .setParameter("now", LocalDateTime.now())
+        .setParameter("userId", userId)
+        .setParameter("channel", channel)
+        .setParameter("inboundDir", AlertDirection.INBOUND)
+        .executeUpdate();
     }
 }

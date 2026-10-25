@@ -27,19 +27,19 @@ public class AttributeResolutionEngineTest {
         List<WhitelistedAttributeDTO> list = engine.listWhitelistedAttributes();
 
         assertNotNull(list);
-        WhitelistedAttributeDTO userIdAttr = list.stream()
-                .filter(a -> a.key().equals("USER.user_id"))
+        WhitelistedAttributeDTO firstNameAttr = list.stream()
+                .filter(a -> a.key().equals("USER.first_name"))
                 .findFirst()
                 .orElse(null);
-        assertNotNull(userIdAttr);
-        assertEquals("Unique identifier (UUID) of the recipient user account", userIdAttr.description());
+        assertNotNull(firstNameAttr);
+        assertEquals("First name of the recipient user", firstNameAttr.description());
 
-        WhitelistedAttributeDTO usernameAttr = list.stream()
-                .filter(a -> a.key().equals("USER.username"))
+        WhitelistedAttributeDTO nameAttr = list.stream()
+                .filter(a -> a.key().equals("USER.name"))
                 .findFirst()
                 .orElse(null);
-        assertNotNull(usernameAttr);
-        assertEquals("Registered unique username/handle of the recipient user", usernameAttr.description());
+        assertNotNull(nameAttr);
+        assertEquals("Display name of the recipient user", nameAttr.description());
     }
 
     @Test

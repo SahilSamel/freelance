@@ -17,7 +17,7 @@ public class AlertsBootstrapTest {
 
         assertDoesNotThrow(AlertsBootstrap::init);
         assertTrue(AttributeResolutionEngine.getInstance().listWhitelistedAttributes().stream()
-                .anyMatch(a -> a.key().equals("USER.username")));
+                .anyMatch(a -> a.key().equals("USER.first_name")));
     }
 
     @Test

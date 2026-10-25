@@ -39,18 +39,14 @@ class SystemTemplatesTest {
                 new UpcomingPaymentReminderTemplate(),
                 new PaymentOverdueReminderTemplate(),
                 new MemberLapsedWinbackTemplate(),
-                new GoogleReviewRequestTemplate(),
-                new InboundWelcomeTemplate(),
-                new InboundMemberSummaryTemplate(),
-                new InboundGymInfoTemplate(),
-                new InboundServicesInfoTemplate()
+                new GoogleReviewRequestTemplate()
         );
     }
 
     @Test
-    @DisplayName("Verify exactly 16 system templates are registered")
+    @DisplayName("Verify exactly 12 system templates are registered")
     void testSystemTemplateCount() {
-        assertEquals(16, provideAllSystemTemplates().count(), "There should be exactly 16 gym templates defined");
+        assertEquals(12, provideAllSystemTemplates().count(), "There should be exactly 12 gym templates defined");
     }
 
     @ParameterizedTest(name = "Validate metadata for template: {0}")
@@ -170,26 +166,6 @@ class SystemTemplatesTest {
     }
 
     @Test
-    @DisplayName("Verify InboundWelcomeTemplate button destinations match child templates")
-    void testInboundWelcomeMenuChaining() {
-        InboundWelcomeTemplate welcome = new InboundWelcomeTemplate();
-        List<ITemplateButton> buttons = welcome.getButtons();
-        assertEquals(4, buttons.size(), "Inbound welcome menu must have 4 buttons");
-
-        assertEquals("Membership & Dues", buttons.get(0).getText());
-        assertEquals(InboundMemberSummaryTemplate.TEMPLATE_KEY, buttons.get(0).getReplyTemplateKey());
-
-        assertEquals("Gym Hours & Info", buttons.get(1).getText());
-        assertEquals(InboundGymInfoTemplate.TEMPLATE_KEY, buttons.get(1).getReplyTemplateKey());
-
-        assertEquals("Plans & Pricing", buttons.get(2).getText());
-        assertEquals(InboundServicesInfoTemplate.TEMPLATE_KEY, buttons.get(2).getReplyTemplateKey());
-
-        assertEquals("Chat with Reception", buttons.get(3).getText());
-        assertTrue(buttons.get(3).requiresHumanAgent());
-    }
-
-    @Test
     @DisplayName("Verify PaymentReceiptInstantTemplate has DOCUMENT media type")
     void testPaymentReceiptInstantMedia() {
         PaymentReceiptInstantTemplate receipt = new PaymentReceiptInstantTemplate();
@@ -199,7 +175,7 @@ class SystemTemplatesTest {
     }
 
     @Test
-    @DisplayName("Verify TemplateSeeder persists all 16 templates and links button replies in Pass 2")
+    @DisplayName("Verify TemplateSeeder persists all 12 templates and configures buttons correctly")
     void testTemplateSeederPass2Chaining() {
         Map<String, AlertTemplateEntity> storage = new HashMap<>();
         AlertTemplateRepository fakeRepo = new AlertTemplateRepository() {
@@ -226,32 +202,15 @@ class SystemTemplatesTest {
         // Seed Pass 1 & Pass 2
         seeder.seed(allTemplates);
 
-        assertEquals(16, storage.size(), "All 16 system templates must be stored");
+        assertEquals(12, storage.size(), "All 12 system templates must be stored");
 
-        // Verify Inbound Welcome Menu buttons have replyTemplate entities linked
-        AlertTemplateEntity welcomeEntity = storage.get(InboundWelcomeTemplate.TEMPLATE_KEY);
+        // Verify Member Welcome Onboarding has "Chat with Reception" button with human agent
+        AlertTemplateEntity welcomeEntity = storage.get("member_welcome_onboarding");
         assertNotNull(welcomeEntity);
         assertNotNull(welcomeEntity.getButtons());
-        assertEquals(4, welcomeEntity.getButtons().size());
-
-        // Button 1: Membership & Dues -> InboundMemberSummaryTemplate
-        var btn1 = welcomeEntity.getButtons().get(0);
-        assertNotNull(btn1.getReply(), "Button 1 must have replyTemplate linked");
-        assertEquals(storage.get(InboundMemberSummaryTemplate.TEMPLATE_KEY), btn1.getReply().getReplyTemplate());
-
-        // Button 2: Gym Hours & Info -> InboundGymInfoTemplate
-        var btn2 = welcomeEntity.getButtons().get(1);
-        assertNotNull(btn2.getReply(), "Button 2 must have replyTemplate linked");
-        assertEquals(storage.get(InboundGymInfoTemplate.TEMPLATE_KEY), btn2.getReply().getReplyTemplate());
-
-        // Button 3: Plans & Pricing -> InboundServicesInfoTemplate
-        var btn3 = welcomeEntity.getButtons().get(2);
-        assertNotNull(btn3.getReply(), "Button 3 must have replyTemplate linked");
-        assertEquals(storage.get(InboundServicesInfoTemplate.TEMPLATE_KEY), btn3.getReply().getReplyTemplate());
-
-        // Button 4: Chat with Reception -> Human Agent
-        var btn4 = welcomeEntity.getButtons().get(3);
-        assertNotNull(btn4.getReply());
-        assertTrue(btn4.getReply().isRequiresHumanAgent());
+        assertEquals(1, welcomeEntity.getButtons().size());
+        assertEquals("Chat with Reception", welcomeEntity.getButtons().get(0).getButtonText());
+        assertNotNull(welcomeEntity.getButtons().get(0).getReply());
+        assertTrue(welcomeEntity.getButtons().get(0).getReply().isRequiresHumanAgent());
     }
 }

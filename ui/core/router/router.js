@@ -129,6 +129,15 @@ class RouterClass {
 
     // Render Component into Outlet
     if (this.outlet) {
+      const existingElement = this.outlet.firstElementChild;
+      const targetTag = typeof route.component === 'string' ? route.component.toLowerCase() : null;
+
+      if (existingElement && targetTag && existingElement.tagName.toLowerCase() === targetTag) {
+        existingElement.routeParams = params;
+        window.dispatchEvent(new CustomEvent('fl:route-changed', { detail: this.currentRoute }));
+        return;
+      }
+
       this.outlet.innerHTML = '';
       let element;
       if (typeof route.component === 'string') {

@@ -35,6 +35,9 @@ public class JpaFactory {
             logEntitySummary(entityBasePackage, entityClasses);
         }
 
+        String maxPool = System.getenv().getOrDefault("DB_POOL_MAX_SIZE", "10");
+        String minIdle = System.getenv().getOrDefault("DB_POOL_MIN_IDLE", "2");
+
         StandardServiceRegistry serviceRegistry =
                 new StandardServiceRegistryBuilder()
                         .applySetting("jakarta.persistence.jdbc.url", databaseConfig.url())
@@ -44,8 +47,8 @@ public class JpaFactory {
                         .applySetting("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect")
                         .applySetting("hibernate.hbm2ddl.auto", "none")
                         .applySetting("hibernate.connection.provider_class", "org.hibernate.hikaricp.internal.HikariCPConnectionProvider")
-                        .applySetting("hibernate.hikari.maximumPoolSize", "60")
-                        .applySetting("hibernate.hikari.minimumIdle", "10")
+                        .applySetting("hibernate.hikari.maximumPoolSize", maxPool)
+                        .applySetting("hibernate.hikari.minimumIdle", minIdle)
                         .applySetting("hibernate.hikari.idleTimeout", "30000")
                         .applySetting("hibernate.hikari.connectionTimeout", "20000")
                         .applySetting("hibernate.hikari.maxLifetime", "1800000")

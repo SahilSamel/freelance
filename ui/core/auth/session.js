@@ -7,9 +7,9 @@ const TOKEN_KEY = 'fl_access_token';
 const USER_KEY = 'fl_auth_user';
 const TENANT_KEY = 'fl_active_tenant';
 
-// Timeouts matching backend SessionConfigKeys.SESSION_TTL_SECONDS (600s = 10 minutes)
-const SESSION_TTL_MS = 10 * 60 * 1000;          // 10 minutes server session TTL
-const INACTIVITY_WARNING_MS = 8 * 60 * 1000;    // 8 minutes since last backend hit before warning
+// Timeouts matching backend SessionConfigKeys.SESSION_TTL_SECONDS (1200s = 20 minutes)
+const SESSION_TTL_MS = 20 * 60 * 1000;          // 20 minutes server session TTL
+const INACTIVITY_WARNING_MS = 17 * 60 * 1000;   // 17 minutes since last backend hit before warning
 
 class SessionManagerClass {
   constructor() {
@@ -30,10 +30,15 @@ class SessionManagerClass {
   getTenantId() {
     if (typeof window !== 'undefined' && window.location) {
       const host = window.location.hostname;
-      if (host && !host.startsWith('localhost') && !/^[0-9.]+$/.test(host)) {
+      if (host && !/^[0-9.]+$/.test(host)) {
         const parts = host.split('.');
-        if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'api') {
-          return parts[0].toLowerCase();
+        // Support tenant.domain.com or tenant.lvh.me or tenant.localhost
+        if (parts.length >= 2) {
+          let sub = parts[0].toLowerCase();
+          if (sub !== 'www' && sub !== 'api' && sub !== 'localhost' && sub !== 'lvh') {
+            this.setTenantId(sub);
+            return sub;
+          }
         }
       }
 
@@ -97,6 +102,15 @@ class SessionManagerClass {
   }
 
   clearSession() {
+    const tenantId = this.getTenantId();
+    if (tenantId) {
+      import('../storage/gym-cache.js').then(({ GymCache }) => {
+        GymCache.clearGymCache(tenantId).catch(() => {});
+      }).catch(() => {});
+    }
+    import('../chat/chat-stream-client.js').then(({ ChatStreamClient }) => {
+      ChatStreamClient.destroy();
+    }).catch(() => {});
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this.hideInactivityModal();

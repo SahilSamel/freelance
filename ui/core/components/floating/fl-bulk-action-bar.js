@@ -89,21 +89,11 @@ export class FlBulkActionBar extends HTMLElement {
         </div>
 
         <!-- Primary Action CTA -->
-        <button type="button" id="fl-bulk-send-btn" style="
-          background-color: var(--fl-primary, #dc2626);
-          color: #ffffff;
-          border: none;
-          border-radius: var(--fl-radius-full);
+        <button type="button" id="fl-bulk-send-btn" class="fl-btn fl-btn-whatsapp" style="
           padding: 8px 18px;
           font-size: 13px;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-          transition: background-color var(--fl-transition-fast);
-        " onmouseover="this.style.background='var(--fl-primary-hover)'" onmouseout="this.style.background='var(--fl-primary)'">
-          <span style="display:flex;">${Icons.chat}</span>
+        ">
+          <span style="display:flex;">${Icons.whatsapp || Icons.chat}</span>
           <span>Send WhatsApp Message</span>
         </button>
       </div>
@@ -148,21 +138,11 @@ export class FlFab extends HTMLElement {
     this.style.zIndex = 'var(--fl-z-floating-bar, 500)';
 
     this.innerHTML = `
-      <button type="button" style="
-        background-color: var(--fl-primary, #dc2626);
-        color: #ffffff;
-        border: none;
-        border-radius: var(--fl-radius-full, 9999px);
+      <button type="button" id="fl-fab-btn" class="fl-btn fl-btn-primary" style="
         padding: 12px 22px;
         font-size: 14px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
-        cursor: pointer;
-        transition: all var(--fl-transition-fast);
-      " id="fl-fab-btn" onmouseover="this.style.background='var(--fl-primary-hover)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='var(--fl-primary)'; this.style.transform='translateY(0)'">
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+      ">
         <span style="display:flex;">${Icons.plus}</span>
         <span>${label}</span>
       </button>

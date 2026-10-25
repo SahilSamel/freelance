@@ -139,6 +139,15 @@ class PushTemplateIntegrationTest {
                     .filter(m -> m.getUserId().equals(userId) && m.getStatus() != AlertMessageStatus.READ)
                     .toList();
         }
+
+        @Override
+        public List<AlertMessageEntity> findRecentByUserAndChannel(UUID userId, AlertChannel channel, Integer limit, Instant beforeTimestamp) {
+            return messages.stream()
+                    .filter(m -> m.getUserId().equals(userId) && m.getChannel() == channel)
+                    .filter(m -> beforeTimestamp == null || (m.getTimestamp() != null && m.getTimestamp().isBefore(beforeTimestamp)))
+                    .limit(limit != null && limit > 0 ? limit : Long.MAX_VALUE)
+                    .toList();
+        }
     }
 
     static class FakeContactRepository extends UserContactRepository {

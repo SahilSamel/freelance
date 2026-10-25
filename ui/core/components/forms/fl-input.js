@@ -29,7 +29,10 @@ export class FlInput extends HTMLElement {
   setError(errorMessage) {
     const wrapper = this.querySelector('.fl-input-wrapper');
     const errText = this.querySelector('.fl-input-err-text');
-    if (wrapper) wrapper.style.borderColor = 'var(--fl-danger, #ef4444)';
+    if (wrapper) {
+      wrapper.style.borderColor = 'var(--fl-danger, #ef4444)';
+      wrapper.style.boxShadow = 'none';
+    }
     if (errText) {
       errText.textContent = errorMessage;
       errText.style.display = 'block';
@@ -39,7 +42,14 @@ export class FlInput extends HTMLElement {
   clearError() {
     const wrapper = this.querySelector('.fl-input-wrapper');
     const errText = this.querySelector('.fl-input-err-text');
-    if (wrapper) wrapper.style.borderColor = 'var(--fl-border, #e2e8f0)';
+    if (wrapper) {
+      wrapper.style.borderColor = 'var(--fl-border, #e2e8f0)';
+      wrapper.style.boxShadow = 'none';
+      wrapper.classList.remove('fl-input--error');
+    }
+    this.classList.remove('fl-input--error');
+    const input = this.querySelector('input');
+    if (input) input.classList.remove('fl-input--error');
     if (errText) {
       errText.textContent = '';
       errText.style.display = 'none';

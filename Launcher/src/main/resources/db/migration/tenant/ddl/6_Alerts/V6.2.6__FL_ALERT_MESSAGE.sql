@@ -15,14 +15,22 @@ CREATE TABLE IF NOT EXISTS FL_ALERT_MESSAGE
     media_url         TEXT,
     media_id          VARCHAR(255),
     media_type        VARCHAR(50),
+    reply_to_message_id UUID,
+    reply_to_sender   VARCHAR(50),
+    reply_to_text     TEXT,
     created_by        UUID         NOT NULL,
     created_date      TIMESTAMPTZ  NOT NULL,
     last_updated_by   UUID,
     last_updated_date TIMESTAMPTZ,
-    CONSTRAINT fk_alert_message_template FOREIGN KEY (template_id) REFERENCES FL_ALERT_TEMPLATE (id) ON DELETE SET NULL
+    CONSTRAINT fk_alert_message_template FOREIGN KEY (template_id) REFERENCES FL_ALERT_TEMPLATE (id) ON DELETE SET NULL,
+    CONSTRAINT fk_alert_message_reply_to FOREIGN KEY (reply_to_message_id) REFERENCES FL_ALERT_MESSAGE (id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_alert_message_user ON FL_ALERT_MESSAGE (user_id, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_alert_message_wamid ON FL_ALERT_MESSAGE (meta_message_id);
 CREATE INDEX IF NOT EXISTS idx_alert_message_template_id ON FL_ALERT_MESSAGE (template_id);
 CREATE INDEX IF NOT EXISTS idx_alert_message_media_id ON FL_ALERT_MESSAGE (media_id);
+CREATE INDEX IF NOT EXISTS idx_alert_message_reply_to ON FL_ALERT_MESSAGE (reply_to_message_id);
+
+ALTER TABLE FL_ALERT_MESSAGE ADD COLUMN IF NOT EXISTS reply_to_sender VARCHAR(50);
+ALTER TABLE FL_ALERT_MESSAGE ADD COLUMN IF NOT EXISTS reply_to_text TEXT;

@@ -86,11 +86,25 @@ public class Msg91WhatsAppDispatcherService implements IAlertDispatcher {
                 : TemplateRenderUtility.render(request.template(), request.resolvedAttributes());
 
         String recipientPhone = cleanPhone(request.recipientContact());
-        String authKey = ConfigurationEngine.get(WebhookConfigKeys.MSG91_AUTH_KEY);
-        String integratedNumber = cleanPhone(ConfigurationEngine.get(WebhookConfigKeys.MSG91_INTEGRATED_NUMBER));
-        String baseUrl = ConfigurationEngine.get(WebhookConfigKeys.MSG91_API_BASE_URL);
+        String tenantId = null;
+        try {
+            if (com.freelance.rest.app.transaction.Transaction.hasActiveTransaction()
+                    && com.freelance.rest.app.transaction.Transaction.getRequestContext() != null) {
+                tenantId = com.freelance.rest.app.transaction.Transaction.getRequestContext().tenantId();
+            }
+        } catch (Exception ignored) {}
+
+        String authKey = tenantId != null
+                ? ConfigurationEngine.get(WebhookConfigKeys.MSG91_AUTH_KEY, tenantId)
+                : ConfigurationEngine.get(WebhookConfigKeys.MSG91_AUTH_KEY);
+        String integratedNumber = cleanPhone(tenantId != null
+                ? ConfigurationEngine.get(WebhookConfigKeys.MSG91_INTEGRATED_NUMBER, tenantId)
+                : ConfigurationEngine.get(WebhookConfigKeys.MSG91_INTEGRATED_NUMBER));
+        String baseUrl = tenantId != null
+                ? ConfigurationEngine.get(WebhookConfigKeys.MSG91_API_BASE_URL, tenantId)
+                : ConfigurationEngine.get(WebhookConfigKeys.MSG91_API_BASE_URL);
         if (baseUrl == null || baseUrl.isBlank()) {
-            baseUrl = "https://api.msg91.com/api/v5/whatsapp";
+            baseUrl = "https://control.msg91.com/api/v5/whatsapp";
         }
         if (baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
@@ -116,12 +130,15 @@ public class Msg91WhatsAppDispatcherService implements IAlertDispatcher {
                 jsonPayload = buildTextPayload(integratedNumber, recipientPhone, renderedText);
             }
 
-            URI targetUri = URI.create(baseUrl + "/whatsapp-outbound-message/");
+            boolean isTemplate = request.template() != null && request.template().getChannel() == AlertChannel.WHATSAPP;
+            String path = isTemplate ? "/whatsapp-outbound-message/bulk/" : "/whatsapp-outbound-message/";
+            URI targetUri = URI.create(baseUrl + path);
 
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(targetUri)
                     .header("authkey", authKey.trim())
                     .header("Content-Type", "application/json")
+                    .header("accept", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .timeout(Duration.ofSeconds(10))
                     .build();
@@ -129,6 +146,24 @@ public class Msg91WhatsAppDispatcherService implements IAlertDispatcher {
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                // Check if MSG91 returned hasError = true or status = "error" inside HTTP 200
+                JsonNode respNode = null;
+                try {
+                    respNode = objectMapper.readTree(response.body());
+                } catch (Exception ignored) {}
+
+                if (respNode != null && (respNode.path("hasError").asBoolean(false) || "error".equalsIgnoreCase(respNode.path("status").asText("")))) {
+                    String err = respNode.hasNonNull("errors") && !respNode.get("errors").isNull()
+                            ? respNode.get("errors").toString()
+                            : respNode.path("message").asText("MSG91 dispatch error");
+                    logger.error("[Msg91WhatsAppDispatcherService] MSG91 business error response: {}", response.body());
+                    return AlertDispatchResult.failure(
+                            WhatsAppErrorCode.CODE_DISPATCH_FAILED,
+                            err,
+                            response.body()
+                    );
+                }
+
                 String requestId = extractRequestId(response.body());
                 return AlertDispatchResult.success(requestId, response.body());
             } else {
@@ -229,17 +264,14 @@ public class Msg91WhatsAppDispatcherService implements IAlertDispatcher {
     private String buildMediaPayload(String integratedNumber, String recipientPhone, AlertDispatchRequest request, String renderedText) throws JsonProcessingException {
         ObjectNode root = objectMapper.createObjectNode();
         root.put("integrated_number", integratedNumber);
+        root.put("recipient_number", recipientPhone);
 
         boolean isDoc = "DOCUMENT".equalsIgnoreCase(request.mediaType())
                 || (request.mediaUrl() != null && request.mediaUrl().toLowerCase().endsWith(".pdf"));
         String mediaType = isDoc ? "document" : "image";
         root.put("content_type", mediaType);
 
-        ObjectNode payload = root.putObject("payload");
-        payload.put("to", recipientPhone);
-        payload.put("type", mediaType);
-
-        ObjectNode mediaNode = payload.putObject(mediaType);
+        ObjectNode mediaNode = root.putObject(mediaType);
         if (request.mediaUrl() != null && !request.mediaUrl().isBlank()) {
             mediaNode.put("link", request.mediaUrl());
         } else if (request.mediaId() != null && !request.mediaId().isBlank()) {
@@ -256,14 +288,9 @@ public class Msg91WhatsAppDispatcherService implements IAlertDispatcher {
     private String buildTextPayload(String integratedNumber, String recipientPhone, String renderedText) throws JsonProcessingException {
         ObjectNode root = objectMapper.createObjectNode();
         root.put("integrated_number", integratedNumber);
+        root.put("recipient_number", recipientPhone);
         root.put("content_type", "text");
-
-        ObjectNode payload = root.putObject("payload");
-        payload.put("to", recipientPhone);
-        payload.put("type", "text");
-
-        ObjectNode textNode = payload.putObject("text");
-        textNode.put("body", renderedText != null ? renderedText : "");
+        root.put("text", renderedText != null ? renderedText : "");
 
         return objectMapper.writeValueAsString(root);
     }
@@ -289,6 +316,12 @@ public class Msg91WhatsAppDispatcherService implements IAlertDispatcher {
         if (json != null && !json.isBlank()) {
             try {
                 JsonNode root = objectMapper.readTree(json);
+                if (root.has("data") && root.get("data").hasNonNull("message_uuid")) {
+                    return root.get("data").get("message_uuid").asText();
+                }
+                if (root.hasNonNull("message_uuid")) {
+                    return root.get("message_uuid").asText();
+                }
                 if (root.hasNonNull("request_id")) {
                     return root.get("request_id").asText();
                 }

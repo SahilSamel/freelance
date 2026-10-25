@@ -9,6 +9,7 @@ param(
 
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$Port/")
+$listener.Prefixes.Add("http://127.0.0.1:$Port/")
 $listener.Start()
 
 $uiDir = $PSScriptRoot
@@ -74,12 +75,16 @@ try {
 
             # 2. If it's an API route (e.g. /auth, /configurations, /members, /plan, etc.), proxy to Backend
             $isApiRoute = $rawUrl.StartsWith("/auth") -or `
+                          $rawUrl.StartsWith("/support") -or `
                           $rawUrl.StartsWith("/configurations") -or `
                           $rawUrl.StartsWith("/members") -or `
                           $rawUrl.StartsWith("/plan") -or `
                           $rawUrl.StartsWith("/tenant") -or `
                           $rawUrl.StartsWith("/user") -or `
-                          $rawUrl.StartsWith("/alerts")
+                          $rawUrl.StartsWith("/alerts") -or `
+                          $rawUrl.StartsWith("/roles") -or `
+                          $rawUrl.StartsWith("/authorizations") -or `
+                          $rawUrl.StartsWith("/audit")
 
             if ($isApiRoute) {
                 try {

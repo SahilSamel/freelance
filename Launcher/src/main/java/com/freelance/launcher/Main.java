@@ -98,31 +98,51 @@ public class Main {
     }
 
     /**
-     * Configures and starts the embedded Grizzly HTTPS server registering JAX-RS endpoints and filters.
+     * Configures and starts the embedded Grizzly HTTP server registering JAX-RS endpoints and filters.
+     * <p>
+     * Defaults to plain HTTP on 0.0.0.0:8080 (ready for NGINX/Docker reverse proxy).
+     * If {@code SSL_KEYSTORE_PATH} is provided and the keystore file exists, runs with HTTPS enabled.
+     * </p>
      *
      * @return the started {@link HttpServer} instance
      */
     private static HttpServer bootHttpServer() {
-        String baseUri = "https://localhost:8080/";
+        String host = System.getenv().getOrDefault("SERVER_HOST", "0.0.0.0");
+        String port = System.getenv().getOrDefault("PORT", "8080");
+        String keystorePath = System.getenv("SSL_KEYSTORE_PATH");
+        String keystorePass = System.getenv().getOrDefault("SSL_KEYSTORE_PASSWORD", "changeit");
 
         ResourceConfig config = new ResourceConfig()
                 .packages(RESOURCE_PACKAGE_LABELS.keySet().toArray(new String[0]))
-                .register(org.glassfish.jersey.jackson.JacksonFeature.class);
+                .register(org.glassfish.jersey.jackson.JacksonFeature.class)
+                .register(org.glassfish.jersey.media.sse.SseFeature.class);
 
         if (logger.isDebugEnabled()) {
             logResourceSummary(config.getClasses());
         }
 
-        SSLContextConfigurator sslConfig = new SSLContextConfigurator();
-        sslConfig.setKeyStoreFile("D:\\programming\\java\\Freelance\\Launcher\\src\\main\\resources\\keystore\\keystore.jks");
-        sslConfig.setKeyStorePass("changeit");
+        if (keystorePath != null && !keystorePath.isBlank() && java.nio.file.Files.exists(java.nio.file.Path.of(keystorePath))) {
+            String baseUri = String.format("https://%s:%s/", host, port);
+            logger.info("Starting Grizzly HTTPS server on {} using keystore at {}", baseUri, keystorePath);
 
-        return GrizzlyHttpServerFactory.createHttpServer(
-                URI.create(baseUri),
-                config,
-                true,
-                new SSLEngineConfigurator(sslConfig, false, false, false)
-        );
+            SSLContextConfigurator sslConfig = new SSLContextConfigurator();
+            sslConfig.setKeyStoreFile(keystorePath);
+            sslConfig.setKeyStorePass(keystorePass);
+
+            return GrizzlyHttpServerFactory.createHttpServer(
+                    URI.create(baseUri),
+                    config,
+                    true,
+                    new SSLEngineConfigurator(sslConfig, false, false, false)
+            );
+        } else {
+            String baseUri = String.format("http://%s:%s/", host, port);
+            logger.info("Starting Grizzly HTTP server on {}", baseUri);
+            return GrizzlyHttpServerFactory.createHttpServer(
+                    URI.create(baseUri),
+                    config
+            );
+        }
     }
 
     /**

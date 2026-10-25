@@ -43,7 +43,7 @@
   --fl-border: #e2e8f0;
   --fl-border-light: #f1f5f9;
   --fl-border-dark: #cbd5e1;
-  --fl-border-focus: #dc2626;
+  --fl-border-focus: #0f172a;
 
   /* Semantic Status Colors (Matching Folder Tab Colors) */
   --fl-status-active-bg: #f0fdf4;
@@ -106,6 +106,104 @@
   --fl-z-drawer: 800;
   --fl-z-modal: 1000;
   --fl-z-toast: 2000;
+
+  /* Unified Button Design Tokens */
+  --fl-btn-radius: 8px;
+  --fl-btn-font-weight: 700;
+  --fl-btn-transition: all 0.15s ease;
+
+  /* Primary Button: Black default, White on hover with black border */
+  --fl-btn-primary-bg: #0f172a;
+  --fl-btn-primary-color: #ffffff;
+  --fl-btn-primary-border: 1px solid #0f172a;
+  --fl-btn-primary-hover-bg: #ffffff;
+  --fl-btn-primary-hover-color: #0f172a;
+  --fl-btn-primary-hover-border: 1px solid #0f172a;
+
+  /* Secondary Button: Slightly greyish bg, black text, black border */
+  --fl-btn-secondary-bg: #f8fafc;
+  --fl-btn-secondary-color: #0f172a;
+  --fl-btn-secondary-border: 1px solid #0f172a;
+  --fl-btn-secondary-hover-bg: #ffffff;
+  --fl-btn-secondary-hover-color: #0f172a;
+  --fl-btn-secondary-hover-border: 1px solid #0f172a;
+
+  /* WhatsApp Button: Faded green bg, green border, black text */
+  --fl-btn-wa-bg: #f0fdf4;
+  --fl-btn-wa-color: #0f172a;
+  --fl-btn-wa-border: 1px solid #86efac;
+  --fl-btn-wa-hover-bg: #ffffff;
+  --fl-btn-wa-hover-color: #0f172a;
+  --fl-btn-wa-hover-border: 1px solid #22c55e;
+}
+
+/* ==========================================================================
+   Unified Button Utility Classes
+   ========================================================================== */
+.fl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  border-radius: var(--fl-btn-radius);
+  font-family: var(--fl-font);
+  font-size: 13px;
+  font-weight: var(--fl-btn-font-weight);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  transition: var(--fl-btn-transition);
+  line-height: 1.2;
+}
+
+.fl-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+/* Primary Button: Black bg with white text -> hover: white bg, black border, black text */
+.fl-btn-primary {
+  background-color: var(--fl-btn-primary-bg) !important;
+  color: var(--fl-btn-primary-color) !important;
+  border: var(--fl-btn-primary-border) !important;
+}
+.fl-btn-primary:hover:not(:disabled) {
+  background-color: var(--fl-btn-primary-hover-bg) !important;
+  color: var(--fl-btn-primary-hover-color) !important;
+  border: var(--fl-btn-primary-hover-border) !important;
+}
+
+/* Secondary Button: Black border, black text, slightly greyish background */
+.fl-btn-secondary {
+  background-color: var(--fl-btn-secondary-bg) !important;
+  color: var(--fl-btn-secondary-color) !important;
+  border: var(--fl-btn-secondary-border) !important;
+}
+.fl-btn-secondary:hover:not(:disabled) {
+  background-color: var(--fl-btn-secondary-hover-bg) !important;
+  color: var(--fl-btn-secondary-hover-color) !important;
+  border: var(--fl-btn-secondary-hover-border) !important;
+}
+
+/* WhatsApp Button: Faded green bg, green border, black text -> hover: white bg, sharp green border, black text */
+.fl-btn-whatsapp {
+  background-color: var(--fl-btn-wa-bg) !important;
+  color: var(--fl-btn-wa-color) !important;
+  border: var(--fl-btn-wa-border) !important;
+}
+.fl-btn-whatsapp:hover:not(:disabled) {
+  background-color: var(--fl-btn-wa-hover-bg) !important;
+  color: var(--fl-btn-wa-hover-color) !important;
+  border: var(--fl-btn-wa-hover-border) !important;
+}
+
+/* Square/Rectangle with rounded corners for icon buttons */
+.fl-btn-icon {
+  padding: 6px 10px;
+  border-radius: var(--fl-btn-radius);
 }
 
 /* CSS Reset & Defaults */
@@ -115,8 +213,22 @@
   padding: 0;
 }
 
+/* Suppress browser default red validation glow/shadows */
+:focus {
+  outline: none;
+}
+input:invalid,
+textarea:invalid,
+select:invalid {
+  box-shadow: none !important;
+  outline: none !important;
+}
+:-moz-ui-invalid {
+  box-shadow: none !important;
+}
+
 html, body {
-  height: 100%;
+  min-height: 100%;
   width: 100%;
   font-family: var(--fl-font);
   font-size: 14px;
@@ -356,15 +468,15 @@ a:hover {
    Error States & Top-Center Error Window
    ========================================================================== */
 
-/* Validation error: Red line/border on offending field */
+/* Validation error: Clean red line on offending field without glow */
 .fl-input--error,
 input.fl-input--error,
 select.fl-input--error,
 textarea.fl-input--error,
 .fl-input-wrapper.fl-input--error {
   border: 1.5px solid var(--fl-danger, #ef4444) !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
-  background-color: #fffafa !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .fl-field-error-msg {
@@ -494,4 +606,15 @@ fl-badge[variant='neutral'] {
   background-color: #f1f5f9;
   color: #475569;
   border: 1px solid #e2e8f0;
+}
+
+@keyframes fl-sync-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.fl-sync-spin {
+  animation: fl-sync-spin 0.8s linear infinite;
+  display: inline-flex;
+  transform-origin: center;
 }

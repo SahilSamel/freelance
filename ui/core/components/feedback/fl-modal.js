@@ -7,7 +7,7 @@ import { Icons } from '../../../assets/icons/icons.js';
 
 export class FlModal extends HTMLElement {
   static get observedAttributes() {
-    return ['open', 'title'];
+    return ['open', 'title', 'max-width', 'z-index'];
   }
 
   constructor() {
@@ -17,6 +17,14 @@ export class FlModal extends HTMLElement {
 
   connectedCallback() {
     this.render();
+    if (!this.hasBackdropClickListener) {
+      this.hasBackdropClickListener = true;
+      this.addEventListener('click', (e) => {
+        if (e.target === this) {
+          this.close();
+        }
+      });
+    }
   }
 
   attributeChangedCallback() {
@@ -25,16 +33,24 @@ export class FlModal extends HTMLElement {
 
   open() {
     this.setAttribute('open', '');
+    this.removeAttribute('closed');
   }
 
   close() {
     this.removeAttribute('open');
-    this.dispatchEvent(new CustomEvent('fl-modal-close', { bubbles: true }));
+    this.setAttribute('closed', '');
+    this.style.display = 'none';
+    this.dispatchEvent(new CustomEvent('fl-modal-close', { bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('fl-modal:close', { bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('close', { bubbles: true, composed: true }));
   }
 
   render() {
-    const isOpen = this.hasAttribute('open');
+    const isClosed = this.hasAttribute('closed') || this.getAttribute('open') === 'false';
+    const isOpen = this.hasAttribute('open') && !isClosed;
     const title = this.getAttribute('title') || 'Dialog';
+    const maxWidth = this.getAttribute('max-width') || '540px';
+    const zIndex = this.getAttribute('z-index') || 'var(--fl-z-modal, 1000)';
 
     this.style.position = 'fixed';
     this.style.top = '0';
@@ -43,7 +59,7 @@ export class FlModal extends HTMLElement {
     this.style.bottom = '0';
     this.style.backgroundColor = 'rgba(15, 23, 42, 0.45)';
     this.style.backdropFilter = 'blur(3px)';
-    this.style.zIndex = 'var(--fl-z-modal, 1000)';
+    this.style.zIndex = zIndex;
     this.style.display = isOpen ? 'flex' : 'none';
     this.style.alignItems = 'center';
     this.style.justifyContent = 'center';
@@ -67,7 +83,7 @@ export class FlModal extends HTMLElement {
         background: #ffffff;
         border-radius: var(--fl-radius-lg, 12px);
         width: 100%;
-        max-width: 540px;
+        max-width: ${maxWidth};
         box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
         overflow: hidden;
         display: flex;
@@ -100,7 +116,7 @@ export class FlModal extends HTMLElement {
         </div>
 
         <!-- Body -->
-        <div style="padding: 20px; max-height: 70vh; overflow-y: auto;" id="fl-modal-content-body">
+        <div style="padding: 20px; max-height: 75vh; overflow-y: auto;" id="fl-modal-content-body">
           <slot></slot>
         </div>
       </div>
@@ -108,14 +124,8 @@ export class FlModal extends HTMLElement {
 
     const closeBtn = this.shadowRoot.querySelector('#fl-modal-close-btn');
     if (closeBtn) {
-      closeBtn.addEventListener('click', () => this.close());
+      closeBtn.onclick = () => this.close();
     }
-
-    this.addEventListener('click', (e) => {
-      if (e.target === this) {
-        this.close();
-      }
-    });
   }
 }
 

@@ -11,9 +11,18 @@ import { ErrorMapper } from '../../core/error/error-mapper.js';
 import '../../core/components/forms/fl-input.js';
 
 export class FlLoginPage extends HTMLElement {
-  connectedCallback() {
+  async connectedCallback() {
     this.brandListener = () => this.render();
     window.addEventListener('fl:config-changed', this.brandListener);
+
+    // Automatically resolve tenant from hostname and load branding
+    const tenant = SessionManager.getTenantId();
+    if (tenant) {
+      try {
+        await AppConfig.loadFromBackend(tenant);
+      } catch (_) {}
+    }
+
     this.render();
   }
 
@@ -73,15 +82,7 @@ export class FlLoginPage extends HTMLElement {
         </div>
 
         <!-- Login Form -->
-        <form id="fl-login-form">
-          <fl-input 
-            label="Tenant Identifier" 
-            name="tenant" 
-            value="${SessionManager.getTenantId() || ''}"
-            placeholder="e.g. gym_name"
-            required
-          ></fl-input>
-
+        <form id="fl-login-form" novalidate>
           <fl-input 
             label="Username" 
             name="username" 
@@ -99,24 +100,13 @@ export class FlLoginPage extends HTMLElement {
             required
           ></fl-input>
 
-          <button type="submit" id="fl-login-submit-btn" style="
+          <button type="submit" id="fl-login-submit-btn" class="fl-btn fl-btn-primary" style="
             width: 100%;
             height: 42px;
             margin-top: 8px;
-            background-color: var(--fl-primary, #dc2626);
-            color: #ffffff;
-            border: none;
-            border-radius: var(--fl-radius-md, 8px);
             font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
-            transition: background var(--fl-transition-fast);
-          " onmouseover="this.style.background='var(--fl-primary-hover)'" onmouseout="this.style.background='var(--fl-primary)'">
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+          ">
             <span>Sign In</span>
           </button>
         </form>
@@ -129,18 +119,13 @@ export class FlLoginPage extends HTMLElement {
     if (form) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const tenantInput = form.querySelector('[name="tenant"]');
         const usernameInput = form.querySelector('[name="username"]');
         const passwordInput = form.querySelector('[name="password"]');
 
-        const tenant = tenantInput ? tenantInput.getValue().trim() : '';
+        const tenant = SessionManager.getTenantId();
         const username = usernameInput ? usernameInput.getValue().trim() : '';
         const password = passwordInput ? passwordInput.getValue() : '';
 
-        if (!tenant) {
-          if (tenantInput) tenantInput.setError('Tenant ID is required');
-          return;
-        }
         if (!username) {
           if (usernameInput) usernameInput.setError('Username is required');
           return;
@@ -154,7 +139,9 @@ export class FlLoginPage extends HTMLElement {
         submitBtn.innerHTML = `<span>Signing In...</span>`;
 
         try {
-          SessionManager.setTenantId(tenant);
+          if (tenant) {
+            SessionManager.setTenantId(tenant);
+          }
           
           // Authenticate with live backend
           const response = await api.post('/auth/login', { username, password });
@@ -169,6 +156,7 @@ export class FlLoginPage extends HTMLElement {
           };
 
           SessionManager.setSession(token, user, tenant);
+          sessionStorage.setItem('fl_just_logged_in', 'true');
           
           // Refresh branding for active tenant
           await AppConfig.loadFromBackend(tenant);

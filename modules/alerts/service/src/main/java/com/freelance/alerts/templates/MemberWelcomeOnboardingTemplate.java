@@ -69,8 +69,7 @@ public class MemberWelcomeOnboardingTemplate implements ITemplate {
     @Override
     public List<ITemplateButton> getButtons() {
         return List.of(
-                TemplateButtonRecord.quickReplyWithFollowup("Open Menu", "INBOUND_WELCOME_MENU", InboundWelcomeTemplate.TEMPLATE_KEY, 1),
-                TemplateButtonRecord.humanSupport("Chat with Reception", 2)
+                TemplateButtonRecord.humanSupport("Chat with Reception", 1)
         );
     }
 

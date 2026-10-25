@@ -1,0 +1,117 @@
+services:
+  # ============================================================================
+  # 1. Reverse Proxy & Static UI File Server (NGINX)
+  # ============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: freelance-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ui:/var/www/ui:ro
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - freelance-net
+
+  # ============================================================================
+  # 2. Java 21 Backend API Server (Jersey + Grizzly HTTP)
+  # ============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: freelance-backend
+    restart: unless-stopped
+    environment:
+      # Database Connection (default: local container; or Supabase if specified in .env)
+      DB_URL: "${DB_URL:-jdbc:postgresql://db:5432/freelance}"
+      DB_USER: "${DB_USER:-postgres}"
+      DB_PASSWORD: "${DB_PASSWORD:-postgres}"
+      DEPLOYMENT_MODE: "${DEPLOYMENT_MODE:-LOCAL}"
+
+      # Redis Event Broker Settings
+      EVENT_BROKER_TYPE: "${EVENT_BROKER_TYPE:-REDIS}"
+      EVENT_REDIS_HOST: "redis"
+      EVENT_REDIS_PORT: "6379"
+      EVENT_REDIS_PASSWORD: ""
+      EVENT_REDIS_DATABASE: "0"
+
+      # Initial Admin Password for Control Plane
+      CONTROL_ADMIN_INITIAL_PASSWORD: "${CONTROL_ADMIN_INITIAL_PASSWORD:-ControlAdmin@123}"
+
+      # WhatsApp MSG91 Live Provider Settings
+      ALERTS_WHATSAPP_PROVIDER: "${ALERTS_WHATSAPP_PROVIDER:-MSG91}"
+      ALERTS_MSG91_AUTHKEY: "${ALERTS_MSG91_AUTHKEY:-579137A6zd7rgpcDFL6ac5338aP1}"
+      ALERTS_MSG91_INTEGRATEDNUMBER: "${ALERTS_MSG91_INTEGRATEDNUMBER:-919137300805}"
+      ALERTS_MSG91_APIBASEURL: "${ALERTS_MSG91_APIBASEURL:-https://control.msg91.com/api/v5/whatsapp}"
+
+      # Server Binding
+      SERVER_HOST: "0.0.0.0"
+      PORT: "8080"
+    depends_on:
+      - redis
+      - db
+    networks:
+      - freelance-net
+
+  # ============================================================================
+  # 3. Local PostgreSQL Instance (Self-Contained Local Database)
+  # ============================================================================
+  db:
+    image: postgres:17-alpine
+    container_name: freelance-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: freelance
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - freelance-net
+
+  # ============================================================================
+  # 4. Persistent Redis Instance (Multi-Tenant Event Queue & Delayed Retries)
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: freelance-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy noeviction
+    volumes:
+      - redis_data:/data
+    networks:
+      - freelance-net
+
+  # ============================================================================
+  # 5. Cloudflare Tunnel (Expose NGINX to Public HTTPS for Meta WhatsApp Webhooks)
+  # ============================================================================
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: freelance-tunnel
+    restart: unless-stopped
+    command: tunnel --url http://nginx:80
+    depends_on:
+      - nginx
+    networks:
+      - freelance-net
+
+# ==============================================================================
+# Persistent Volumes & Private Network
+# ==============================================================================
+volumes:
+  postgres_data:
+    name: freelance_postgres_data
+  redis_data:
+    name: freelance_redis_data
+
+networks:
+  freelance-net:
+    name: freelance_internal_network

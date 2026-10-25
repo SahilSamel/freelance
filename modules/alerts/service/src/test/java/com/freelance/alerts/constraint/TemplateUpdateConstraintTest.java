@@ -9,7 +9,6 @@ import com.freelance.alerts.template.entity.AlertButtonEntity;
 import com.freelance.alerts.template.entity.AlertTemplateEntity;
 import com.freelance.alerts.template.repository.AlertButtonRepository;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
-import com.freelance.alerts.templates.InboundWelcomeTemplate;
 import com.freelance.fixtures.FakeAlertTemplateCategoryRepository;
 import com.freelance.fixtures.TestContextHelper;
 import com.freelance.keys.alerts.template.TemplateConstraintErrors;
@@ -120,7 +119,7 @@ class TemplateUpdateConstraintTest {
     @DisplayName("Should reject welcome menu update if no button has requiresHuman=true")
     void testWelcomeMenuRequiresHumanButton() {
         UUID id = UUID.randomUUID();
-        createSampleTemplate(id, InboundWelcomeTemplate.TEMPLATE_KEY);
+        createSampleTemplate(id, "inbound_welcome_menu");
 
         TemplateUpdateRequestDTO req = new TemplateUpdateRequestDTO(
                 id, null, "Inbound Welcome Menu", null, null, "Hello! Choose an option:", null, null, null,
@@ -138,7 +137,7 @@ class TemplateUpdateConstraintTest {
     @DisplayName("Should allow welcome menu update when at least one button has requiresHuman=true")
     void testWelcomeMenuPassesWithHumanButton() {
         UUID id = UUID.randomUUID();
-        createSampleTemplate(id, InboundWelcomeTemplate.TEMPLATE_KEY);
+        createSampleTemplate(id, "inbound_welcome_menu");
 
         TemplateUpdateRequestDTO req = new TemplateUpdateRequestDTO(
                 id, null, "Inbound Welcome Menu", null, null, "Hello! Choose an option:", null, null, null,

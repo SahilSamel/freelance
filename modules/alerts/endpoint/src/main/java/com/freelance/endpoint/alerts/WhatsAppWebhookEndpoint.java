@@ -35,13 +35,32 @@ public class WhatsAppWebhookEndpoint extends AbstractEndpoint {
         return Response.status(Response.Status.FORBIDDEN).entity("Verification failed").build();
     }
 
+    private static final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
     @POST
     @Anonymous
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response receiveWebhook(WhatsAppWebhookPayloadDTO payload) {
-        if (payload != null) {
-            EventManagementEngine.emit(AlertConsumer.INBOUND_WHATSAPP, payload, EventPriority.HIGH);
+    public Response receiveWebhook(String rawPayload) {
+        if (rawPayload != null && !rawPayload.isBlank()) {
+                                                                     try {
+                com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(rawPayload);
+                if (root.isArray()) {
+                    for (com.fasterxml.jackson.databind.JsonNode item : root) {
+                        WhatsAppWebhookPayloadDTO payload = objectMapper.treeToValue(item, WhatsAppWebhookPayloadDTO.class);
+                        if (payload != null) {
+                            EventManagementEngine.emit(AlertConsumer.INBOUND_WHATSAPP, payload, EventPriority.HIGH);
+                        }
+                    }
+                } else if (root.isObject()) {
+                    WhatsAppWebhookPayloadDTO payload = objectMapper.treeToValue(root, WhatsAppWebhookPayloadDTO.class);
+                    if (payload != null) {
+                        EventManagementEngine.emit(AlertConsumer.INBOUND_WHATSAPP, payload, EventPriority.HIGH);
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("[WhatsAppWebhookEndpoint] Failed to parse webhook payload: {}", rawPayload, e);
+            }
         }
         return Response.ok("{\"status\":\"EVENT_RECEIVED\"}").build();
     }

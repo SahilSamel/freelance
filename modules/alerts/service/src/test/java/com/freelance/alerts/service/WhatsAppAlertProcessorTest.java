@@ -476,7 +476,7 @@ class WhatsAppAlertProcessorTest {
         processor.processInbound(EventMessage.of(() -> "inbound", new WhatsAppWebhookPayloadDTO("object", List.of(new WebhookEntryDTO("id", List.of(new WebhookChangeDTO("messages", val1)))))));
 
         assertTrue(contact.isOptedOut());
-        assertFalse(contact.isActive());
+        assertTrue(contact.isActive());
 
         // 2. Opt-in keyword "START"
         WebhookMessageDTO startMsg = new WebhookMessageDTO(phone, "msg-2", "1700000001", "text", new WebhookTextMessageDTO("START"), null, null);
@@ -491,7 +491,7 @@ class WhatsAppAlertProcessorTest {
         buttonReplyRepo.byPayload.put("PAYLOAD_SUPPORT", replyEntity);
 
         WebhookInteractiveDTO interactive = new WebhookInteractiveDTO("button_reply", new WebhookButtonReplyDTO("PAYLOAD_SUPPORT", "Talk to Agent"), null);
-        WebhookMessageDTO btnMsg = new WebhookMessageDTO(phone, "msg-3", "1700000002", "interactive", null, interactive, null);
+        WebhookMessageDTO btnMsg = new WebhookMessageDTO(phone, "msg-3", String.valueOf(Instant.now().getEpochSecond()), "interactive", null, interactive, null);
         WebhookValueDTO val3 = new WebhookValueDTO("whatsapp", null, null, List.of(btnMsg), null);
         processor.processInbound(EventMessage.of(() -> "inbound", new WhatsAppWebhookPayloadDTO("object", List.of(new WebhookEntryDTO("id", List.of(new WebhookChangeDTO("messages", val3)))))));
 
@@ -685,7 +685,7 @@ class WhatsAppAlertProcessorTest {
         contactRepo.persist(contact);
 
         WebhookInteractiveDTO interactive = new WebhookInteractiveDTO("button_reply", new WebhookButtonReplyDTO("UNKNOWN_PAYLOAD", "Unknown"), null);
-        WebhookMessageDTO btnMsg = new WebhookMessageDTO(phone, "msg-unmapped", "1700000000", "interactive", null, interactive, null);
+        WebhookMessageDTO btnMsg = new WebhookMessageDTO(phone, "msg-unmapped", String.valueOf(Instant.now().getEpochSecond()), "interactive", null, interactive, null);
         WebhookValueDTO valUnmapped = new WebhookValueDTO("whatsapp", null, null, List.of(btnMsg), null);
         processor.processInbound(EventMessage.of(() -> "inbound", new WhatsAppWebhookPayloadDTO("object", List.of(new WebhookEntryDTO("id", List.of(new WebhookChangeDTO("messages", valUnmapped)))))));
 
@@ -702,7 +702,7 @@ class WhatsAppAlertProcessorTest {
 
         // 1. Inbound Image
         WebhookMediaDTO imageDto = new WebhookMediaDTO("media_img_99", "image/jpeg", "sha256img", "Here is my photo", null);
-        WebhookMessageDTO imgMsg = new WebhookMessageDTO(phone, "wamid.inbound.img1", "1700000000", "image", null, null, null, imageDto, null);
+        WebhookMessageDTO imgMsg = new WebhookMessageDTO(phone, "wamid.inbound.img1", String.valueOf(Instant.now().getEpochSecond()), "image", null, null, null, imageDto, null);
         WebhookValueDTO valImg = new WebhookValueDTO("whatsapp", null, null, List.of(imgMsg), null);
         processor.processInbound(EventMessage.of(() -> "inbound", new WhatsAppWebhookPayloadDTO("object", List.of(new WebhookEntryDTO("id", List.of(new WebhookChangeDTO("messages", valImg)))))));
 

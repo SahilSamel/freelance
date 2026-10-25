@@ -16,7 +16,6 @@ import com.freelance.alerts.template.entity.AlertButtonReplyEntity;
 import com.freelance.alerts.template.entity.AlertTemplateEntity;
 import com.freelance.alerts.template.repository.AlertButtonReplyRepository;
 import com.freelance.alerts.template.repository.AlertTemplateRepository;
-import com.freelance.alerts.templates.InboundWelcomeTemplate;
 import com.freelance.consumer.alerts.inbound.whatsapp.WhatsAppInboundConsumer;
 import com.freelance.consumer.alerts.outbound.whatsapp.WhatsAppErrorAdapter;
 import com.freelance.event.model.EventMessage;
@@ -58,6 +57,14 @@ class WhatsAppInboundConsumerTest {
                 byMetaId.put(entity.getMetaMessageId(), entity);
             }
             return entity;
+        }
+
+        @Override
+        public Optional<AlertMessageEntity> findLatestByUserAndChannel(UUID userId, AlertChannel channel) {
+            if (userId == null) return Optional.empty();
+            return persisted.stream()
+                    .filter(m -> userId.equals(m.getUserId()) && channel == m.getChannel())
+                    .reduce((first, second) -> second);
         }
     }
 
@@ -242,7 +249,8 @@ class WhatsAppInboundConsumerTest {
         Optional<UserContactEntity> contactOpt = contactRepo.findByContactAndChannel("+919876543210", AlertChannel.WHATSAPP);
         assertTrue(contactOpt.isPresent());
         assertEquals(persisted.getUserId(), contactOpt.get().getUserId());
-        assertNull(contactOpt.get().getHumanSessionExpiresAt(), "Human session should not start on freeform text");
+        assertNotNull(contactOpt.get().getHumanSessionExpiresAt(), "Human session should start on freeform text");
+        assertEquals(Instant.ofEpochSecond(1700000000L).plusSeconds(86400), contactOpt.get().getHumanSessionExpiresAt());
     }
 
     @Test
@@ -311,7 +319,7 @@ class WhatsAppInboundConsumerTest {
         Optional<UserContactEntity> contactOpt = contactRepo.findByUserAndChannel(userId, AlertChannel.WHATSAPP);
         assertTrue(contactOpt.isPresent());
         assertTrue(contactOpt.get().isOptedOut());
-        assertFalse(contactOpt.get().isActive());
+        assertTrue(contactOpt.get().isActive());
     }
 
     @Test
@@ -333,7 +341,7 @@ class WhatsAppInboundConsumerTest {
         Optional<UserContactEntity> contactOpt = contactRepo.findByUserAndChannel(userId, AlertChannel.WHATSAPP);
         assertTrue(contactOpt.isPresent());
         assertTrue(contactOpt.get().isOptedOut());
-        assertFalse(contactOpt.get().isActive());
+        assertTrue(contactOpt.get().isActive());
     }
 
     @Test
@@ -385,7 +393,7 @@ class WhatsAppInboundConsumerTest {
     }
 
     @Test
-    @DisplayName("Should handle button reply with automated response template and emit follow-up alert")
+    @DisplayName("Should handle button reply and maintain 24h service session")
     void testInboundButtonReply_withReplyTemplate() {
         UUID replyTemplateId = UUID.randomUUID();
         AlertTemplateEntity replyTemplate = new AlertTemplateEntity(
@@ -403,7 +411,7 @@ class WhatsAppInboundConsumerTest {
                 "button_reply", new WebhookButtonReplyDTO("PAYLOAD_OPT_IN", "Opt In")
         );
         WebhookMessageDTO msgDTO = new WebhookMessageDTO(
-                "+919876543210", "wamid_button_1", "1700000000", "interactive", null, interactiveDTO, null
+                "+919876543210", "wamid_button_1", String.valueOf(Instant.now().getEpochSecond()), "interactive", null, interactiveDTO, null
         );
 
         consumer.handle(EventMessage.of("alert.inbound.whatsapp", wrapMessage(msgDTO)));
@@ -415,7 +423,7 @@ class WhatsAppInboundConsumerTest {
 
         Optional<UserContactEntity> contactOpt1 = contactRepo.findByContactAndChannel("+919876543210", AlertChannel.WHATSAPP);
         assertTrue(contactOpt1.isPresent());
-        assertFalse(contactOpt1.get().isHumanSessionActive());
+        assertTrue(contactOpt1.get().isHumanSessionActive());
     }
 
     @Test
@@ -429,7 +437,7 @@ class WhatsAppInboundConsumerTest {
                 "button_reply", new WebhookButtonReplyDTO("PAYLOAD_TALK_HUMAN", "Talk to Human")
         );
         WebhookMessageDTO msgDTO = new WebhookMessageDTO(
-                "+919876543210", "wamid_button_2", "1700000000", "interactive", null, interactiveDTO, null
+                "+919876543210", "wamid_button_2", String.valueOf(Instant.now().getEpochSecond()), "interactive", null, interactiveDTO, null
         );
 
         consumer.handle(EventMessage.of("alert.inbound.whatsapp", wrapMessage(msgDTO)));
@@ -445,7 +453,7 @@ class WhatsAppInboundConsumerTest {
     }
 
     @Test
-    @DisplayName("Should handle interactive list reply with automated response template and emit follow-up alert")
+    @DisplayName("Should handle interactive list reply and maintain 24h service session")
     void testInboundListReply_withReplyTemplate() {
         UUID replyTemplateId = UUID.randomUUID();
         AlertTemplateEntity replyTemplate = new AlertTemplateEntity(
@@ -463,7 +471,7 @@ class WhatsAppInboundConsumerTest {
                 "list_reply", null, new WebhookListReplyDTO("PAYLOAD_LIST_FAQ", "Check FAQ", "Read our FAQs")
         );
         WebhookMessageDTO msgDTO = new WebhookMessageDTO(
-                "+919876543210", "wamid_list_1", "1700000000", "interactive", null, interactiveDTO, null
+                "+919876543210", "wamid_list_1", String.valueOf(Instant.now().getEpochSecond()), "interactive", null, interactiveDTO, null
         );
 
         consumer.handle(EventMessage.of("alert.inbound.whatsapp", wrapMessage(msgDTO)));
@@ -475,7 +483,7 @@ class WhatsAppInboundConsumerTest {
 
         Optional<UserContactEntity> contactOpt = contactRepo.findByContactAndChannel("+919876543210", AlertChannel.WHATSAPP);
         assertTrue(contactOpt.isPresent());
-        assertFalse(contactOpt.get().isHumanSessionActive());
+        assertTrue(contactOpt.get().isHumanSessionActive());
     }
 
     @Test
@@ -489,7 +497,7 @@ class WhatsAppInboundConsumerTest {
                 "list_reply", null, new WebhookListReplyDTO("PAYLOAD_LIST_HUMAN", "Speak to Specialist", "Live agent triage")
         );
         WebhookMessageDTO msgDTO = new WebhookMessageDTO(
-                "+919876543210", "wamid_list_2", "1700000000", "interactive", null, interactiveDTO, null
+                "+919876543210", "wamid_list_2", String.valueOf(Instant.now().getEpochSecond()), "interactive", null, interactiveDTO, null
         );
 
         consumer.handle(EventMessage.of("alert.inbound.whatsapp", wrapMessage(msgDTO)));
@@ -509,7 +517,7 @@ class WhatsAppInboundConsumerTest {
     void testInboundButtonReply_unconfiguredPayload() {
         WebhookButtonDTO buttonDTO = new WebhookButtonDTO("Custom Option", "CUSTOM_PAYLOAD_UNCONFIGURED");
         WebhookMessageDTO msgDTO = new WebhookMessageDTO(
-                "+919876543210", "wamid_button_3", "1700000000", "button", null, null, buttonDTO
+                "+919876543210", "wamid_button_3", String.valueOf(Instant.now().getEpochSecond()), "button", null, null, buttonDTO
         );
 
         consumer.handle(EventMessage.of("alert.inbound.whatsapp", wrapMessage(msgDTO)));
@@ -725,29 +733,11 @@ class WhatsAppInboundConsumerTest {
     }
 
     @Test
-    @DisplayName("Should emit welcome template and not start human session on inbound freeform text")
-    void testInboundTextMessage_emitsWelcomeTemplateWithoutStartingHumanSession() {
-        // Seed InboundWelcomeTemplate
-        AlertTemplateEntity welcomeEntity = new AlertTemplateEntity(
-                UUID.randomUUID(),
-                InboundWelcomeTemplate.TEMPLATE_KEY,
-                "Inbound Welcome Menu",
-                "UTILITY",
-                "en_US",
-                "Hello! Please choose:",
-                null,
-                null,
-                AlertChannel.WHATSAPP,
-                TemplateStatus.APPROVED,
-                true,
-                null,
-                null
-        );
-        templateRepo.persist(welcomeEntity);
-
+    @DisplayName("Should start 24h service session and not emit welcome template on inbound freeform text")
+    void testInboundTextMessage_activatesServiceSessionWithoutEmittingWelcomeTemplate() {
         WebhookTextMessageDTO textDTO = new WebhookTextMessageDTO("What are your business hours?");
         WebhookMessageDTO msgDTO = new WebhookMessageDTO(
-                "+919876543210", "wamid_inbound_welcome", "1700000000", "text", textDTO, null, null
+                "+919876543210", "wamid_inbound_welcome", String.valueOf(Instant.now().getEpochSecond()), "text", textDTO, null, null
         );
 
         consumer.handle(EventMessage.of("alert.inbound.whatsapp", wrapMessage(msgDTO)));
@@ -758,59 +748,59 @@ class WhatsAppInboundConsumerTest {
 
         Optional<UserContactEntity> contactOpt = contactRepo.findByContactAndChannel("+919876543210", AlertChannel.WHATSAPP);
         assertTrue(contactOpt.isPresent());
-        assertNull(contactOpt.get().getHumanSessionExpiresAt(), "Human session should NOT start on freeform text");
+        assertNotNull(contactOpt.get().getHumanSessionExpiresAt(), "Service session MUST start on freeform text");
+        assertTrue(contactOpt.get().isHumanSessionActive(), "Service session must be active");
     }
 
     @Test
-    @DisplayName("Should not start human session when user selects self-service button")
-    void testInboundButtonReply_selfServiceOption_doesNotStartHumanSession() {
+    @DisplayName("Should start 24h service session when user clicks an interactive button")
+    void testInboundButtonReply_interactiveButton_startsServiceSession() {
         String phone = "+919876543210";
         UUID userId = UUID.randomUUID();
         UserContactEntity contact = new UserContactEntity(UUID.randomUUID(), userId, AlertChannel.WHATSAPP, phone, false, true, null);
         contactRepo.persist(contact);
 
-        AlertButtonEntity button = new AlertButtonEntity(UUID.randomUUID(), null, "View FAQs", ButtonType.QUICK_REPLY, "TRIAGE_FAQ", 1);
+        AlertButtonEntity button = new AlertButtonEntity(UUID.randomUUID(), null, "View Info", ButtonType.QUICK_REPLY, "INFO_BTN", 1);
         AlertButtonReplyEntity buttonReply = new AlertButtonReplyEntity(UUID.randomUUID(), button, null, false);
-        buttonReplyRepo.save("TRIAGE_FAQ", buttonReply);
+        buttonReplyRepo.save("INFO_BTN", buttonReply);
 
-        WebhookButtonDTO buttonDTO = new WebhookButtonDTO("View FAQs", "TRIAGE_FAQ");
+        WebhookButtonDTO buttonDTO = new WebhookButtonDTO("View Info", "INFO_BTN");
         WebhookMessageDTO msgDTO = new WebhookMessageDTO(
-                phone, "wamid_btn_faq", "1700000000", "button", null, null, buttonDTO
+                phone, "wamid_btn_info", String.valueOf(Instant.now().getEpochSecond()), "button", null, null, buttonDTO
         );
 
         consumer.handle(EventMessage.of("alert.inbound.whatsapp", wrapMessage(msgDTO)));
 
         assertEquals(1, messageRepo.persisted.size());
-        AlertMessageEntity persisted = messageRepo.persisted.get(0);
-        assertNull(contact.getHumanSessionExpiresAt(), "Self-service click must not activate human session");
+        Optional<UserContactEntity> updatedContactOpt = contactRepo.findByUserAndChannel(userId, AlertChannel.WHATSAPP);
+        assertTrue(updatedContactOpt.isPresent());
+        assertTrue(updatedContactOpt.get().isHumanSessionActive(), "Any interactive click must activate 24-hour service session");
     }
 
     @Test
-    @DisplayName("Should activate 24h human support session when user selects Need Human Support button")
-    void testInboundButtonReply_humanSupportOption_startsHumanSession() {
+    @DisplayName("Should extend 24h service session rolling window on follow-up inbound message")
+    void testInboundMessage_followUpExtendsServiceSession() {
         String phone = "+919876543210";
         UUID userId = UUID.randomUUID();
-        UserContactEntity contact = new UserContactEntity(UUID.randomUUID(), userId, AlertChannel.WHATSAPP, phone, false, true, null);
+        // Initial session expiring at 1700000000 + 24h
+        Instant initialExpiry = Instant.ofEpochSecond(1700000000).plusSeconds(86400);
+        UserContactEntity contact = new UserContactEntity(UUID.randomUUID(), userId, AlertChannel.WHATSAPP, phone, false, true, initialExpiry);
         contactRepo.persist(contact);
 
-        AlertButtonEntity button = new AlertButtonEntity(UUID.randomUUID(), null, "Need Human Support", ButtonType.QUICK_REPLY, "TRIAGE_HUMAN", 3);
-        AlertButtonReplyEntity buttonReply = new AlertButtonReplyEntity(UUID.randomUUID(), button, null, true);
-        buttonReplyRepo.save("TRIAGE_HUMAN", buttonReply);
+        // Follow up message arriving 2 hours later at timestamp 1700007200
+        long newTimestampSec = 1700007200L;
+        Instant expectedNewExpiry = Instant.ofEpochSecond(newTimestampSec).plusSeconds(86400);
 
-        WebhookButtonDTO buttonDTO = new WebhookButtonDTO("Need Human Support", "TRIAGE_HUMAN");
+        WebhookTextMessageDTO textDTO = new WebhookTextMessageDTO("Follow up question");
         WebhookMessageDTO msgDTO = new WebhookMessageDTO(
-                phone, "wamid_btn_human", "1700000000", "button", null, null, buttonDTO
+                phone, "wamid_msg_followup", String.valueOf(newTimestampSec), "text", textDTO, null, null
         );
 
         consumer.handle(EventMessage.of("alert.inbound.whatsapp", wrapMessage(msgDTO)));
-
-        assertEquals(1, messageRepo.persisted.size());
-        AlertMessageEntity persisted = messageRepo.persisted.get(0);
 
         Optional<UserContactEntity> updatedContactOpt = contactRepo.findByUserAndChannel(userId, AlertChannel.WHATSAPP);
         assertTrue(updatedContactOpt.isPresent());
-        assertNotNull(updatedContactOpt.get().getHumanSessionExpiresAt(), "Human session timer must be active");
-        assertTrue(updatedContactOpt.get().isHumanSessionActive(), "Human session must be active");
+        assertEquals(expectedNewExpiry, updatedContactOpt.get().getHumanSessionExpiresAt(), "Expiration time must be overwritten with new timestamp + 24h");
     }
 }
 

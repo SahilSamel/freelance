@@ -20,18 +20,18 @@ export const SECTIONS = [
     load: () => import('./sections/payments-section.js')
   },
   {
-    id: 'plans',
-    label: 'Plans',
-    icon: 'layers',
-    componentTag: 'fl-plans-section',
-    load: () => import('./sections/plans-section.js')
-  },
-  {
     id: 'chats',
     label: 'Chats',
     icon: 'messageCircle',
     componentTag: 'fl-chats-section',
     load: () => import('./sections/chats-section.js')
+  },
+  {
+    id: 'plans',
+    label: 'Plans',
+    icon: 'layers',
+    componentTag: 'fl-plans-section',
+    load: () => import('./sections/plans-section.js')
   }
 ];
 

@@ -73,7 +73,7 @@ public class MemberLapsedWinbackTemplate implements ITemplate {
     @Override
     public List<ITemplateButton> getButtons() {
         return List.of(
-                TemplateButtonRecord.humanSupport("Claim Offer", 1),
+                TemplateButtonRecord.humanSupport("Chat with Reception", 1),
                 TemplateButtonRecord.quickReply("Stop Notifications", "STOP", 2)
         );
     }

@@ -101,6 +101,21 @@ export class ApiClient {
         error.data = data;
         error.endpoint = endpoint;
 
+        // Check if error is session termination/invalid (e.g., FL_2103)
+        const isSessionInvalid = (data && (
+          data.errorCode === 'FL_2103' ||
+          data.errorCode === 'FL_2104' ||
+          (typeof data.message === 'string' && data.message.toLowerCase().includes('session is invalid'))
+        ));
+
+        if (isSessionInvalid) {
+          SessionManager.clearSession();
+          ErrorMapper.notifyUnauthorized();
+          const sessionErr = new Error((data && data.message) || 'Session is invalid or has been terminated.');
+          sessionErr.status = 401;
+          throw sessionErr;
+        }
+
         // Auto-delegate to global error mapper
         if (!options.silentError) {
           ErrorMapper.handle(error, options.formElement);
