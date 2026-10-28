@@ -612,6 +612,10 @@ export class FlChatsSection extends HTMLElement {
                     docName = cleanTextBody.substring(2).trim();
                   } else if (cleanTextBody && cleanTextBody.toLowerCase().endsWith('.pdf')) {
                     docName = cleanTextBody;
+                  } else if (isDoc && (cleanTextBody.toLowerCase().includes('receipt') || cleanTextBody.toLowerCase().includes('payment'))) {
+                    const rawName = (activeConv?.name || 'Member').trim().split(/\s+/)[0];
+                    const dateStr = (msg.timestamp ? new Date(msg.timestamp) : new Date()).toISOString().slice(0, 10);
+                    docName = `Payment_Receipt_${rawName}_${dateStr}.pdf`;
                   } else {
                     docName = 'Attachment.pdf';
                   }
@@ -797,7 +801,7 @@ export class FlChatsSection extends HTMLElement {
                               <div style="font-size: 10.5px; color: #64748b;">PDF Document</div>
                             </div>
                           </div>
-                          <a href="${msg.mediaUrl}" target="_blank" download style="
+                          <a href="${msg.mediaUrl}${msg.mediaUrl.includes('?') ? '&' : '?'}filename=${encodeURIComponent(docName)}" target="_blank" download="${docName}" style="
                             background: #00a884;
                             color: #ffffff;
                             text-decoration: none;
@@ -1533,7 +1537,8 @@ export class FlChatsSection extends HTMLElement {
 
       // 14. Scroll-up pagination for older messages
       msgContainer.addEventListener('scroll', async () => {
-        if (msgContainer.scrollTop < 40 && activeConv && activeConv._hasMoreOlder !== false && !this._isLoadingOlder) {
+        const canScroll = msgContainer.scrollHeight > msgContainer.clientHeight;
+        if (canScroll && msgContainer.scrollTop < 40 && activeConv && activeConv._hasMoreOlder === true && !this._isLoadingOlder) {
           this._isLoadingOlder = true;
           await HomeStore.loadOlderMessages(activeConv.id);
           this._isLoadingOlder = false;

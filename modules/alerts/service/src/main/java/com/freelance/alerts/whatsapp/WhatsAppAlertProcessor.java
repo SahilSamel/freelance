@@ -830,6 +830,7 @@ public class WhatsAppAlertProcessor {
                         if (!isOptOut && !isOptIn && !isNewContact) {
                             WhatsAppUtility.extendHumanSession(contact, contactRepository, Duration.ofHours(24), messageTime);
                         }
+                        broadcastSessionStatus(effectiveTenantId, userId, true);
                     }
                 }
 
@@ -1050,6 +1051,19 @@ public class WhatsAppAlertProcessor {
             TenantChatStreamHub.broadcast(tenantId, "MESSAGE_STATUS", update);
         } catch (Exception e) {
             logger.debug("[WhatsAppAlertProcessor] Could not broadcast message status: {}", e.getMessage());
+        }
+    }
+
+    private void broadcastSessionStatus(String tenantId, UUID userId, boolean isHumanRequired) {
+        if (tenantId == null || userId == null) return;
+        try {
+            Map<String, Object> update = Map.of(
+                    "userId", userId.toString(),
+                    "isHumanRequired", isHumanRequired
+            );
+            TenantChatStreamHub.broadcast(tenantId, "CHAT_SESSION_STATUS", update);
+        } catch (Exception e) {
+            logger.debug("[WhatsAppAlertProcessor] Could not broadcast session status: {}", e.getMessage());
         }
     }
 }

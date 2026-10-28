@@ -477,9 +477,9 @@ class WhatsAppMockIntegrationTest {
                     testUserId,
                     null,
                     null,
-                    "payment_receipt_instant".equals(tpl.getTemplateKey()) ? "https://example.com/receipt.pdf" : null,
-                    "payment_receipt_instant".equals(tpl.getTemplateKey()) ? "med_doc_101" : null,
-                    "payment_receipt_instant".equals(tpl.getTemplateKey()) ? "DOCUMENT" : null
+                    null,
+                    null,
+                    null
             );
 
             // Execute real outbound processing pipeline
@@ -498,12 +498,6 @@ class WhatsAppMockIntegrationTest {
             // Verify body variables were resolved and populated
             assertFalse(recorded.bodyVariables().isEmpty(),
                     "Body variables must be resolved for template: " + tpl.getTemplateKey());
-
-            // Verify header media for PDF receipt template
-            if ("payment_receipt_instant".equals(tpl.getTemplateKey())) {
-                assertEquals("document", recorded.mediaType());
-                assertEquals("https://example.com/receipt.pdf", recorded.mediaUrl());
-            }
 
             // Verify recorded in database with SENT status and received wamid
             AlertMessageEntity dbMsg = messageRepo.findByMetaMessageId(recorded.id()).orElseThrow();

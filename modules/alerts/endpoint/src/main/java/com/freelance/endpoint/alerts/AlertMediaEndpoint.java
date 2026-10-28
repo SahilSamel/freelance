@@ -47,10 +47,16 @@ public class AlertMediaEndpoint extends AbstractEndpoint {
     @GET
     @Path("/{mediaId}")
     @Anonymous
-    public Response getMedia(@PathParam("mediaId") String mediaId) {
+    public Response getMedia(
+            @PathParam("mediaId") String mediaId,
+            @jakarta.ws.rs.QueryParam("filename") String customFileName
+    ) {
         MediaDownloadResponseDTO item = mediaService.getMedia(mediaId);
+        String resolvedName = (customFileName != null && !customFileName.isBlank())
+                ? customFileName.trim()
+                : item.fileName();
         return Response.ok(item.data(), item.mimeType())
-                .header("Content-Disposition", "inline; filename=\"" + item.fileName() + "\"")
+                .header("Content-Disposition", "attachment; filename=\"" + resolvedName + "\"")
                 .build();
     }
 }

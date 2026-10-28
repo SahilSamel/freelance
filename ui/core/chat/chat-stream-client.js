@@ -64,6 +64,15 @@ class ChatStreamClientSingleton {
         }
       });
 
+      this.eventSource.addEventListener('CHAT_SESSION_STATUS', (e) => {
+        try {
+          const sessionUpdate = JSON.parse(e.data);
+          HomeStore.handleStreamSessionStatus(sessionUpdate);
+        } catch (err) {
+          console.warn('[ChatStreamClient] Could not parse CHAT_SESSION_STATUS:', err);
+        }
+      });
+
       this.eventSource.onerror = (err) => {
         this.isConnected = false;
         // Native EventSource automatically attempts reconnection

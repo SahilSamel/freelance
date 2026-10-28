@@ -32,5 +32,3 @@ CREATE INDEX IF NOT EXISTS idx_alert_message_template_id ON FL_ALERT_MESSAGE (te
 CREATE INDEX IF NOT EXISTS idx_alert_message_media_id ON FL_ALERT_MESSAGE (media_id);
 CREATE INDEX IF NOT EXISTS idx_alert_message_reply_to ON FL_ALERT_MESSAGE (reply_to_message_id);
 
-ALTER TABLE FL_ALERT_MESSAGE ADD COLUMN IF NOT EXISTS reply_to_sender VARCHAR(50);
-ALTER TABLE FL_ALERT_MESSAGE ADD COLUMN IF NOT EXISTS reply_to_text TEXT;

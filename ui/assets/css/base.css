@@ -473,10 +473,25 @@ a:hover {
 input.fl-input--error,
 select.fl-input--error,
 textarea.fl-input--error,
-.fl-input-wrapper.fl-input--error {
-  border: 1.5px solid var(--fl-danger, #ef4444) !important;
+.fl-input-wrapper.fl-input--error,
+.fl-input-wrapper:focus-within {
   box-shadow: none !important;
   outline: none !important;
+}
+
+.fl-input--error,
+input.fl-input--error,
+select.fl-input--error,
+textarea.fl-input--error,
+.fl-input-wrapper.fl-input--error {
+  border: 1px solid var(--fl-danger, #ef4444) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .fl-field-error-msg {

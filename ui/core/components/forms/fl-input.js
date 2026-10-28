@@ -119,8 +119,8 @@ export class FlInput extends HTMLElement {
 
     if (input && wrapper) {
       input.addEventListener('focus', () => {
-        wrapper.style.borderColor = 'var(--fl-primary, #10b981)';
-        wrapper.style.boxShadow = '0 0 0 2px var(--fl-primary-subtle, #d1fae5)';
+        wrapper.style.borderColor = '#0f172a';
+        wrapper.style.boxShadow = 'none';
       });
       input.addEventListener('blur', () => {
         if (!this.querySelector('.fl-input-err-text').textContent) {

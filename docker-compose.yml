@@ -53,6 +53,8 @@ services:
       # Server Binding
       SERVER_HOST: "0.0.0.0"
       PORT: "8080"
+    volumes:
+      - storage_data:/app/storage
     depends_on:
       - redis
       - db
@@ -111,6 +113,8 @@ volumes:
     name: freelance_postgres_data
   redis_data:
     name: freelance_redis_data
+  storage_data:
+    name: freelance_storage_data
 
 networks:
   freelance-net:

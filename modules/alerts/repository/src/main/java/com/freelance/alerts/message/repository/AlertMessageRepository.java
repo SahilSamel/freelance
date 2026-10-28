@@ -65,6 +65,12 @@ public class AlertMessageRepository extends AbstractRepository<AlertMessageEntit
         return executeSingleResultSearch("AlertMessage.findByMetaMessageId", Map.of("metaMessageId", metaMessageId.trim()));
     }
 
+    public Optional<AlertMessageEntity> findByMediaId(String mediaId) {
+        if (mediaId == null || mediaId.isBlank()) return Optional.empty();
+        List<AlertMessageEntity> results = executeListResultSearch("AlertMessage.findByMediaId", Map.of("mediaId", mediaId.trim()));
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+    }
+
     public Optional<AlertMessageEntity> findLatestByUserId(UUID userId) {
         if (userId == null) return Optional.empty();
         return executeListResultSearch("AlertMessage.findLatestByUserId", Map.of("userId", userId))

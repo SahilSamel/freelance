@@ -6,6 +6,12 @@ import com.freelance.alerts.templates.MemberRenewalConfirmationTemplate;
 import com.freelance.alerts.templates.MemberWelcomeOnboardingTemplate;
 import com.freelance.alerts.dto.UserContactDTO;
 import com.freelance.alerts.preference.service.UserContactService;
+import com.freelance.gym.credit.dto.MemberCreditDTO;
+import com.freelance.gym.credit.entity.MemberCreditEntity;
+import com.freelance.gym.credit.repository.MemberCreditRepository;
+import com.freelance.gym.referral.dto.MemberReferralDTO;
+import com.freelance.gym.referral.entity.MemberReferralEntity;
+import com.freelance.gym.referral.repository.MemberReferralRepository;
 import com.freelance.gym.payment.ReceiptNotificationService;
 import com.freelance.gym.member.assembler.MemberAssembler;
 import com.freelance.gym.member.constraint.MemberCreateConstraint;
@@ -69,6 +75,8 @@ public class MemberService {
     private final PaymentAssembler paymentAssembler;
     private final ReceiptNotificationService receiptNotificationService;
     private final AlertsEngine alertsEngine;
+    private final MemberCreditRepository memberCreditRepository;
+    private final MemberReferralRepository memberReferralRepository;
 
     public MemberService() {
         this(
@@ -143,6 +151,48 @@ public class MemberService {
             ReceiptNotificationService receiptNotificationService,
             AlertsEngine alertsEngine
     ) {
+        this(
+                userReadService,
+                userCreateService,
+                userUpdateService,
+                userContactService,
+                userTypeRepository,
+                userUserTypeRepository,
+                userPlanRepository,
+                paymentRepository,
+                userPlanPaymentRepository,
+                planRepository,
+                planService,
+                paymentService,
+                assembler,
+                paymentAssembler,
+                receiptNotificationService,
+                alertsEngine,
+                new MemberCreditRepository(),
+                new MemberReferralRepository()
+        );
+    }
+
+    public MemberService(
+            UserReadService userReadService,
+            UserCreateService userCreateService,
+            UserUpdateService userUpdateService,
+            UserContactService userContactService,
+            UserTypeRepository userTypeRepository,
+            UserUserTypeRepository userUserTypeRepository,
+            UserPlanRepository userPlanRepository,
+            PaymentRepository paymentRepository,
+            UserPlanPaymentRepository userPlanPaymentRepository,
+            PlanRepository planRepository,
+            PlanService planService,
+            PaymentService paymentService,
+            MemberAssembler assembler,
+            PaymentAssembler paymentAssembler,
+            ReceiptNotificationService receiptNotificationService,
+            AlertsEngine alertsEngine,
+            MemberCreditRepository memberCreditRepository,
+            MemberReferralRepository memberReferralRepository
+    ) {
         this.userReadService = userReadService;
         this.userCreateService = userCreateService;
         this.userUpdateService = userUpdateService;
@@ -159,6 +209,8 @@ public class MemberService {
         this.paymentAssembler = paymentAssembler;
         this.receiptNotificationService = receiptNotificationService;
         this.alertsEngine = alertsEngine;
+        this.memberCreditRepository = memberCreditRepository;
+        this.memberReferralRepository = memberReferralRepository;
     }
 
     public MemberCreateResponseDTO createMember(MemberCreateRequestDTO request) {
@@ -384,7 +436,40 @@ public class MemberService {
             }
         }
 
-        // 7. Assemble member records: Level 1 (User) -> Level 2 (Payments) -> Level 3 (Plans)
+        // 7. Query Credits & Referrals
+        List<MemberCreditEntity> credits = memberCreditRepository.findByUserIds(memberUserIds);
+        Map<UUID, MemberCreditDTO> creditByUser = credits.stream()
+                .collect(Collectors.toMap(
+                        MemberCreditEntity::getUserId,
+                        c -> new MemberCreditDTO(c.getBalance(), c.getNotes()),
+                        (a, b) -> a
+                ));
+
+        List<MemberReferralEntity> referrals = memberReferralRepository.findByRefereeIds(memberUserIds);
+        Map<UUID, UUID> referrerIdByReferee = referrals.stream()
+                .collect(Collectors.toMap(MemberReferralEntity::getRefereeId, MemberReferralEntity::getReferrerId, (a, b) -> a));
+
+        List<UUID> allReferrerIds = referrals.stream().map(MemberReferralEntity::getReferrerId).distinct().toList();
+        Map<UUID, String> referrerNameById = new HashMap<>();
+        if (!allReferrerIds.isEmpty()) {
+            List<UserDTO> referrerUsers = userReadService.readUsersByIds(allReferrerIds);
+            for (UserDTO ru : referrerUsers) {
+                String fullName = ((ru.firstName() != null ? ru.firstName() : "") + " " + (ru.lastName() != null ? ru.lastName() : "")).trim();
+                referrerNameById.put(ru.id(), fullName.isEmpty() ? ru.username() : fullName);
+            }
+        }
+
+        Map<UUID, MemberReferralDTO> referralByUser = new HashMap<>();
+        for (MemberReferralEntity r : referrals) {
+            referralByUser.put(r.getRefereeId(), new MemberReferralDTO(
+                    r.getReferrerId(),
+                    referrerNameById.getOrDefault(r.getReferrerId(), "Unknown"),
+                    r.getReferralDate(),
+                    r.getNotes()
+            ));
+        }
+
+        // 8. Assemble member records: Level 1 (User) -> Level 2 (Payments) -> Level 3 (Plans)
         List<MemberRecordDTO> records = new ArrayList<>();
         for (UserDTO user : users) {
             List<UserContactDTO> userContacts = contactsByUser.getOrDefault(user.id(), List.of());
@@ -401,7 +486,9 @@ public class MemberService {
                     user.firstName(),
                     user.lastName(),
                     plansByUser.getOrDefault(user.id(), List.of()),
-                    paymentsByUser.getOrDefault(user.id(), List.of())
+                    paymentsByUser.getOrDefault(user.id(), List.of()),
+                    creditByUser.get(user.id()),
+                    referralByUser.get(user.id())
             ));
         }
 
@@ -430,6 +517,47 @@ public class MemberService {
                     profile.lastName(),
                     contacts
             ));
+        }
+
+        // 1b. Update or delete Member Credit
+        if (request.credit() != null) {
+            Optional<MemberCreditEntity> existingCredit = memberCreditRepository.findByUserId(userId);
+            if (existingCredit.isPresent()) {
+                MemberCreditEntity credit = existingCredit.get();
+                credit.setBalance(request.credit().balance());
+                credit.setNotes(request.credit().notes());
+                memberCreditRepository.merge(credit);
+            } else {
+                memberCreditRepository.persist(new MemberCreditEntity(
+                        userId,
+                        request.credit().balance(),
+                        request.credit().notes()
+                ));
+            }
+        }
+
+        // 1c. Update or delete Member Referral
+        if (request.referral() != null) {
+            if (request.referral().referrerId() != null) {
+                Optional<MemberReferralEntity> existingRef = memberReferralRepository.findByRefereeId(userId);
+                if (existingRef.isPresent()) {
+                    MemberReferralEntity ref = existingRef.get();
+                    ref.setReferrerId(request.referral().referrerId());
+                    ref.setReferralDate(request.referral().referralDate() != null ? request.referral().referralDate() : LocalDate.now());
+                    ref.setNotes(request.referral().notes());
+                    memberReferralRepository.merge(ref);
+                } else {
+                    memberReferralRepository.persist(new MemberReferralEntity(
+                            request.referral().referrerId(),
+                            userId,
+                            request.referral().referralDate() != null ? request.referral().referralDate() : LocalDate.now(),
+                            request.referral().notes()
+                    ));
+                }
+            } else {
+                // If referrerId is null, remove referral mapping
+                memberReferralRepository.deleteByRefereeId(userId);
+            }
         }
 
         // 2. State Reconciliation (Delete-Insert for Plans & Pending Installments)

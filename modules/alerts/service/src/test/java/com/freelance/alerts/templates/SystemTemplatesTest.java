@@ -166,10 +166,10 @@ class SystemTemplatesTest {
     }
 
     @Test
-    @DisplayName("Verify PaymentReceiptInstantTemplate has DOCUMENT media type")
+    @DisplayName("Verify PaymentReceiptInstantTemplate attributes and category")
     void testPaymentReceiptInstantMedia() {
         PaymentReceiptInstantTemplate receipt = new PaymentReceiptInstantTemplate();
-        assertEquals("DOCUMENT", receipt.getMediaType());
+        assertNull(receipt.getMediaType());
         assertEquals(TemplateCategory.UTILITY.name(), receipt.getCategory());
         assertTrue(receipt.getRequiredAttributes().contains("USER.first_name"));
     }

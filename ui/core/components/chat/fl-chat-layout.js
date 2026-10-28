@@ -468,9 +468,17 @@ export class FlChatThread extends HTMLElement {
           contentBody.includes('[Video/GIF]')
         );
 
-        let docName = (contentBody && contentBody.startsWith('📄 ')) ? contentBody.substring(2).trim() : 'Document.pdf';
-        if (isDoc && !contentBody.startsWith('📄 ') && contentBody.toLowerCase().endsWith('.pdf')) {
+        let docName = (contentBody && contentBody.startsWith('📄 ')) ? contentBody.substring(2).trim() : null;
+        if (!docName && isDoc && !contentBody.startsWith('📄 ') && contentBody.toLowerCase().endsWith('.pdf')) {
           docName = contentBody;
+        }
+        if (!docName && isDoc && (contentBody.toLowerCase().includes('receipt') || contentBody.toLowerCase().includes('payment'))) {
+          const rawName = (this.activeName || 'Member').trim().split(/\s+/)[0];
+          const dateStr = (m.timestamp ? new Date(m.timestamp) : new Date()).toISOString().slice(0, 10);
+          docName = `Payment_Receipt_${rawName}_${dateStr}.pdf`;
+        }
+        if (!docName) {
+          docName = 'Document.pdf';
         }
 
         const isDocDuplicate = isDoc && (contentBody === docName || contentBody === ('📄 ' + docName) || contentBody === '[Document]');
@@ -575,7 +583,7 @@ export class FlChatThread extends HTMLElement {
                       <div style="font-size: 10.5px; color: #64748b;">PDF Document</div>
                     </div>
                   </div>
-                  <a href="${m.mediaUrl}" target="_blank" download style="background: #25d366; color: #ffffff; text-decoration: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; white-space: nowrap;">
+                  <a href="${m.mediaUrl}${m.mediaUrl.includes('?') ? '&' : '?'}filename=${encodeURIComponent(docName)}" target="_blank" download="${docName}" style="background: #25d366; color: #ffffff; text-decoration: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; white-space: nowrap;">
                     Download ⤓
                   </a>
                 </div>

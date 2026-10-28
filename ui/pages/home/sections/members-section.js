@@ -227,21 +227,29 @@ export class FlMembersSection extends HTMLElement {
         : `<span style="color: #0f172a; font-weight: 700; font-size: 12px; margin-left: 4px; user-select: none;">↓</span>`;
     };
 
-    const planBtnLabel = memberFilters.plan !== 'all' ? `Plan (${memberFilters.plan.length > 12 ? memberFilters.plan.slice(0, 10) + '...' : memberFilters.plan})` : 'Plans';
+    let planBtnLabel = 'Plans';
+    if (memberFilters.plan && memberFilters.plan !== 'all') {
+      if (memberFilters.plan === 'no-plan') {
+        planBtnLabel = 'Plan (No Plan)';
+      } else {
+        planBtnLabel = `Plan (${memberFilters.plan.length > 12 ? memberFilters.plan.slice(0, 10) + '...' : memberFilters.plan})`;
+      }
+    }
     
-    const hasExpFilter = !!(memberFilters.expiryFrom || memberFilters.expiryTo);
+    const hasExpFilter = !!(memberFilters.expiryFrom || memberFilters.expiryTo || (memberFilters.expiry && memberFilters.expiry !== 'all'));
     const expLabelMap = { 'all': 'Expiry Date', '7d': 'Expiry (≤ 7d)', '30d': 'Expiry (≤ 30d)', 'expired': 'Expiry (Expired)', 'future': 'Expiry (> 30d)' };
-    const expBtnLabel = hasExpFilter
+    const expBtnLabel = (memberFilters.expiryFrom || memberFilters.expiryTo)
       ? formatRangeLabel(memberFilters.expiryFrom, memberFilters.expiryTo, 'Expiry Date')
       : (memberFilters.expiry && memberFilters.expiry !== 'all' ? (expLabelMap[memberFilters.expiry] || 'Expiry Date') : 'Expiry Date');
 
     // Applied chips calculation
     const appliedMemberChips = [];
-    if (memberFilters.noPlanOnly) {
-      appliedMemberChips.push({ key: 'noplan', label: 'Potential Members (No Plan)', type: 'noplan' });
-    }
     if (memberFilters.plan && memberFilters.plan !== 'all') {
-      appliedMemberChips.push({ key: 'plan', label: `Plan: ${memberFilters.plan}`, type: 'plan' });
+      appliedMemberChips.push({
+        key: 'plan',
+        label: memberFilters.plan === 'no-plan' ? 'Plan: No Plan' : `Plan: ${memberFilters.plan}`,
+        type: 'plan'
+      });
     }
     if (hasExpFilter) {
       appliedMemberChips.push({
@@ -292,6 +300,10 @@ export class FlMembersSection extends HTMLElement {
                 <div class="fl-member-drop-item" data-filter="plan" data-val="all" style="padding: 7px 12px; font-size: 13px; color: #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center; ${memberFilters.plan === 'all' ? 'font-weight: 700; background: #f8fafc;' : ''}">
                   <span>All Plans</span>
                   ${memberFilters.plan === 'all' ? '<span style="color: #0f172a;">✓</span>' : ''}
+                </div>
+                <div class="fl-member-drop-item" data-filter="plan" data-val="no-plan" style="padding: 7px 12px; font-size: 13px; color: #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; ${memberFilters.plan === 'no-plan' ? 'font-weight: 700; background: #f8fafc;' : ''}">
+                  <span>No Plan</span>
+                  ${memberFilters.plan === 'no-plan' ? '<span style="color: #0f172a;">✓</span>' : ''}
                 </div>
                 ${uniquePlans.map(pn => `
                   <div class="fl-member-drop-item" data-filter="plan" data-val="${pn}" style="padding: 7px 12px; font-size: 13px; color: #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center; ${memberFilters.plan === pn ? 'font-weight: 700; background: #f8fafc;' : ''}">
@@ -732,8 +744,6 @@ export class FlMembersSection extends HTMLElement {
         const type = badge.getAttribute('data-type');
         if (type === 'expiry') {
           HomeStore.setMemberDateFilter('expiry', '', '');
-        } else if (type === 'noplan') {
-          HomeStore.setMemberFilter('noPlanOnly', false);
         } else {
           HomeStore.setMemberFilter(type, 'all');
         }

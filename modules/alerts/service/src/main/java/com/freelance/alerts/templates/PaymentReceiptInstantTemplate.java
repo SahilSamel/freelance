@@ -31,7 +31,7 @@ public class PaymentReceiptInstantTemplate implements ITemplate {
 
     @Override
     public String getLanguage() {
-        return "en_US";
+        return "en";
     }
 
     @Override
@@ -47,7 +47,7 @@ public class PaymentReceiptInstantTemplate implements ITemplate {
 
     @Override
     public String getMediaType() {
-        return "DOCUMENT";
+        return null;
     }
 
     @Override

@@ -30,7 +30,7 @@ public class PaymentOverdueReminderTemplate implements ITemplate {
 
     @Override
     public String getLanguage() {
-        return "en_US";
+        return "en";
     }
 
     @Override
@@ -46,12 +46,12 @@ public class PaymentOverdueReminderTemplate implements ITemplate {
 
     @Override
     public String getMediaUrl() {
-        return "/alerts/media/med_upi_qr_code";
+        return null;
     }
 
     @Override
     public String getMediaType() {
-        return "IMAGE";
+        return null;
     }
 
     @Override

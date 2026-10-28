@@ -163,9 +163,19 @@ export class FlLoginPage extends HTMLElement {
 
           ErrorMapper.notifySuccess(`Welcome back, ${user.name}!`, 'Signed In');
 
-          const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
-          const params = new URLSearchParams(window.location.search || hashQuery);
-          const redirect = params.get('redirect') || '/';
+          let redirect = '/';
+          if (window.location.hash.includes('?')) {
+            const hashParams = new URLSearchParams(window.location.hash.split('?')[1]);
+            if (hashParams.get('redirect')) {
+              redirect = hashParams.get('redirect');
+            }
+          }
+          if (redirect === '/' && window.location.search) {
+            const searchParams = new URLSearchParams(window.location.search);
+            if (searchParams.get('redirect')) {
+              redirect = searchParams.get('redirect');
+            }
+          }
           
           if (window.fl && window.fl.router) {
             window.fl.router.navigate(redirect);

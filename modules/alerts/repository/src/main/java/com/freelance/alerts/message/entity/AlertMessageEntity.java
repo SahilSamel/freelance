@@ -39,6 +39,10 @@ import java.util.UUID;
         @NamedQuery(
                 name = "AlertMessage.findUnreadByUserId",
                 query = "SELECT m FROM AlertMessageEntity m WHERE m.userId = :userId AND m.status != com.freelance.alerts.AlertMessageStatus.READ ORDER BY m.timestamp ASC, m.createdDate ASC"
+        ),
+        @NamedQuery(
+                name = "AlertMessage.findByMediaId",
+                query = "SELECT m FROM AlertMessageEntity m WHERE m.mediaId = :mediaId ORDER BY m.createdDate DESC"
         )
 })
 public class AlertMessageEntity extends AbstractAuditEntity {

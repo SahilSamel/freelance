@@ -368,11 +368,10 @@ class HomeStoreClass {
 
   filterPotentialMembers() {
     this.state.memberFilters = {
-      plan: 'all',
+      plan: 'no-plan',
       pendingAmount: 'all',
       pendingAmountMin: null,
       pendingAmountMax: null,
-      noPlanOnly: true,
       expiry: 'all',
       expiryFrom: '',
       expiryTo: ''
@@ -395,11 +394,10 @@ class HomeStoreClass {
       dueDate: 'this-month',
       dueDateFrom: '',
       dueDateTo: lastDayThisMonthStr,
-      unpaidOnly: true,
       amount: 'all',
       amountMin: null,
       amountMax: null,
-      paidDate: 'all',
+      paidDate: 'unpaid',
       paidDateFrom: '',
       paidDateTo: ''
     };
@@ -1139,6 +1137,20 @@ class HomeStoreClass {
         expiryDate: latestExpiryDate,
         memberSince: earliestDate ? earliestDate.toISOString().slice(0, 10) : null,
         planBatches,
+        credit: (m.credit || m.concession) ? {
+          balance: Number((m.credit || m.concession).balance) || 0,
+          notes: (m.credit || m.concession).notes || ''
+        } : { balance: 0, notes: '' },
+        concession: (m.credit || m.concession) ? {
+          balance: Number((m.credit || m.concession).balance) || 0,
+          notes: (m.credit || m.concession).notes || ''
+        } : { balance: 0, notes: '' },
+        referral: m.referral ? {
+          referrerId: m.referral.referrerId,
+          referrerName: m.referral.referrerName || 'Unknown',
+          referralDate: m.referral.referralDate || null,
+          notes: m.referral.notes || ''
+        } : null,
         rawRecord: m
       });
     }
@@ -1386,8 +1398,12 @@ class HomeStoreClass {
 
       // 2. Plan filter
       if (memberFilters.plan && memberFilters.plan !== 'all') {
-        const pLower = memberFilters.plan.toLowerCase();
-        result = result.filter(m => m.plans && m.plans.toLowerCase().includes(pLower));
+        if (memberFilters.plan === 'no-plan') {
+          result = result.filter(m => !m.subscriptions || m.subscriptions.length === 0 || !m.plans || m.plans === 'No Plan');
+        } else {
+          const pLower = memberFilters.plan.toLowerCase();
+          result = result.filter(m => m.plans && m.plans.toLowerCase().includes(pLower));
+        }
       }
 
       // 3. Pending amount filter
@@ -1560,7 +1576,7 @@ class HomeStoreClass {
         const curPrefix = new Date().toISOString().slice(0, 7) + '-01';
         result = result.filter(p => p.paidDate && p.paidDate < curPrefix && p.paidDate !== '—');
       } else if (paymentFilters.paidDate === 'unpaid') {
-        result = result.filter(p => !p.isPaid);
+        result = result.filter(p => !p.isPaid || !p.paidDate || p.paidDate === '—');
       }
     }
 
@@ -2261,7 +2277,7 @@ class HomeStoreClass {
     return res;
   }
 
-  async updateMember({ userId, firstName, lastName, phoneNumber, plans = [], payments = [], paidPaymentPlanLinks = [], silent = false, successMessage = 'Member profile updated successfully!' }) {
+  async updateMember({ userId, firstName, lastName, phoneNumber, plans = [], payments = [], paidPaymentPlanLinks = [], credit = null, concession = null, referral = null, silent = false, successMessage = 'Member profile updated successfully!' }) {
     let cleanPhone = null;
     if (phoneNumber) {
       if (typeof phoneNumber === 'object' && phoneNumber.number) {
@@ -2301,6 +2317,23 @@ class HomeStoreClass {
         planIndices: l.planIndices || []
       })) : []
     };
+
+    const targetCredit = credit !== null && credit !== undefined ? credit : concession;
+    if (targetCredit !== null && targetCredit !== undefined) {
+      payload.credit = {
+        balance: Number(targetCredit.balance) || 0,
+        notes: targetCredit.notes || null
+      };
+    }
+
+    if (referral !== null && referral !== undefined) {
+      payload.referral = {
+        referrerId: referral.referrerId || null,
+        referrerName: referral.referrerName || null,
+        referralDate: referral.referralDate || null,
+        notes: referral.notes || null
+      };
+    }
 
     const res = await api.post('/members/update', payload);
     if (!silent && successMessage) {
@@ -2378,13 +2411,18 @@ class HomeStoreClass {
   // ==========================================
   setActiveChatId(chatId) {
     if (!chatId) return;
-    if (String(this.state.activeChatId) === String(chatId)) return;
     this.state.activeChatId = chatId;
+
+    const conv = (this.state.conversations || []).find(c => String(c.id) === String(chatId));
+    if (conv && Array.isArray(conv.messages) && conv.messages.length > 30) {
+      conv.messages = conv.messages.slice(conv.messages.length - 30);
+      conv._hasMoreOlder = true;
+    }
+
     this.notify();
     this.markChatAsRead(chatId);
 
-    // If messages are already present in memory from conversations or SSE stream, skip redundant timeline API hits
-    const conv = (this.state.conversations || []).find(c => String(c.id) === String(chatId));
+    // Only fetch timeline from server if this conversation has NO messages loaded yet
     if (!conv || !Array.isArray(conv.messages) || conv.messages.length === 0) {
       this.loadConversationTimeline(chatId);
     }
@@ -2478,6 +2516,12 @@ class HomeStoreClass {
       try {
         const cachedConvs = await GymCache.getChatCache(currentTenant);
         if (Array.isArray(cachedConvs) && cachedConvs.length > 0) {
+          cachedConvs.forEach(c => {
+            if (Array.isArray(c.messages) && c.messages.length > 30) {
+              c.messages = c.messages.slice(c.messages.length - 30);
+              c._hasMoreOlder = true;
+            }
+          });
           this.state.conversations = cachedConvs;
           if (!this.state.activeChatId) {
             const withMessages = cachedConvs.find(c => (c.messages && c.messages.length > 0) || c.isHumanRequired);
@@ -2556,7 +2600,9 @@ class HomeStoreClass {
                 const t = m.timestamp ? new Date(m.timestamp).getTime() : 0;
                 return t < oldestIncomingTime && !incoming.some(inc => String(inc.id) === String(m.id));
               });
-              conv.messages = [...olderExisting, ...incoming];
+              const merged = [...olderExisting, ...incoming];
+              conv.messages = merged.length > 30 ? merged.slice(merged.length - 30) : merged;
+              conv._hasMoreOlder = (incoming.length >= 20);
 
               const last = conv.messages[conv.messages.length - 1];
               if (last) {
@@ -2711,10 +2757,11 @@ class HomeStoreClass {
   async loadConversationTimeline(userId) {
     if (!userId) return;
     try {
+      const limit = 30;
       const res = await api.post('/alerts/chat/timeline', {
         userId,
         channel: 'WHATSAPP',
-        limit: 200
+        limit
       }, { silentError: true });
 
       if (res) {
@@ -2723,7 +2770,8 @@ class HomeStoreClass {
           if (res.isHumanRequired !== undefined) {
             conv.isHumanRequired = Boolean(res.isHumanRequired);
           }
-          if (Array.isArray(res.messages) && res.messages.length > 0) {
+          if (Array.isArray(res.messages)) {
+            conv._hasMoreOlder = (res.messages.length >= limit);
             const serverMessages = res.messages.map(m => {
               const mType = (m.messageType || '').toUpperCase();
               let resolvedFileName = m.fileName;
@@ -2767,11 +2815,18 @@ class HomeStoreClass {
 
             const prevSign = `${conv.isHumanRequired}|${(conv.messages || []).map(m => `${m.id}:${m.status}`).join('|')}`;
 
+            // Preserve older messages if already loaded via pagination during this active viewing session
+            const oldestIncomingTime = serverMessages.length > 0 && serverMessages[0].timestamp ? new Date(serverMessages[0].timestamp).getTime() : 0;
+            const olderExisting = (conv.messages || []).filter(m => {
+              const t = m.timestamp ? new Date(m.timestamp).getTime() : 0;
+              return t < oldestIncomingTime && !serverMessages.some(sm => String(sm.id) === String(m.id));
+            });
+
             // Keep any active in-flight pending messages that haven't been picked up by server yet
             const pendingOptimistic = (conv.messages || []).filter(m => 
               m.status === 'PENDING' && !serverMessages.some(sm => sm.id === m.id || (sm.direction === 'OUTBOUND' && sm.text === m.text))
             );
-            conv.messages = [...serverMessages, ...pendingOptimistic];
+            conv.messages = [...olderExisting, ...serverMessages, ...pendingOptimistic];
 
             const last = conv.messages[conv.messages.length - 1];
             if (last) {
@@ -2892,9 +2947,25 @@ class HomeStoreClass {
       conv.unreadCount = (conv.unreadCount || 0) + 1;
     }
 
+    if (!isOutbound) {
+      // Inbound customer message immediately activates the 24-hour live service session
+      conv.isHumanRequired = true;
+    }
+
     this.notify();
     const currentTenant = SessionManager.getTenantId();
     GymCache.setChatCache(currentTenant, this.state.conversations);
+  }
+
+  handleStreamSessionStatus(update) {
+    if (!update || !update.userId) return;
+    const conv = (this.state.conversations || []).find(c => String(c.id) === String(update.userId));
+    if (conv) {
+      conv.isHumanRequired = Boolean(update.isHumanRequired);
+      this.notify();
+      const currentTenant = SessionManager.getTenantId();
+      GymCache.setChatCache(currentTenant, this.state.conversations);
+    }
   }
 
   handleStreamMessageStatus(update) {

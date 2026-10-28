@@ -29,24 +29,38 @@ class SessionManagerClass {
 
   getTenantId() {
     if (typeof window !== 'undefined' && window.location) {
-      const host = window.location.hostname;
-      if (host && !/^[0-9.]+$/.test(host)) {
-        const parts = host.split('.');
-        // Support tenant.domain.com or tenant.lvh.me or tenant.localhost
-        if (parts.length >= 2) {
-          let sub = parts[0].toLowerCase();
-          if (sub !== 'www' && sub !== 'api' && sub !== 'localhost' && sub !== 'lvh') {
-            this.setTenantId(sub);
-            return sub;
-          }
-        }
-      }
-
+      // 1. Explicit query parameter ?tenant=xxx always takes top precedence
       const urlParams = new URLSearchParams(window.location.search);
       const paramTenant = urlParams.get('tenant');
       if (paramTenant) {
         this.setTenantId(paramTenant);
         return paramTenant.toLowerCase();
+      }
+
+      // Check hash params e.g. #/login?tenant=xxx
+      if (window.location.hash && window.location.hash.includes('?')) {
+        const hashQuery = window.location.hash.split('?')[1];
+        const hashParams = new URLSearchParams(hashQuery);
+        const hashTenant = hashParams.get('tenant');
+        if (hashTenant) {
+          this.setTenantId(hashTenant);
+          return hashTenant.toLowerCase();
+        }
+      }
+
+      // 2. Subdomain check (excluding common infrastructure / tunnel domains)
+      const host = window.location.hostname;
+      if (host && !/^[0-9.]+$/.test(host)) {
+        if (!host.endsWith('.trycloudflare.com')) {
+          const parts = host.split('.');
+          if (parts.length >= 2) {
+            let sub = parts[0].toLowerCase();
+            if (sub !== 'www' && sub !== 'api' && sub !== 'localhost' && sub !== 'lvh') {
+              this.setTenantId(sub);
+              return sub;
+            }
+          }
+        }
       }
     }
 

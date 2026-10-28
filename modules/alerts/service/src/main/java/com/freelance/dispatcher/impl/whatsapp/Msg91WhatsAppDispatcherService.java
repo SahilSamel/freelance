@@ -143,7 +143,9 @@ public class Msg91WhatsAppDispatcherService implements IAlertDispatcher {
                     .timeout(Duration.ofSeconds(10))
                     .build();
 
+            logger.info("[Msg91WhatsAppDispatcherService] Outbound POST {} payload: {}", targetUri, jsonPayload);
             HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            logger.info("[Msg91WhatsAppDispatcherService] Outbound response HTTP {}: {}", response.statusCode(), response.body());
 
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 // Check if MSG91 returned hasError = true or status = "error" inside HTTP 200
@@ -206,16 +208,29 @@ public class Msg91WhatsAppDispatcherService implements IAlertDispatcher {
 
         ObjectNode components = recipientComponent.putObject("components");
 
-        // 1. Header component (Media)
+        // 1. Header component (Media) - only include if template defines a header media component
+        String mediaType = request.template().getMediaType();
         String mediaUrl = request.template().getMediaUrl() != null && !request.template().getMediaUrl().isBlank()
                 ? request.template().getMediaUrl()
                 : request.mediaUrl();
 
-        if (mediaUrl != null && !mediaUrl.isBlank()) {
-            boolean isDoc = "DOCUMENT".equalsIgnoreCase(request.template().getMediaType()) || mediaUrl.toLowerCase().endsWith(".pdf");
+        boolean hasHeader = mediaType != null && !mediaType.isBlank() && !"NONE".equalsIgnoreCase(mediaType)
+                && mediaUrl != null && !mediaUrl.isBlank();
+
+        if (hasHeader) {
+            boolean isDoc = "DOCUMENT".equalsIgnoreCase(mediaType) || mediaUrl.toLowerCase().endsWith(".pdf");
             ObjectNode header = components.putObject("header_1");
             header.put("type", isDoc ? "document" : "image");
             header.put("value", mediaUrl);
+            if (isDoc) {
+                String filename = "Document.pdf";
+                if (mediaUrl.contains("/")) {
+                    String part = mediaUrl.substring(mediaUrl.lastIndexOf('/') + 1);
+                    if (part.contains("?")) part = part.substring(0, part.indexOf('?'));
+                    if (!part.isBlank()) filename = part.endsWith(".pdf") ? part : (part + ".pdf");
+                }
+                header.put("filename", filename);
+            }
         }
 
         // 2. Body parameters from resolvedAttributes or sequential placeholders

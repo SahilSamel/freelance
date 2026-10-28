@@ -259,15 +259,25 @@ export class FlPaymentsSection extends HTMLElement {
       ? `Method (${methodLabels[paymentFilters.method.toLowerCase()] || paymentFilters.method.toUpperCase()})`
       : 'Method';
 
-    const hasDueFilter = !!(paymentFilters.dueDateFrom || paymentFilters.dueDateTo);
-    const dueBtnLabel = hasDueFilter
+    const hasDueFilter = !!(paymentFilters.dueDateFrom || paymentFilters.dueDateTo || (paymentFilters.dueDate && paymentFilters.dueDate !== 'all'));
+    const dueBtnLabel = (paymentFilters.dueDateFrom || paymentFilters.dueDateTo)
       ? formatRangeLabel(paymentFilters.dueDateFrom, paymentFilters.dueDateTo, 'Due Date')
       : (paymentFilters.dueDate && paymentFilters.dueDate !== 'all' ? (paymentFilters.dueDate === 'oct-2026' || paymentFilters.dueDate === 'this-month' ? 'Due Date (≤ Month End)' : paymentFilters.dueDate) : 'Due Date');
 
-    const hasPaidFilter = !!(paymentFilters.paidDateFrom || paymentFilters.paidDateTo);
-    const paidBtnLabel = hasPaidFilter
-      ? formatRangeLabel(paymentFilters.paidDateFrom, paymentFilters.paidDateTo, 'Paid Date')
-      : (paymentFilters.paidDate && paymentFilters.paidDate !== 'all' ? (paymentFilters.paidDate === 'this-month' ? 'Paid Date (This Mo)' : paymentFilters.paidDate) : 'Paid Date');
+    const hasPaidFilter = !!(paymentFilters.paidDateFrom || paymentFilters.paidDateTo || (paymentFilters.paidDate && paymentFilters.paidDate !== 'all'));
+    let paidBtnLabel = 'Paid Date';
+    if (paymentFilters.paidDateFrom || paymentFilters.paidDateTo) {
+      paidBtnLabel = formatRangeLabel(paymentFilters.paidDateFrom, paymentFilters.paidDateTo, 'Paid Date');
+    } else if (paymentFilters.paidDate && paymentFilters.paidDate !== 'all') {
+      const pBtnMap = {
+        'unpaid': 'Paid Date (Not Paid)',
+        'this-month': 'Paid Date (This Mo)',
+        'last-month': 'Paid Date (Last Mo)',
+        'today': 'Paid Date (Today)',
+        'earlier': 'Paid Date (Earlier)'
+      };
+      paidBtnLabel = pBtnMap[paymentFilters.paidDate] || `Paid Date (${paymentFilters.paidDate})`;
+    }
 
     // Applied chips calculation
     const appliedChips = [];
@@ -297,7 +307,7 @@ export class FlPaymentsSection extends HTMLElement {
       const aLabels = { 'under-2k': 'Amount: < ₹2,000', '2k-5k': 'Amount: ₹2,000 – ₹5,000', 'above-5k': 'Amount: > ₹5,000' };
       appliedChips.push({ key: 'amount', label: aLabels[paymentFilters.amount], type: 'amount' });
     }
-    if (hasDueFilter) {
+    if (paymentFilters.dueDateFrom || paymentFilters.dueDateTo) {
       appliedChips.push({
         key: 'duedate',
         label: formatChipLabel('Due Date', paymentFilters.dueDateFrom, paymentFilters.dueDateTo),
@@ -307,15 +317,21 @@ export class FlPaymentsSection extends HTMLElement {
       const dLabels = { 'this-month': 'Due Date: ≤ Month End', 'oct-2026': 'Due Date: ≤ Month End' };
       appliedChips.push({ key: 'duedate', label: dLabels[paymentFilters.dueDate] || 'Due Date', type: 'duedate' });
     }
-    if (hasPaidFilter) {
+    if (paymentFilters.paidDateFrom || paymentFilters.paidDateTo) {
       appliedChips.push({
         key: 'paiddate',
         label: formatChipLabel('Paid Date', paymentFilters.paidDateFrom, paymentFilters.paidDateTo),
         type: 'paiddate'
       });
     } else if (paymentFilters.paidDate && paymentFilters.paidDate !== 'all') {
-      const pLabels = { 'this-month': 'Paid: This Month', 'earlier': 'Paid: Earlier', 'unpaid': 'Paid: Unpaid Only' };
-      appliedChips.push({ key: 'paiddate', label: pLabels[paymentFilters.paidDate] || 'Paid Date', type: 'paiddate' });
+      const pLabels = {
+        'unpaid': 'Paid: Not Paid',
+        'this-month': 'Paid: This Month',
+        'last-month': 'Paid: Last Month',
+        'today': 'Paid: Today',
+        'earlier': 'Paid: Earlier'
+      };
+      appliedChips.push({ key: 'paiddate', label: pLabels[paymentFilters.paidDate] || `Paid: ${paymentFilters.paidDate}`, type: 'paiddate' });
     }
 
     this.innerHTML = `
@@ -484,6 +500,7 @@ export class FlPaymentsSection extends HTMLElement {
                   <span style="font-size: 11px; font-weight: 500; color: #64748b;">Presets</span>
                 </div>
                 <div style="margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px;">
+                  <button type="button" class="fl-pay-date-preset" data-target="paid" data-preset="unpaid" style="padding: 3px 8px; border: 1px solid ${paymentFilters.paidDate === 'unpaid' ? '#0f172a' : '#e2e8f0'}; background: ${paymentFilters.paidDate === 'unpaid' ? '#f1f5f9' : '#f8fafc'}; font-weight: ${paymentFilters.paidDate === 'unpaid' ? '700' : '500'}; border-radius: 4px; font-size: 11px; color: #0f172a; cursor: pointer;">Not Paid</button>
                   <button type="button" class="fl-pay-date-preset" data-target="paid" data-preset="today" style="padding: 3px 8px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 4px; font-size: 11px; font-weight: 500; color: #334155; cursor: pointer;">Today</button>
                   <button type="button" class="fl-pay-date-preset" data-target="paid" data-preset="this-month" style="padding: 3px 8px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 4px; font-size: 11px; font-weight: 500; color: #334155; cursor: pointer;">This Month</button>
                   <button type="button" class="fl-pay-date-preset" data-target="paid" data-preset="last-month" style="padding: 3px 8px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 4px; font-size: 11px; font-weight: 500; color: #334155; cursor: pointer;">Last Month</button>
@@ -1023,7 +1040,17 @@ export class FlPaymentsSection extends HTMLElement {
           if (toInput) toInput.value = to;
           HomeStore.setPaymentDateFilter('due', from, to);
         } else if (target === 'paid') {
-          if (preset === 'today') {
+          if (preset === 'unpaid') {
+            const fromInput = this.querySelector('#fl-paid-date-from');
+            const toInput = this.querySelector('#fl-paid-date-to');
+            if (fromInput) fromInput.value = '';
+            if (toInput) toInput.value = '';
+            this.querySelectorAll('.fl-dropdown-panel').forEach(p => p.style.display = 'none');
+            HomeStore.setPaymentFilter('paidDate', 'unpaid');
+            HomeStore.setPaymentFilter('paidDateFrom', '');
+            HomeStore.setPaymentFilter('paidDateTo', '');
+            return;
+          } else if (preset === 'today') {
             from = presets.todayStr;
             to = presets.todayStr;
           } else if (preset === 'this-month') {
@@ -1224,6 +1251,7 @@ export class FlPaymentsSection extends HTMLElement {
         } else if (type === 'duedate') {
           HomeStore.setPaymentDateFilter('due', '', '');
         } else if (type === 'paiddate') {
+          HomeStore.setPaymentFilter('paidDate', 'all');
           HomeStore.setPaymentDateFilter('paid', '', '');
         }
       });

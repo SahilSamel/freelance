@@ -30,7 +30,7 @@ public class CampaignSeasonalOfferTemplate implements ITemplate {
 
     @Override
     public String getLanguage() {
-        return "en_US";
+        return "en";
     }
 
     @Override

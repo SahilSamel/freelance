@@ -1,6 +1,8 @@
 package com.freelance.gym.member.dto;
 
+import com.freelance.gym.credit.dto.MemberCreditDTO;
 import com.freelance.gym.payment.dto.PaymentResponseDTO;
+import com.freelance.gym.referral.dto.MemberReferralDTO;
 import com.freelance.identityManagement.PhoneNumber;
 
 import java.io.Serializable;
@@ -16,7 +18,9 @@ public record MemberRecordDTO(
         PhoneNumber phoneNumber,
         LocalDateTime createdDate,
         List<UserPlanResponseDTO> plans,
-        List<PaymentResponseDTO> payments
+        List<PaymentResponseDTO> payments,
+        MemberCreditDTO credit,
+        MemberReferralDTO referral
 ) implements Serializable {
 }
 

@@ -213,8 +213,17 @@ export class FlMemberDrawer extends HTMLElement {
     const rawRecord = member.rawRecord || {};
     const firstName = rawRecord.firstName || (member.name ? member.name.trim().split(' ')[0] : '');
     const lastName = rawRecord.lastName || (member.name ? member.name.trim().split(' ').slice(1).join(' ') : '');
-    const phone = member.rawPhone || (member.phone ? member.phone.replace(/\D/g, '').slice(-10) : '');
-    this.profileDraft = { firstName, lastName, phone };
+    const credit = member.credit || member.concession || { balance: 0, notes: '' };
+    const referral = member.referral || null;
+    this.profileDraft = {
+      firstName,
+      lastName,
+      phone,
+      creditBalance: credit.balance || 0,
+      creditNotes: credit.notes || '',
+      referrerId: referral ? referral.referrerId : '',
+      referrerNotes: referral ? (referral.notes || '') : ''
+    };
   }
 
   render() {
@@ -318,8 +327,14 @@ export class FlMemberDrawer extends HTMLElement {
                     ${badgeText}
                   </span>
                 </div>
-                <div style="margin-top: 4px; font-size: 13.5px; color: #64748b; font-weight: 500;">
-                  ${member.phone}
+                <div style="margin-top: 4px; font-size: 13.5px; color: #64748b; font-weight: 500; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span>${member.phone}</span>
+                  ${(member.referral && member.referral.referrerName) ? `
+                    <span style="color: #cbd5e1;">•</span>
+                    <span style="font-size: 12.5px; color: #475569;">
+                      Referred by <strong style="color: #0f172a; font-weight: 700;">${member.referral.referrerName}</strong>
+                    </span>
+                  ` : ''}
                 </div>
               </div>
 
@@ -370,6 +385,42 @@ export class FlMemberDrawer extends HTMLElement {
                 <div style="font-size: 11.5px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Pending Dues</div>
                 <div style="font-size: 14.5px; font-weight: 700; color: ${(member.pendingAmount || 0) > 0 ? '#dc2626' : '#0f172a'};">
                   ${AppConfig.formatCurrency(member.pendingAmount || 0)}
+                </div>
+              </div>
+            </div>
+
+            <!-- Credits Card (Full Width) -->
+            <div style="margin-bottom: 20px;">
+              <div 
+                id="fl-drawer-credit-card"
+                class="fl-expandable-card"
+                style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: all 0.15s ease;"
+                title="Click to expand/collapse full notes"
+              >
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                  <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Gym Credits Balance</span>
+                  <span style="font-size: 14.5px; font-weight: 800; color: #0f172a;">
+                    ${AppConfig.formatCurrency((member.credit && member.credit.balance) || (member.concession && member.concession.balance) || 0)}
+                  </span>
+                </div>
+                <div 
+                  id="fl-drawer-credit-notes"
+                  style="
+                    font-size: 12px;
+                    color: #475569;
+                    margin-top: 6px;
+                    line-height: 1.4;
+                    word-break: break-word;
+                    overflow-wrap: anywhere;
+                    display: -webkit-box;
+                    -webkit-line-clamp: ${this.isCreditExpanded ? 'unset' : '2'};
+                    -webkit-box-orient: vertical;
+                    overflow: ${this.isCreditExpanded ? 'visible' : 'hidden'};
+                    text-overflow: ellipsis;
+                    font-style: ${(member.credit && member.credit.notes) || (member.concession && member.concession.notes) ? 'normal' : 'italic'};
+                  "
+                >
+                  ${((member.credit && member.credit.notes) || (member.concession && member.concession.notes)) ? ((member.credit && member.credit.notes) || member.concession.notes) : 'No credit notes'}
                 </div>
               </div>
             </div>
@@ -654,6 +705,85 @@ export class FlMemberDrawer extends HTMLElement {
                   placeholder="10-digit number"
                   style="flex: 1; height: 36px; padding: 0 10px; border: none; font-size: 13.5px;" 
                 />
+              </div>
+            </div>
+
+            <div style="border-top: 1px dashed #e2e8f0; margin-top: 6px; padding-top: 10px;">
+              <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Gym Credits & Referral</div>
+
+              <div style="margin-bottom: 10px;">
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">Credits Amount (₹)</label>
+                <input 
+                  type="number" 
+                  id="fl-profile-credit-balance" 
+                  min="0"
+                  step="any"
+                  value="${this.profileDraft.creditBalance !== undefined ? this.profileDraft.creditBalance : (this.profileDraft.concessionBalance || 0)}" 
+                  placeholder="0.00"
+                  style="width: 100%; height: 36px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px;" 
+                />
+              </div>
+
+              <div style="margin-bottom: 10px;">
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">Credits Offer Notes</label>
+                <textarea 
+                  id="fl-profile-credit-notes" 
+                  rows="4"
+                  placeholder="e.g. Free massage on renewal, ₹1000 referral reward"
+                  style="width: 100%; min-height: 80px; max-height: 200px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; font-family: inherit; resize: vertical; box-sizing: border-box; overflow-y: auto; word-break: break-word; overflow-wrap: anywhere; line-height: 1.45;" 
+                >${this.profileDraft.creditNotes || this.profileDraft.concessionNotes || ''}</textarea>
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 11.5px; font-weight: 700; color: #475569; margin-bottom: 4px;">Referred By (Member)</label>
+                <div style="position: relative;">
+                  <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff; padding: 0 10px; height: 38px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="margin-right: 8px; flex-shrink: 0;">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.3-4.3"></path>
+                    </svg>
+                    <input 
+                      type="text" 
+                      id="fl-profile-referrer-search" 
+                      placeholder="Search member by name or phone..."
+                      value="${(() => {
+                        if (!this.profileDraft.referrerId) return '';
+                        const m = (HomeStore.getState().members || []).find(x => x.id === this.profileDraft.referrerId);
+                        return m ? `${m.name} (${m.phone})` : '';
+                      })()}"
+                      autocomplete="off"
+                      style="flex: 1; height: 100%; border: none; outline: none; font-size: 13.5px; background: transparent;"
+                    />
+                    <button 
+                      type="button" 
+                      id="fl-profile-referrer-clear" 
+                      style="display: ${this.profileDraft.referrerId ? 'flex' : 'none'}; border: none; background: transparent; cursor: pointer; color: #94a3b8; padding: 2px;"
+                      title="Clear referrer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <input type="hidden" id="fl-profile-referrer-id" value="${this.profileDraft.referrerId || ''}" />
+
+                  <div 
+                    id="fl-profile-referrer-results" 
+                    style="
+                      display: none;
+                      position: absolute;
+                      top: calc(100% + 4px);
+                      left: 0;
+                      right: 0;
+                      max-height: 180px;
+                      overflow-y: auto;
+                      background: #ffffff;
+                      border: 1px solid #e2e8f0;
+                      border-radius: 8px;
+                      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+                      z-index: 1200;
+                    "
+                  ></div>
+                </div>
               </div>
             </div>
 
@@ -945,6 +1075,22 @@ export class FlMemberDrawer extends HTMLElement {
       });
     });
 
+    // Gym Credits card toggle expand/collapse
+    const creditCard = this.querySelector('#fl-drawer-credit-card');
+    if (creditCard) {
+      creditCard.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.isCreditExpanded = !this.isCreditExpanded;
+        const notesEl = this.querySelector('#fl-drawer-credit-notes');
+        if (notesEl) {
+          notesEl.style.webkitLineClamp = this.isCreditExpanded ? 'unset' : '2';
+          notesEl.style.overflow = this.isCreditExpanded ? 'visible' : 'hidden';
+        }
+      });
+    }
+
+
+
     // Top Header [Edit Profile] button
     const editProfileBtn = this.querySelector('#fl-drawer-edit-btn');
     if (editProfileBtn) {
@@ -1135,9 +1281,85 @@ export class FlMemberDrawer extends HTMLElement {
       const fNameInput = this.querySelector('#fl-profile-first-name');
       const lNameInput = this.querySelector('#fl-profile-last-name');
       const phoneInput = this.querySelector('#fl-profile-phone');
+      const creditBalanceInput = this.querySelector('#fl-profile-credit-balance') || this.querySelector('#fl-profile-concession-balance');
+      const creditNotesInput = this.querySelector('#fl-profile-credit-notes') || this.querySelector('#fl-profile-concession-notes');
+      const referrerSearchInput = this.querySelector('#fl-profile-referrer-search');
+      const referrerHiddenId = this.querySelector('#fl-profile-referrer-id');
+      const referrerClearBtn = this.querySelector('#fl-profile-referrer-clear');
+      const referrerResults = this.querySelector('#fl-profile-referrer-results');
+
       if (fNameInput) fNameInput.addEventListener('input', () => { this.profileDraft.firstName = fNameInput.value; });
       if (lNameInput) lNameInput.addEventListener('input', () => { this.profileDraft.lastName = lNameInput.value; });
       if (phoneInput) phoneInput.addEventListener('input', () => { this.profileDraft.phone = phoneInput.value; });
+      if (creditBalanceInput) creditBalanceInput.addEventListener('input', () => { this.profileDraft.creditBalance = Number(creditBalanceInput.value) || 0; });
+      if (creditNotesInput) creditNotesInput.addEventListener('input', () => { this.profileDraft.creditNotes = creditNotesInput.value; });
+
+      // Interactive member search autocomplete
+      if (referrerSearchInput && referrerResults && referrerHiddenId) {
+        const renderResults = (query) => {
+          const q = (query || '').trim().toLowerCase();
+          const allMembers = (HomeStore.getState().members || []).filter(m => m.id !== currMember.id);
+          const filtered = q
+            ? allMembers.filter(m => (m.name && m.name.toLowerCase().includes(q)) || (m.phone && m.phone.includes(q)) || (m.rawPhone && m.rawPhone.includes(q)))
+            : allMembers;
+
+          let html = `
+            <div class="fl-ref-item" data-id="" data-label="Direct Walk-in / None" style="padding: 10px 12px; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 1px solid #f1f5f9;">
+              None / Direct Walk-in
+            </div>
+          `;
+
+          if (filtered.length === 0) {
+            html += `<div style="padding: 12px; font-size: 12.5px; color: #94a3b8; text-align: center;">No matching members found</div>`;
+          } else {
+            html += filtered.slice(0, 30).map(m => `
+              <div class="fl-ref-item" data-id="${m.id}" data-label="${m.name} (${m.phone})" style="
+                padding: 10px 12px;
+                cursor: pointer;
+                border-bottom: 1px solid #f8fafc;
+              " onmouseover="this.style.background='#f1f5f9';" onmouseout="this.style.background='#ffffff';">
+                <div style="font-size: 13px; font-weight: 700; color: #0f172a;">${m.name}</div>
+                <div style="font-size: 11.5px; color: #64748b; margin-top: 1px;">${m.phone}</div>
+              </div>
+            `).join('');
+          }
+
+          referrerResults.innerHTML = html;
+          referrerResults.style.display = 'block';
+
+          referrerResults.querySelectorAll('.fl-ref-item').forEach(item => {
+            item.addEventListener('click', () => {
+              const selectedId = item.getAttribute('data-id');
+              const selectedLabel = item.getAttribute('data-label');
+              referrerHiddenId.value = selectedId;
+              this.profileDraft.referrerId = selectedId;
+              referrerSearchInput.value = selectedId ? selectedLabel : '';
+              if (referrerClearBtn) referrerClearBtn.style.display = selectedId ? 'flex' : 'none';
+              referrerResults.style.display = 'none';
+            });
+          });
+        };
+
+        referrerSearchInput.addEventListener('focus', () => renderResults(referrerSearchInput.value));
+        referrerSearchInput.addEventListener('input', () => renderResults(referrerSearchInput.value));
+
+        if (referrerClearBtn) {
+          referrerClearBtn.addEventListener('click', () => {
+            referrerHiddenId.value = '';
+            this.profileDraft.referrerId = '';
+            referrerSearchInput.value = '';
+            referrerClearBtn.style.display = 'none';
+            referrerResults.style.display = 'none';
+          });
+        }
+
+        // Close results on outer click
+        document.addEventListener('click', (e) => {
+          if (!referrerSearchInput.contains(e.target) && !referrerResults.contains(e.target)) {
+            referrerResults.style.display = 'none';
+          }
+        });
+      }
 
       const profileForm = this.querySelector('#fl-edit-profile-form');
       if (profileForm) {
@@ -1149,6 +1371,9 @@ export class FlMemberDrawer extends HTMLElement {
           const fn = fNameInput ? fNameInput.value.trim() : '';
           const ln = lNameInput ? lNameInput.value.trim() : '';
           const ph = phoneInput ? phoneInput.value.trim().replace(/\D/g, '') : '';
+          const cBalance = creditBalanceInput ? Number(creditBalanceInput.value) || 0 : (this.profileDraft.creditBalance || this.profileDraft.concessionBalance || 0);
+          const cNotes = creditNotesInput ? creditNotesInput.value.trim() : (this.profileDraft.creditNotes || this.profileDraft.concessionNotes || '');
+          const refId = referrerHiddenId ? referrerHiddenId.value : (this.profileDraft.referrerId || '');
 
           if (!fn) {
             if (errEl) { errEl.textContent = 'First name is required.'; errEl.style.display = 'block'; }
@@ -1173,7 +1398,18 @@ export class FlMemberDrawer extends HTMLElement {
               phoneNumber: ph,
               plans: allPlansToSend,
               payments: unpaidPaymentsToSend,
-              paidPaymentPlanLinks: paidPaymentPlanLinks
+              paidPaymentPlanLinks: paidPaymentPlanLinks,
+              credit: {
+                balance: cBalance,
+                notes: cNotes
+              },
+              concession: {
+                balance: cBalance,
+                notes: cNotes
+              },
+              referral: {
+                referrerId: refId || null
+              }
             });
 
             this.isEditingProfile = false;

@@ -98,6 +98,12 @@ public class MemberServiceTest {
     @Mock
     private AlertsEngine alertsEngine;
 
+    @Mock
+    private com.freelance.gym.credit.repository.MemberCreditRepository memberCreditRepository;
+
+    @Mock
+    private com.freelance.gym.referral.repository.MemberReferralRepository memberReferralRepository;
+
     private MemberService memberService;
 
     @BeforeEach
@@ -119,7 +125,9 @@ public class MemberServiceTest {
                 new MemberAssembler(),
                 new PaymentAssembler(),
                 receiptNotificationService,
-                alertsEngine
+                alertsEngine,
+                memberCreditRepository,
+                memberReferralRepository
         );
     }
 
